@@ -1,4 +1,5 @@
 TALENTHUB - KOL RATECARD FINDER
+
 Platform web internal full-stack monolith yang dirancang khusus 
 untuk mencari, menyaring, dan mengelola data ratecard Influencer 
 / KOL (Key Opinion Leader) secara efisien.
