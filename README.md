@@ -1,40 +1,71 @@
-🚀 TalentHub - KOL Ratecard Finder
-Platform web internal full-stack monolith yang dirancang khusus untuk mencari, menyaring, dan mengelola data ratecard Influencer / KOL (Key Opinion Leader) secara efisien.
+==================================================================
+TALENTHUB - KOL RATECARD FINDER
+==================================================================
 
-🛠️ Fitur Utama
-KOL Search & Filter: Mempermudah pencarian Influencer berdasarkan nama, platform (Instagram/TikTok), jumlah followers, kategori niche, dan rentang harga ratecard.
+Platform web internal full-stack monolith yang dirancang khusus 
+untuk mencari, menyaring, dan mengelola data ratecard Influencer 
+/ KOL (Key Opinion Leader) secara efisien.
 
-Ratecard Management (CRUD): Fitur untuk menambah, mengubah, dan menghapus database ratecard KOL terbaru ke dalam sistem.
+------------------------------------------------------------------
+FITUR UTAMA
+------------------------------------------------------------------
 
-Single User Authentication: Sistem login terpusat menggunakan next-auth di mana hak akses hanya diberikan kepada 1 User Utama (ADMIN) untuk menjaga keamanan data internal perusahaan.
+* KOL Search & Filter: 
+  Mempermudah pencarian Influencer berdasarkan nama, platform 
+  (Instagram/TikTok), jumlah followers, kategori niche, dan 
+  rentang harga ratecard.
 
-💻 Tech Stack & Arsitektur
-Frontend: Next.js (App Router), React, TypeScript.
-Styling: Tailwind CSS.
-Backend & Database: Node.js (Next API Routes), PostgreSQL, dan Prisma ORM.
-Security: NextAuth.js (Credentials Provider).
+* Ratecard Management (CRUD): 
+  Fitur untuk menambah, mengubah, dan menghapus database 
+  ratecard KOL terbaru ke dalam sistem.
 
-⚙️ Persiapan Environment
+* Single User Authentication: 
+  Sistem login terpusat menggunakan next-auth di mana hak akses 
+  hanya diberikan kepada 1 User Utama (ADMIN) untuk menjaga 
+  keamanan data internal perusahaan.
+
+------------------------------------------------------------------
+TECH STACK & ARSITEKTUR
+------------------------------------------------------------------
+
+* Frontend: Next.js (App Router), React, TypeScript.
+* Styling: Tailwind CSS.
+* Backend & Database: Node.js (Next API Routes), PostgreSQL, Prisma ORM.
+* Security: NextAuth.js (Credentials Provider).
+
+------------------------------------------------------------------
+PERSIAPAN ENVIRONMENT (.env)
+------------------------------------------------------------------
+
 Buat file .env di root project dan isi konfigurasinya seperti ini:
-# Koneksi ke database PostgreSQL lokal kamu
-DATABASE_URL="postgresql://postgres:password@localhost:5432/talenthub_ratecard"
 
-# Secret token untuk mengamankan session login Admin
+DATABASE_URL="postgresql://postgres:password@localhost:5432/talenthub_ratecard"
 AUTH_SECRET="isi-dengan-string-random-bebas"
 
-🚀 Jalankan Aplikasi di Laptop Tim
-Minta tim kamu untuk membuka Terminal di VS Code, lalu jalankan perintah ini secara berurutan:
-# 1. Install semua library pendukung
-npm install
-# 2. Sinkronisasi struktur tabel ratecard ke PostgreSQL lokal
-npx prisma migrate dev --name init_talenthub
-# 3. Jalankan server lokal untuk mulai koding frontend/backend
-npm run dev
+------------------------------------------------------------------
+LANGKAH JALANKAN APLIKASI DI LAPTOP TIM
+------------------------------------------------------------------
 
-Web otomatis bisa diakses di browser pada alamat http://localhost:3000.
+Buka Terminal di VS Code, lalu jalankan perintah ini secara berurutan:
 
-📂 Struktur Modul Projek
-📂 app/ : Mengatur rute halaman tampilan web dan endpoint API backend.
-📂 components/ : Tempat kodingan potongan UI (Form login, tabel data KOL, dan komponen search bar).
-📂 lib/ : Berisi script logika query database Prisma untuk mengambil atau menyimpan data KOL.
-📂 prisma/ : Berisi file schema.prisma yang mendefinisikan tabel data KOL dan Admin.
+1. Install semua library pendukung:
+   npm install
+
+2. Sinkronisasi struktur tabel ratecard ke PostgreSQL lokal:
+   npx prisma migrate dev --name init_talenthub
+
+3. Jalankan server lokal untuk mulai koding:
+   npm run dev
+
+Web otomatis bisa diakses di browser pada alamat: http://localhost:3000
+
+------------------------------------------------------------------
+STRUKTUR MODUL PROJEK
+------------------------------------------------------------------
+
+* app/        : Mengatur rute halaman tampilan web dan endpoint API backend.
+* components/ : Tempat kodingan potongan UI (Form login, tabel data KOL).
+* lib/        : Berisi script logika query database Prisma (CRUD data KOL).
+* prisma/     : Berisi file schema.prisma (Definisi tabel KOL dan Admin).
+
+==================================================================
