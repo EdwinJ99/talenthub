@@ -43,4 +43,3 @@ STRUKTUR MODUL PROJEK
 * components/ : Tempat kodingan potongan UI (Form login, tabel data KOL).
 * lib/        : Berisi script logika query database Prisma (CRUD data KOL).
 * prisma/     : Berisi file schema.prisma (Definisi tabel KOL dan Admin).
-<img width="468" height="649" alt="image" src="https://github.com/user-attachments/assets/f25be6ff-d9de-47fa-b500-74aec26c3193" />
