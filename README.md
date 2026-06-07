@@ -1,14 +1,11 @@
-==================================================================
 TALENTHUB - KOL RATECARD FINDER
-==================================================================
 
 Platform web internal full-stack monolith yang dirancang khusus 
 untuk mencari, menyaring, dan mengelola data ratecard Influencer 
 / KOL (Key Opinion Leader) secara efisien.
 
-------------------------------------------------------------------
+
 FITUR UTAMA
-------------------------------------------------------------------
 
 * KOL Search & Filter: 
   Mempermudah pencarian Influencer berdasarkan nama, platform 
@@ -23,10 +20,9 @@ FITUR UTAMA
   Sistem login terpusat menggunakan next-auth di mana hak akses 
   hanya diberikan kepada 1 User Utama (ADMIN) untuk menjaga 
   keamanan data internal perusahaan.
+  
 
-------------------------------------------------------------------
 TECH STACK & ARSITEKTUR
-------------------------------------------------------------------
 
 * Frontend: Next.js (App Router), React, TypeScript.
 * Styling: Tailwind CSS.
@@ -42,9 +38,8 @@ Buat file .env di root project dan isi konfigurasinya seperti ini:
 DATABASE_URL="postgresql://postgres:password@localhost:5432/talenthub_ratecard"
 AUTH_SECRET="isi-dengan-string-random-bebas"
 
-------------------------------------------------------------------
+
 LANGKAH JALANKAN APLIKASI DI LAPTOP TIM
-------------------------------------------------------------------
 
 Buka Terminal di VS Code, lalu jalankan perintah ini secara berurutan:
 
@@ -59,9 +54,8 @@ Buka Terminal di VS Code, lalu jalankan perintah ini secara berurutan:
 
 Web otomatis bisa diakses di browser pada alamat: http://localhost:3000
 
-------------------------------------------------------------------
+
 STRUKTUR MODUL PROJEK
-------------------------------------------------------------------
 
 * app/        : Mengatur rute halaman tampilan web dan endpoint API backend.
 * components/ : Tempat kodingan potongan UI (Form login, tabel data KOL).
