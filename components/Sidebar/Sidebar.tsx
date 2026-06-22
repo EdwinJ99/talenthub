@@ -4,7 +4,7 @@ import type { AppRole } from "@/lib/roles";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore, useEffect, useRef } from "react";
 
 type SidebarProps = {
   collapsed: boolean;
@@ -15,9 +15,10 @@ type SidebarProps = {
 
 type MenuItem = {
   label: string;
-  href: string;
+  href: string; // href jadi opsional
   icon: React.ReactNode;
   roles?: AppRole[];
+  subItems?: { label: string; href: string }[];
 };
 
 const menuItems: MenuItem[] = [
@@ -25,98 +26,159 @@ const menuItems: MenuItem[] = [
     label: "Home",
     href: "/",
     icon: (
-          <svg
-            className="fill-current"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M3 10L12 3L21 10V20C21 20.55 20.55 21 20 21H15C14.45 21 14 20.55 14 20V16C14 15.45 13.55 15 13 15H11C10.45 15 10 15.45 10 16V20C10 20.55 9.55 21 9 21H4C3.45 21 3 20.55 3 20V10Z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-    ),
-  },
-  {
-    label: "Analysis",
-    href: "/analysis",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 20h16" />
-        <path d="M7 16v-4M12 16V8M17 16v-6" />
+      <svg
+        className="fill-current"
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M3 10L12 3L21 10V20C21 20.55 20.55 21 20 21H15C14.45 21 14 20.55 14 20V16C14 15.45 13.55 15 13 15H11C10.45 15 10 15.45 10 16V20C10 20.55 9.55 21 9 21H4C3.45 21 3 20.55 3 20V10Z"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
-    {
-    label: "Planning",
-    href: "/planning",
-    roles: ["ADMIN", "ORDERING"],
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 6h16v14H4z" />
-        <path d="M8 3v6M16 3v6" />
-        <path d="M4 10h16" />
-        <path d="M8 14h3M8 18h8" />
-      </svg>
-    ),
-  },
-  {
-    label: "Ordering",
-    href: "/ordering",
-    roles: ["ADMIN", "ORDERING"],
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 7.5h16" />
-        <path d="M7 4.5v6" />
-        <path d="M17 4.5v6" />
-        <rect x="4" y="6" width="16" height="14" rx="2" />
-        <path d="M8 12h8M8 16h5" />
-      </svg>
-    ),
-  },
-  {
-    label: "Stock",
-    href: "/ordering/stock",
-    roles: ["ADMIN", "ORDERING"],
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 7.5 12 3l8 4.5-8 4.5L4 7.5Z" />
-        <path d="M4 7.5v9L12 21l8-4.5v-9" />
-        <path d="M12 12v9" />
-      </svg>
-    ),
-  },
+  // {
+  //   label: "Analysis",
+  //   href: "/analysis",
+  //   icon: (
+  //     <svg
+  //       viewBox="0 0 24 24"
+  //       className="h-5 w-5"
+  //       fill="none"
+  //       stroke="currentColor"
+  //       strokeWidth="1.8"
+  //     >
+  //       <path d="M4 20h16" />
+  //       <path d="M7 16v-4M12 16V8M17 16v-6" />
+  //     </svg>
+  //   ),
+  // },
+  // {
+  //   label: "Planning",
+  //   href: "/planning",
+  //   roles: ["ADMIN", "ORDERING"],
+  //   icon: (
+  //     <svg
+  //       viewBox="0 0 24 24"
+  //       className="h-5 w-5"
+  //       fill="none"
+  //       stroke="currentColor"
+  //       strokeWidth="1.8"
+  //     >
+  //       <path d="M4 6h16v14H4z" />
+  //       <path d="M8 3v6M16 3v6" />
+  //       <path d="M4 10h16" />
+  //       <path d="M8 14h3M8 18h8" />
+  //     </svg>
+  //   ),
+  // },
+  // {
+  //   label: "Ordering",
+  //   href: "/ordering",
+  //   roles: ["ADMIN", "ORDERING"],
+  //   icon: (
+  //     <svg
+  //       viewBox="0 0 24 24"
+  //       className="h-5 w-5"
+  //       fill="none"
+  //       stroke="currentColor"
+  //       strokeWidth="1.8"
+  //     >
+  //       <path d="M4 7.5h16" />
+  //       <path d="M7 4.5v6" />
+  //       <path d="M17 4.5v6" />
+  //       <rect x="4" y="6" width="16" height="14" rx="2" />
+  //       <path d="M8 12h8M8 16h5" />
+  //     </svg>
+  //   ),
+  // },
+  // {
+  //   label: "Stock",
+  //   href: "/ordering/stock",
+  //   roles: ["ADMIN", "ORDERING"],
+  //   icon: (
+  //     <svg
+  //       viewBox="0 0 24 24"
+  //       className="h-5 w-5"
+  //       fill="none"
+  //       stroke="currentColor"
+  //       strokeWidth="1.8"
+  //     >
+  //       <path d="M4 7.5 12 3l8 4.5-8 4.5L4 7.5Z" />
+  //       <path d="M4 7.5v9L12 21l8-4.5v-9" />
+  //       <path d="M12 12v9" />
+  //     </svg>
+  //   ),
+  // },
+  // {
+  //   label: "Tracking",
+  //   href: "/tracking",
+  //   icon: (
+  //     <svg
+  //       viewBox="0 0 24 24"
+  //       className="h-5 w-5"
+  //       fill="none"
+  //       stroke="currentColor"
+  //       strokeWidth="1.8"
+  //     >
+  //       <path d="M3 7h10v8H3z" />
+  //       <path d="M13 10h3l3 3v2h-6" />
+  //       <circle cx="8" cy="17" r="1.5" />
+  //       <circle cx="17" cy="17" r="1.5" />
+  //     </svg>
+  //   ),
+  // },
 
   {
-    label: "Tracking",
-    href: "/tracking",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M3 7h10v8H3z" />
-        <path d="M13 10h3l3 3v2h-6" />
-        <circle cx="8" cy="17" r="1.5" />
-        <circle cx="17" cy="17" r="1.5" />
-      </svg>
-    ),
-  },
-  {
-    label: "Users",
-    href: "/users",
+    label: "Influencer",
+    href: "/influencer",
     roles: ["ADMIN"],
     icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
         <path d="M16 19a4 4 0 0 0-8 0" />
         <circle cx="12" cy="9" r="3" />
         <path d="M19 19a3 3 0 0 0-2.2-2.88" />
         <path d="M17 7.5a2.5 2.5 0 0 1 0 5" />
       </svg>
     ),
+  },
+
+  {
+    label: "Operational",
+    href: "/operational",
+    roles: ["ADMIN"],
+    icon: (
+      <svg
+        viewBox="0 0 24 24"
+        className="h-5 w-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <circle cx="12" cy="12" r="3" />
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 4.6 13H4a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1H5.5a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 7 4.6V4a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82A1.65 1.65 0 0 0 19.4 11H20a2 2 0 0 1 0 4h-.6z" />
+      </svg>
+    ),
+    subItems: [
+      { label: "Master Data User", href: "/users" },
+      { label: "Master Data Payment", href: "/payment" },
+      { label: "Master Data SOW", href: "/sow" },
+    ],
   },
 ];
 
@@ -129,8 +191,26 @@ export default function Sidebar({
   const mounted = useMounted();
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
 
-  const userRole = mounted ? (session?.user?.role as AppRole | undefined) : undefined;
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setOpenSubMenu(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const userRole = mounted
+    ? (session?.user?.role as AppRole | undefined)
+    : undefined;
   const visibleMenuItems = menuItems.filter(
     (item) => !item.roles || (userRole && item.roles.includes(userRole))
   );
@@ -138,77 +218,115 @@ export default function Sidebar({
   return (
     <>
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-72 border-r border-white/10 bg-white text-black-600 transition-transform duration-300 md:z-40 md:translate-x-0 ${
-          collapsed ? "md:w-20" : "md:w-72"
-        } ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-50 w-20 border-r border-slate-100 bg-white text-slate-600 transition-transform duration-300 md:z-40 md:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-        <div className="flex h-full flex-col">
-          <div
-            className={`flex items-center px-3 py-5 ${
-              collapsed ? "justify-center py-2" : "justify-between py-3"
-            }`}
-          >
-            <div
-              className={`overflow-hidden transition-all duration-300 ml-2 ${
-                collapsed ? "w-0 opacity-0 md:hidden" : "w-auto opacity-100"
-              }`}
-            >
-              <p className="text-3xl font-semibold">TalentHub</p>
-              
-            </div>
-
-            {/* CLOSE BUTTON */}
-            <div className="flex items-center">
-              <button
-                type="button"
-                onClick={onToggleCollapse}
-                className="hidden rounded-lg border border-slate-300/70 p-1.5 text-slate-500 transition hover:border-[#049f57] hover:text-[#049f57] md:inline-flex"
-                aria-label="Toggle sidebar"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <button
-                type="button"
-                onClick={onCloseMobile}
-                className="rounded-lg border border-slate-300/70 p-1.5 text-slate-500 transition hover:border-[#049f57] hover:text-[#049f57] md:hidden"
-                aria-label="Close sidebar"
-              >
-                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
-              </button>
-            </div>
+        <div className="flex h-full flex-col items-center">
+          <div className="flex items-center justify-center py-6">
+            <p className="text-2xl font-bold">TH</p>
           </div>
 
-          {/* MENU ITEMS */}
-          <nav className="flex-1 space-y-2 p-3">
+          <nav className="flex-1 w-full flex flex-col items-center gap-1 px-2">
             {visibleMenuItems.map((item) => {
-              const isActive = pathname === item.href;
+      
+
+              // Cek apakah halaman sekarang adalah halaman aktif dari sub-menu
+              const isSubActive = item.subItems?.some((sub) =>
+                pathname.startsWith(sub.href)
+              );
+
+              // Menu aktif jika pathname sama dengan href, ATAU jika salah satu sub-menu aktif
+              const isActive = pathname === item.href || isSubActive;
+
+              if (item.subItems) {
+                return (
+                  <div
+                    key={item.label}
+                    ref={containerRef}
+                    className="relative w-full flex justify-center"
+                  >
+                    <button
+                      onClick={() =>
+                        setOpenSubMenu(
+                          openSubMenu === item.label ? null : item.label
+                        )
+                      }
+                      // Gunakan logika isActive untuk warna latar belakang button
+                      className={`group flex w-16 flex-col items-center justify-center gap-1 rounded-xl py-3 transition ${
+                        isActive ? "bg-[#FFEED2]" : "hover:bg-[#FFEED2]"
+                      }`}
+                    >
+                      {/* Gunakan logika isActive untuk warna icon */}
+                      <span
+                        className={`transition-colors ${
+                          isActive
+                            ? "text-[#F4AC39]"
+                            : "text-[#90A1B9] group-hover:text-[#F4AC39]"
+                        }`}
+                      >
+                        {item.icon}
+                      </span>
+                      <span className="text-[10px] text-black font-medium">
+                        {item.label}
+                      </span>
+                    </button>
+
+                    {openSubMenu === item.label && (
+                      <div className="absolute left-16 ml-2 w-40 rounded-xl bg-white border border-slate-100 shadow-xl py-2 z-50">
+                        {item.subItems.map((sub) => {
+                          const isSubItemActive = pathname === sub.href;
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={() => setOpenSubMenu(null)}
+                              className={`block px-4 py-2 text-xs transition ${
+                                isSubItemActive
+                                  ? "text-[#F4AC39] font-bold bg-slate-50"
+                                  : "text-slate-600 hover:text-black hover:bg-slate-50"
+                              }`}
+                            >
+                              {sub.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={onCloseMobile}
-                  className={`group flex items-center gap-3 rounded-xl px-3 py-3 transition ${
-                    isActive
-                      ? "bg-[#d9fcf3] text-slate-500"
-                      : "text-slate-500 hover:bg-black/5 hover:text-slate-500"
-                  } ${collapsed ? "md:justify-center" : ""}`}
+                  className={`group flex w-16 flex-col items-center justify-center gap-1 rounded-xl py-3 transition 
+          ${isActive ? "bg-[#FFEED2]" : "hover:bg-[#FFEED2]"}`} // Warna latar aktif/hover
                 >
-                  <span className={isActive ? "text-slate-500" : "text-slate-400 group-hover:text-slate-500"}>
+                  <span
+                    className={`transition-colors ${
+                      isActive
+                        ? "text-[#F4AC39]" // Warna Ikon saat Active
+                        : "text-[#90A1B9] group-hover:text-[#F4AC39]" // Warna Ikon saat normal & hover
+                    }`}
+                  >
                     {item.icon}
                   </span>
-                  <span className={`text-md font-medium ${collapsed ? "md:hidden" : ""}`}>{item.label}</span>
+                  <span
+                    className={`text-[10px] font-medium leading-none mt-0.5 ${
+                      isActive ? "text-black" : "text-black" // Semua tulisan warna hitam
+                    }`}
+                  >
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className={`border-t border-white/10 p-4 text-xs text-slate-400 ${collapsed ? "md:text-center" : ""}`}>
-            {collapsed ? "v1" : "Dashboard v1.0"}
-          </div>
+          <div className="p-4 text-[10px] text-slate-400">v1.0</div>
         </div>
       </aside>
 
@@ -225,17 +343,18 @@ export default function Sidebar({
 }
 
 function useMounted() {
-  return useSyncExternalStore(subscribeToMount, getClientSnapshot, getServerSnapshot);
+  return useSyncExternalStore(
+    subscribeToMount,
+    getClientSnapshot,
+    getServerSnapshot
+  );
 }
-
 function subscribeToMount() {
   return () => {};
 }
-
 function getClientSnapshot() {
   return true;
 }
-
 function getServerSnapshot() {
   return false;
 }

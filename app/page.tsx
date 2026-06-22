@@ -43,12 +43,12 @@ export default async function Home() {
               TalentHub Dashboard
             </h1>
             <p className="mt-3 max-w-3xl text-sm text-slate-200 md:text-base">
-              Akses cepat ke planning, ordering, delivery, analysis, dan modul operasional lain dari satu home page.
+              Manage creator campaigns, projects, and operational activities in one place.
             </p>
           </div>
         </div>
 
-        <section className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-sm">
+        {/* <section className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Quick Access</p>
@@ -79,7 +79,7 @@ export default async function Home() {
               </Link>
             ))}
           </div>
-        </section>
+        </section> */}
 
         {/* <section className="rounded-2xl border border-slate-200 bg-white/95 p-6 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Workflow</p>
@@ -87,7 +87,7 @@ export default async function Home() {
 
           <div className="mt-6 grid gap-4 lg:grid-cols-4">
             <WorkflowStep step="01" title="Planning" description="Set stock awal dan plan produksi harian." accent="bg-emerald-500" />
-            <WorkflowStep step="02" title="Ordering" description="Buat order berdasarkan planning dan kebutuhan aktual." accent="bg-slate-900" />
+            
             <WorkflowStep step="03" title="Delivery" description="Konfirmasi quantity yang benar-benar dikirim." accent="bg-amber-500" />
             <WorkflowStep step="04" title="Receiving" description="Input qty received dan ubah status order menjadi checked." accent="bg-sky-500" />
           </div>
