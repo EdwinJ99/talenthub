@@ -53,3 +53,16 @@ export const confirmStartProject = async () => {
     confirmButtonColor: "#16a34a",
   });
 };
+
+export const confirmGenerateReport = async () => {
+  return Swal.fire({
+    title: "Generate Report?",
+    text: "Campaign akan dipindahkan ke tahap Report.",
+    icon: "question",
+    showCancelButton: true,
+    confirmButtonText: "Ya, Generate",
+    cancelButtonText: "Batal",
+    reverseButtons: true,
+    confirmButtonColor: "#16a34a",
+  });
+};
