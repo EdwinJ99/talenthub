@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { confirmDelete, showSuccess } from "@/lib/alert";
+import { useRouter } from "next/navigation";
+import {
+  confirmDelete,
+  confirmGenerateQuotation,
+  showSuccess,
+} from "@/lib/alert";
 import DefaultLayout from "@/components/Layout/DefaultLayout"
 import Link from "next/link"
 
@@ -80,6 +85,22 @@ const steps = ["Draft", "Quotation", "Running", "Report", "Invoice", "Finish"]
 
 export default function DraftPage() {
   const [creators, setCreators] = useState(initialCreators);
+  const [sortField, setSortField] = useState<string>("");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const router = useRouter();
+
+  const handleGenerateQuotation = async () => {
+    const result = await confirmGenerateQuotation();
+
+    if (!result.isConfirmed) return;
+
+    await showSuccess(
+      "Berhasil",
+      "Quotation berhasil dibuat."
+    );
+
+    router.push("/tracking/quotation");
+  };
 
   const handleDelete = async (creatorNo: number) => {
     const result = await confirmDelete(
@@ -97,6 +118,38 @@ export default function DraftPage() {
       "Creator berhasil dihapus."
     );
   };
+
+  const handleSort = (field: string) => {
+  const direction =
+    sortField === field && sortDirection === "asc"
+      ? "desc"
+      : "asc";
+
+  setSortField(field);
+  setSortDirection(direction);
+
+  const sorted = [...creators].sort((a: any, b: any) => {
+    const aValue = a[field];
+    const bValue = b[field];
+
+    if (typeof aValue === "number") {
+      return direction === "asc"
+        ? aValue - bValue
+        : bValue - aValue;
+    }
+
+    return direction === "asc"
+      ? String(aValue).localeCompare(String(bValue))
+      : String(bValue).localeCompare(String(aValue));
+  });
+
+  setCreators(sorted);
+};
+
+const getSortIcon = (field: string) => {
+  if (sortField !== field) return "↕";
+  return sortDirection === "asc" ? "▲" : "▼";
+};
 
   const currentStep = 0;
 
@@ -224,31 +277,40 @@ const progressWidth =
 
             <div className="mt-6 w-full overflow-x-auto rounded-xl border border-slate-200 scrollbar-thin">
             <table className="min-w-[1400px] w-full border-collapse text-sm whitespace-nowrap">
-              <thead>
-                <tr className="border-y border-slate-300 bg-white text-left">
-                  {[
-                    "No.",
-                    "Photo",
-                    "Influencer Name",
-                    "Username",
-                    "Followers",
-                    "Post",
-                    "ER (%)",
-                    "Avr View",
-                    "Avr Brand",
-                    "CPV All",
-                    "CPV Branded",
-                    "Action Detail",
-                  ].map((head) => (
-                    <th
-                      key={head}
-                      className="border-x border-slate-200 px-4 py-4 text-xs font-bold text-slate-900"
-                    >
-                      {head} <span className="text-slate-300">↕</span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
+            <thead>
+              <tr className="border-y border-slate-300 bg-white text-left">
+
+                {[
+                  { label: "No.", field: "no" },
+                  { label: "Influencer Name", field: "name" },
+                  { label: "Username", field: "username" },
+                  { label: "Followers", field: "followers" },
+                  { label: "Post", field: "post" },
+                  { label: "ER (%)", field: "er" },
+                  { label: "Avr View", field: "avrView" },
+                  { label: "Avr Brand", field: "avrBrand" },
+                  { label: "CPV All", field: "cpvAll" },
+                  { label: "CPV Branded", field: "cpvBranded" },
+                ].map((head) => (
+                  <th
+                    key={head.field}
+                    onClick={() => handleSort(head.field)}
+                    className="cursor-pointer border-x border-slate-200 px-4 py-4 text-xs font-bold text-slate-900 hover:bg-slate-50"
+                  >
+                    {head.label}
+
+                    <span className="ml-1 text-slate-400">
+                      {getSortIcon(head.field)}
+                    </span>
+                  </th>
+                ))}
+
+                <th className="border-x border-slate-200 px-4 py-4 text-xs font-bold text-slate-900">
+                  Action Detail
+                </th>
+
+              </tr>
+            </thead>
 
               <tbody>
                 {creators.map((creator) => (
@@ -326,12 +388,12 @@ const progressWidth =
             <button className="w-full rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold md:w-auto">
               📄 Send Spreadsheet
             </button>
-            <Link
-            href="/tracking/quotation"
+          <button
+            onClick={handleGenerateQuotation}
             className="w-full rounded-xl bg-black px-6 py-3 text-center text-sm font-semibold text-white md:w-auto"
-            >
+          >
             Generate Quotation
-            </Link>
+          </button>
           </div>
         </section>
       </div>
