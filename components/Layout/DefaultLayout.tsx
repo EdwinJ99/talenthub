@@ -23,6 +23,25 @@ export default function DefaultLayout({ children }: DefaultLayoutProps) {
   const mounted = useMounted();
   const router = useRouter();
   const pathname = usePathname();
+  const currentPage = pathname.includes("/tracking")
+  ? {
+      title: "Tracking",
+      description: "Track and monitor project campaign progress",
+    }
+  : pathname.includes("/influencer")
+  ? {
+      title: "Influencer",
+      description: "Manage influencers and campaign collaborations",
+    }
+  : pathname.includes("/operational")
+  ? {
+      title: "Operational",
+      description: "Manage operational activities and workflows",
+    }
+  : {
+      title: "Home",
+      description: "Discover the right creators for your campaigns",
+    };
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -112,8 +131,13 @@ export default function DefaultLayout({ children }: DefaultLayoutProps) {
                 </svg>
               </button>
               <div>
-                <p className="text-sm font-bold text-slate-900">Home</p>
-                <p className="text-xs text-slate-500">Discover the right creators for your campaigns</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {currentPage.title}
+                </p>
+
+                <p className="text-xs text-slate-500">
+                  {currentPage.description}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
