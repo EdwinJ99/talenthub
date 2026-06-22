@@ -97,7 +97,7 @@ export default function DefaultLayout({ children }: DefaultLayoutProps) {
         onCloseMobile={() => setMobileOpen(false)}
       />
 
-      <div className={`transition-[margin] duration-300 ${collapsed ? "md:ml-20" : "md:ml-72"}`}>
+     <div className={`transition-[margin] duration-300 ml-20`}>
         <header className="sticky top-0 z-30 border-b border-slate-200/70 bg-white/70 px-4 py-7 backdrop-blur md:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
