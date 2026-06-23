@@ -41,7 +41,7 @@ const progressWidth =
 
 const stepDates = [
   "17 May 2026", // Draft
-  "17 May 2026", // Quotation
+  "20 May 2026", // Quotation
   "-",           // Running
   "-",           // Report
   "-",           // Invoice

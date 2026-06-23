@@ -7,6 +7,9 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import DefaultLayout from "@/components/Layout/DefaultLayout"
+import CheckIcon from "@/components/icons/CheckIcon";
+import EditIcon from "@/components/icons/EditIcon";
+import EyeIcon from "@/components/icons/EyeIcon";
 
 
 const projectDetail = {
@@ -36,18 +39,18 @@ export default function RunningPage() {
     const currentStep = 2;
 
     const progressWidth =
-  currentStep === 2
-    ? "37%"
-    : `${(currentStep / (steps.length - 1)) * 100}%`;
+    currentStep === 2
+      ? "37%"
+      : `${(currentStep / (steps.length - 1)) * 100}%`;
 
-const stepDates = [
-  "17 May 2026", // Draft
-  "17 May 2026", // Quotation
-  "17 May 2026", // Running
-  "-",           // Report
-  "-",           // Invoice
-  "-",           // Finish
-];
+  const stepDates = [
+    "17 May 2026", // Draft
+    "20 May 2026", // Quotation
+    "22 May 2026", // Running
+    "-", // Report
+    "-",           // Invoice
+    "-",           // Finish
+  ];
 
   const handleSort = (columnIndex: number, field: string) => {
   const direction =
@@ -240,23 +243,23 @@ const handleGenerateReport = async () => {
                     <td className="border border-slate-200 px-4 py-4 text-center">{row[2]}</td>
                     <td className="border border-slate-200 px-4 py-4 text-center">{row[3]}</td>
                     <td className="border border-slate-200 px-4 py-4 text-center">{row[4]}</td>
-                    <td className="border border-slate-200 bg-slate-50 px-4 py-4 text-center">
-                      {row[5] === "view" ? (
-                        <button className="text-2xl text-blue-600">
-                          👁️
-                        </button>
-                      ) : (
-                        <div className="flex justify-center gap-4 text-xl">
-                        <button className="text-2xl text-yellow-500">
-                          ✏️
-                        </button>
+<td className="border border-slate-200 bg-slate-50 px-4 py-4 text-center">
+  {row[5] === "view" ? (
+    <button title="View">
+      <EyeIcon className="h-7 w-7" />
+    </button>
+  ) : (
+    <div className="flex justify-center gap-4">
+      <button title="Edit">
+        <EditIcon className="h-7 w-7" />
+      </button>
 
-                        <button className="text-2xl text-emerald-600">
-                          ✔️
-                        </button>
-                        </div>
-                      )}
-                    </td>
+      <button title="Approve">
+        <CheckIcon className="h-7 w-7" />
+      </button>
+    </div>
+  )}
+</td>
                   </tr>
                 ))}
               </tbody>
