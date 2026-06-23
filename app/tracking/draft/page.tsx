@@ -9,6 +9,9 @@ import {
 } from "@/lib/alert";
 import DefaultLayout from "@/components/Layout/DefaultLayout"
 import Link from "next/link"
+import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
+import DeleteIcon from "@/components/icons/DeleteIcon";
+import EyeIcon from "@/components/icons/EyeIcon";
 
 const projectDetail = {
   id: "TRS-10192929",
@@ -351,25 +354,23 @@ const progressWidth =
                       {creator.cpvBranded}
                     </td>
                     <td className="border-x border-slate-200 px-4 py-3">
-                      <div className="flex items-center justify-center gap-4">
+                    <div className="flex items-center justify-center gap-4">
+                      <Link
+                        href={`/tracking/draft/detail/${creator.no}`}
+                        className="text-sky-600 transition hover:scale-110"
+                        title="Detail"
+                      >
+                        <EyeIcon className="h-5 w-5" />
+                      </Link>
 
-                        <Link
-                          href={`/tracking/draft/detail/${creator.no}`}
-                          className="text-sky-600 hover:scale-110 transition"
-                          title="Detail"
-                        >
-                          👁️
-                        </Link>
-
-                        <button
-                          className="text-red-600 hover:scale-110 transition"
-                          title="Delete"
-                          onClick={() => handleDelete(creator.no)}
-                        >
-                          🗑️
-                        </button>
-
-                      </div>
+                      <button
+                        className="text-red-500 transition hover:scale-110"
+                        title="Delete"
+                        onClick={() => handleDelete(creator.no)}
+                      >
+                        <DeleteIcon className="h-5 w-5" />
+                      </button>
+                    </div>
                     </td>
                   </tr>
                 ))}
@@ -382,12 +383,14 @@ const progressWidth =
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-            <button className="w-full rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold md:w-auto">
-              📄 Download Spreadsheet
-            </button>
-            <button className="w-full rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold md:w-auto">
-              📄 Send Spreadsheet
-            </button>
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto">
+            <FileDocumentIcon className="h-4 w-4" />
+            Download Spreadsheet
+          </button>
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto">
+            <FileDocumentIcon className="h-4 w-4" />
+            Send Spreadsheet
+          </button>
           <button
             onClick={handleGenerateQuotation}
             className="w-full rounded-xl bg-black px-6 py-3 text-center text-sm font-semibold text-white md:w-auto"

@@ -1,11 +1,117 @@
-import DefaultLayout from "@/components/Layout/DefaultLayout"
-import { requireSession } from "@/lib/session"
+"use client";
 
-const items = [1, 2, 3, 4, 5]
+import { useState } from "react";
+import DefaultLayout from "@/components/Layout/DefaultLayout"
+import {
+  confirmFinishProject,
+  showSuccess,
+} from "@/lib/alert";
+import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
+
+const projectDetail = {
+  brand: "CAFE PRO",
+  projectName: "NEW YEAR 2",
+  pic: "Gumelar Akhirul",
+  date: "24 Mei 2026",
+};
+
+const items = [
+  {
+    no: 1,
+    description: "William Tanuwijaya - Launch Campaign",
+    sow: "Feed Instagram",
+    platform: "Instagram",
+    cost: "Rp.20.000.000",
+  },
+  {
+    no: 2,
+    description: "Raymond Chin - Awareness Campaign",
+    sow: "Instagram Reels",
+    platform: "Instagram",
+    cost: "Rp.35.000.000",
+  },
+  {
+    no: 3,
+    description: "Andrew Darwis - Product Review",
+    sow: "Instagram Story",
+    platform: "Instagram",
+    cost: "Rp.15.000.000",
+  },
+  {
+    no: 4,
+    description: "Fadil Jaidi - Viral Content",
+    sow: "TikTok Video",
+    platform: "TikTok",
+    cost: "Rp.50.000.000",
+  },
+  {
+    no: 5,
+    description: "Merry Riana - Branding Campaign",
+    sow: "YouTube Integration",
+    platform: "YouTube",
+    cost: "Rp.80.000.000",
+  },
+];
+
 const steps = ["Draft", "Quotation", "Running", "Report", "Invoice", "Finish"]
 
-export default async function InvoicePage() {
-  await requireSession()
+export default function InvoicePage() {
+        const [sortField, setSortField] = useState("");
+        const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+        const [itemData, setItemData] = useState(items);
+        const [isFinished, setIsFinished] = useState(false);
+      
+        const currentStep = isFinished ? 5 : 4;
+
+        const progressWidth = isFinished ? "100%" : "72%";
+
+        const stepDates = [
+          "17 May 2026",
+          "20 May 2026",
+          "22 May 2026",
+          "24 May 2026",
+          "26 May 2026",
+          isFinished ? "27 May 2026" : "-",
+        ];
+    
+      const handleSort = (columnIndex: number, field: string) => {
+      const direction =
+        sortField === field && sortDirection === "asc"
+          ? "desc"
+          : "asc";
+    
+      setSortField(field);
+      setSortDirection(direction);
+    
+      const sorted = [...itemData].sort((a, b) => {
+        const aValue = String(a[field as keyof typeof a]);
+        const bValue = String(b[field as keyof typeof b]);
+
+        return direction === "asc"
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      });
+
+      setItemData(sorted);
+    };
+    
+    const getSortIcon = (field: string) => {
+      if (sortField !== field) return "↕";
+      return sortDirection === "asc" ? "▲" : "▼";
+    };
+
+    const handleFinish = async () => {
+  const result = await confirmFinishProject();
+
+  if (!result.isConfirmed) return;
+
+  await showSuccess(
+    "Berhasil",
+    "Project berhasil diselesaikan."
+  );
+
+  setIsFinished(true);
+};
 
   return (
     <DefaultLayout>
@@ -15,45 +121,90 @@ export default async function InvoicePage() {
             <div>
               <h1 className="text-2xl font-bold text-slate-900">Detail Project</h1>
               <span className="mt-3 inline-flex rounded-full border border-emerald-400 bg-emerald-50 px-5 py-1 text-xs font-bold text-emerald-700">
-                Invoice
+               {isFinished ? "Finish" : "Invoice"}
               </span>
             </div>
 
-            <button className="rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
-              ✎ Edit Header
-            </button>
+            {!isFinished && (
+              <button className="rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
+                ✎ Edit Header
+              </button>
+            )}
           </div>
 
-          <div className="mt-10">
-            <div className="relative flex items-start justify-between">
-              <div className="absolute left-0 right-0 top-3 h-0.5 bg-slate-400" />
-              <div className="absolute left-0 top-3 h-0.5 w-[82%] bg-orange-400" />
+          <div className="mt-12 overflow-x-auto">
+            <div className="relative min-w-[1000px] px-8">
 
-              {steps.map((step, index) => (
-                <div key={step} className="relative z-10 flex flex-col items-center">
-                  <div
-                    className={`h-6 w-6 rounded-full ${
-                      index < 4
-                        ? "bg-emerald-400"
-                        : index === 4
-                        ? "bg-orange-400"
-                        : "bg-slate-400"
-                    }`}
-                  />
-                  <p className="mt-2 text-[10px] font-semibold text-slate-700">{step}</p>
-                  <p className="text-[9px] text-slate-400">
-                    {index <= 4 ? "17 May 2026" : "-"}
-                  </p>
-                </div>
-              ))}
+              <div className="absolute left-14 right-14 top-3 h-1 rounded-full bg-slate-300" />
+
+              <div
+                className="absolute left-14 top-3 h-1 rounded-full bg-emerald-500"
+                style={{ width: progressWidth }}
+              />
+
+              <div className="relative flex justify-between">
+                {steps.map((step, index) => {
+                  const completed = index < currentStep;
+                  const active = index === currentStep;
+
+                  return (
+                    <div
+                      key={step}
+                      className="flex w-28 flex-col items-center"
+                    >
+                      <div  
+                        className={`h-8 w-8 rounded-full border-4 ${
+                          isFinished
+                            ? "border-emerald-500 bg-emerald-500"
+                            : completed
+                            ? "border-emerald-500 bg-emerald-500"
+                            : active
+                            ? "border-orange-500 bg-orange-500"
+                            : "border-slate-300 bg-white"
+                        }`}
+                      />
+
+                      <p
+                        className={`mt-3 text-sm font-semibold ${
+                          isFinished || completed || active
+                            ? "text-slate-900"
+                            : "text-slate-500"
+                        }`}
+                      >
+                        {step}
+                      </p>
+
+                      <p className="mt-1 text-xs text-slate-400">
+                        {stepDates[index]}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
             </div>
           </div>
 
-          <div className="mt-10 grid gap-6 md:grid-cols-4">
-            <FieldBox label="Brand Name" value="Brand Name" />
-            <FieldBox label="Project Name" value="Project Name" />
-            <FieldBox label="PIC" value="PIC Name" />
-            <FieldBox label="Date" value="Date" />
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <FieldBox
+            label="Brand Name"
+            value={projectDetail.brand}
+          />
+
+          <FieldBox
+            label="Project Name"
+            value={projectDetail.projectName}
+          />
+
+          <FieldBox
+            label="PIC"
+            value={projectDetail.pic}
+          />
+
+          <FieldBox
+            label="Date"
+            value={projectDetail.date}
+          />
           </div>
         </section>
 
@@ -71,26 +222,52 @@ export default async function InvoicePage() {
             <table className="w-full min-w-max border-collapse whitespace-nowrap text-sm">
               <thead>
                 <tr>
-                  {["No.", "Description", "SOW", "Platforms", "Cost"].map((head) => (
-                    <th key={head} className="border border-slate-200 px-6 py-4 text-center text-xs font-bold">
-                      {head} <span className="text-slate-300">↕</span>
+                  {[
+                    { label: "No.", field: "no" },
+                    { label: "Description", field: "description" },
+                    { label: "SOW", field: "sow" },
+                    { label: "Platforms", field: "platform" },
+                    { label: "Cost", field: "cost" },
+                  ].map((head, index) => (
+                    <th
+                      key={head.label}
+                      onClick={() => handleSort(index, head.field)}
+                      className="cursor-pointer border border-slate-200 px-6 py-4 text-center text-xs font-bold hover:bg-slate-50"
+                    >
+                      {head.label}
+
+                      <span className="ml-1 text-slate-400">
+                        {getSortIcon(head.field)}
+                      </span>
                     </th>
                   ))}
                 </tr>
               </thead>
 
               <tbody>
-                {items.map((item) => (
-                  <tr key={item}>
-                    <td className="border border-slate-200 px-6 py-4 text-center">{item}</td>
-                    <td className="border border-slate-200 px-6 py-4 text-center">Test1</td>
+                {itemData.map((item) => (
+                  <tr key={item.no}>
+                    <td className="border border-slate-200 px-6 py-4 text-center">
+                      {item.no}
+                    </td>
+
+                    <td className="border border-slate-200 px-6 py-4 text-center">
+                      {item.description}
+                    </td>
+
                     <td className="border border-slate-200 px-6 py-4 text-center">
                       <select className="rounded-lg border border-slate-300 px-3 py-1">
-                        <option>Feed Instagram</option>
+                        <option>{item.sow}</option>
                       </select>
                     </td>
-                    <td className="border border-slate-200 px-6 py-4 text-center">Instagram</td>
-                    <td className="border border-slate-200 px-6 py-4 text-center">Rp.20.000000</td>
+
+                    <td className="border border-slate-200 px-6 py-4 text-center">
+                      {item.platform}
+                    </td>
+
+                    <td className="border border-slate-200 px-6 py-4 text-center">
+                      {item.cost}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -98,40 +275,51 @@ export default async function InvoicePage() {
           </div>
 
           <div className="mt-8 grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-8">
-              <h3 className="text-xl font-bold text-slate-900">Payment Method</h3>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-8">
+            <h3 className="text-xl font-bold text-slate-900">
+              Payment Method
+            </h3>
 
-              <div className="mt-8 space-y-1 text-sm">
+            <div className="mt-8 space-y-4 text-sm">
                 <PaymentRow label="Bank" value="Bank Mandiri" />
-                <PaymentRow label="Account No" value="12363--3284-9382" />
+                <PaymentRow label="Account No" value="12363-3284-9382" />
                 <PaymentRow label="Account Name" value="D’Best Influence Marketing" />
               </div>
             </div>
 
             <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-8">
               <div className="space-y-2 text-sm">
-                <TotalRow label="Subtotal" value="Rp. 0" />
-                <TotalRow label="DPP" value="Rp. 0" />
-                <TotalRow label="PPN (11%)" value="Rp. 0" />
+              <TotalRow label="Subtotal" value="Rp. 100.000.000" />
+              <TotalRow label="DPP" value="Rp. 100.000.000" />
+              <TotalRow label="PPN (11%)" value="Rp. 11.000.000" />
               </div>
 
               <div className="mt-8 flex justify-between text-lg font-bold">
                 <span>Grand Total</span>
-                <span>Rp. 0</span>
+                <span>Rp. 111.000.000</span>
               </div>
             </div>
           </div>
 
           <div className="mt-10 flex justify-end gap-5">
-            <button className="rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
-              📄 Export PDF
-            </button>
-            <button className="rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
-              📄 Send PDF
-            </button>
-            <button className="rounded-xl bg-black px-10 py-3 text-sm font-semibold text-white">
+          <button className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
+            <FileDocumentIcon className="h-4 w-4 text-black" />
+            Export PDF
+          </button>
+
+          <button className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
+            <FileDocumentIcon className="h-4 w-4 text-black" />
+            Send PDF
+          </button>
+
+          {!isFinished && (
+            <button
+              onClick={handleFinish}
+              className="rounded-xl bg-black px-10 py-3 text-sm font-semibold text-white"
+            >
               Finish
             </button>
+          )}
           </div>
         </section>
       </div>
@@ -146,19 +334,30 @@ function FieldBox({ label, value }: { label: string; value: string }) {
       <input
         value={value}
         readOnly
-        className="mt-3 h-12 w-full rounded-lg border border-slate-300 px-4 text-slate-400 outline-none"
+        className="mt-3 h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-medium text-slate-700 outline-none"
       />
     </div>
   )
 }
 
-function PaymentRow({ label, value }: { label: string; value: string }) {
+function PaymentRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="flex justify-between gap-4">
-      <span>{label}</span>
-      <span className="font-bold">{value}</span>
+    <div className="flex items-start justify-between gap-6">
+      <span className="text-slate-700">
+        {label}
+      </span>
+
+      <span className="font-semibold text-slate-900 text-right">
+        {value}
+      </span>
     </div>
-  )
+  );
 }
 
 function TotalRow({ label, value }: { label: string; value: string }) {

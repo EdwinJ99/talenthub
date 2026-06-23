@@ -223,7 +223,7 @@ await showSuccess(
       />
       </section>
 
-      <section className="grid gap-5 2xl:grid-cols-2">
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
       {filteredProjects.map((project) => {
         const stepIndex = getStepIndex(project.status);
 
@@ -419,7 +419,7 @@ const stepStyles = {
       🗑 Delete
     </button>
 
-      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1.2fr_1.2fr]">
+      <div className="mt-3 grid gap-3 md:grid-cols-3">
         <div>
           <p className="text-sm font-bold text-slate-900">{project.id}</p>
           <span

@@ -10,6 +10,7 @@ import DefaultLayout from "@/components/Layout/DefaultLayout"
 import CheckIcon from "@/components/icons/CheckIcon";
 import EditIcon from "@/components/icons/EditIcon";
 import EyeIcon from "@/components/icons/EyeIcon";
+import FileDocumentIcon from "@/components/icons/FileDocumentIcon"; 
 
 
 const projectDetail = {
@@ -269,9 +270,10 @@ const handleGenerateReport = async () => {
           <p className="mt-4 text-xs text-slate-700">Showing 1 to 5 of 5 entries</p>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-            <button className="rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
-              📄 Export PDF
-            </button>
+          <button className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
+            <FileDocumentIcon className="h-4 w-4 text-black" />
+            Export PDF
+          </button>
 
             <button
               onClick={handleGenerateReport}

@@ -7,6 +7,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import DefaultLayout from "@/components/Layout/DefaultLayout"
+import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 
 const projectDetail = {
   brand: "CAFE PRO",
@@ -264,12 +265,14 @@ const handleStartProject = async () => {
           </div>
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-            <button className="w-full rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold md:w-auto">
-              📄 Export PDF
+            <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold md:w-auto">
+              <FileDocumentIcon className="h-4 w-4" />
+              Export PDF
             </button>
-            <button className="w-full rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold md:w-auto">
-              📄 Send PDF
-            </button>
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold md:w-auto">
+            <FileDocumentIcon className="h-4 w-4" />
+            Send PDF
+          </button>
           <button
             onClick={handleStartProject}
             className="w-full rounded-xl bg-black px-8 py-3 text-center text-sm font-semibold text-white md:w-auto"
