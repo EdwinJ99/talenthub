@@ -174,10 +174,15 @@ const handleGenerateInvoice = async () => {
               <span>entries</span>
             </div>
 
-          <button className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold text-slate-700">
-            <ReportIcon className="h-5 w-5" />
-            View Report
-          </button>
+            <button
+              onClick={() =>
+                router.push("/tracking/report/detail-report")
+              }
+              className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold text-slate-700"
+            >
+              <ReportIcon className="h-5 w-5" />
+              View Report
+            </button>
           </div>
 
           <div className="mt-6 w-full overflow-x-auto rounded-xl border border-slate-200">
@@ -234,10 +239,15 @@ const handleGenerateInvoice = async () => {
                     <td className="border border-slate-200 px-4 py-4">{row[3]}</td>
                     <td className="border border-slate-200 px-4 py-4">
                       <div className="flex justify-center items-center">
-                        <button className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-1 text-sm text-slate-700">
-                          <InvoiceIcon className="h-4 w-4" />
-                          View
-                        </button>
+                      <button
+                        onClick={() =>
+                          router.push("/tracking/report/detail-report")
+                        }
+                        className="flex items-center gap-2 rounded-lg border border-slate-300 px-4 py-1 text-sm text-slate-700"
+                      >
+                        <InvoiceIcon className="h-4 w-4" />
+                        View
+                      </button>
                       </div>
                     </td>
                   </tr>

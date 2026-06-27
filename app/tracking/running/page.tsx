@@ -3,6 +3,8 @@
 import {
   confirmGenerateReport,
   showSuccess,
+  showRunningContentModal,
+  confirmApproveCreator,
 } from "@/lib/alert";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -35,6 +37,7 @@ export default function RunningPage() {
     const [sortField, setSortField] = useState("");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
     const [creatorData, setCreatorData] = useState(creators);
+    const [approvedRows, setApprovedRows] = useState<string[]>([]);
     const router = useRouter();
   
     const currentStep = 2;
@@ -245,17 +248,37 @@ const handleGenerateReport = async () => {
                     <td className="border border-slate-200 px-4 py-4 text-center">{row[3]}</td>
                     <td className="border border-slate-200 px-4 py-4 text-center">{row[4]}</td>
 <td className="border border-slate-200 bg-slate-50 px-4 py-4 text-center">
-  {row[5] === "view" ? (
-    <button title="View">
+  {row[5] === "view" || approvedRows.includes(row[0]) ? (
+    <button
+      title="View"
+      onClick={() => showRunningContentModal("view")}
+    >
       <EyeIcon className="h-7 w-7" />
     </button>
   ) : (
     <div className="flex justify-center gap-4">
-      <button title="Edit">
+      <button
+        title="Edit"
+        onClick={() => showRunningContentModal("edit")}
+      >
         <EditIcon className="h-7 w-7" />
       </button>
 
-      <button title="Approve">
+      <button
+        title="Approve"
+        onClick={async () => {
+          const result = await confirmApproveCreator();
+
+          if (!result.isConfirmed) return;
+
+          setApprovedRows((prev) => [...prev, row[0]]);
+
+          await showSuccess(
+            "Berhasil",
+            "Content creator berhasil disetujui."
+          );
+        }}
+      >
         <CheckIcon className="h-7 w-7" />
       </button>
     </div>
