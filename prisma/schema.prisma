@@ -35,33 +35,6 @@ model Notification {
   @@index([order_id])
 }
 
-model Order_Header {
-  order_id           String    @id
-  kode_order         String
-  tanggal_order      DateTime  @db.Date
-  waktu_order        DateTime
-  shift              String
-  day_night          String?
-  truck_type         String?
-  ritase_request     Int?      @default(0)
-  status_order       String?
-  remarks_ordering   String?
-  created_by         String?
-  created_at         DateTime?
-  updated_by         String?
-  updated_at         DateTime?
-  delivery_note      String?
-  remarks_delivery   String?
-  ratio_cb_1tr       Int       @default(0)
-  ratio_cb_2tr       Int       @default(0)
-  shell_state_cb_1tr String?
-  shell_state_cb_2tr String?
-  request_type       String    @default("ORDER")
-
-  @@index([kode_order])
-  @@index([tanggal_order, shift, day_night])
-}
-
 model Session {
   id           String   @id
   sessionToken String   @unique
@@ -159,17 +132,19 @@ model dtl_project {
 }
 
 model mst_categories {
-  id         Int       @id @default(autoincrement())
-  name       String    @db.VarChar(100)
-  status     Int?      @default(1) @db.SmallInt
-  created_at DateTime? @default(now()) @db.Timestamp(6)
+  id           Int            @id @default(autoincrement())
+  name         String         @db.VarChar(100)
+  status       Int?           @default(1) @db.SmallInt
+  created_at   DateTime?      @default(now()) @db.Timestamp(6)
+  mst_creators mst_creators[]
 }
 
 model mst_cities {
-  id         Int       @id @default(autoincrement())
-  name       String    @db.VarChar(100)
-  status     Int?      @default(1) @db.SmallInt
-  created_at DateTime? @default(now()) @db.Timestamp(6)
+  id           Int            @id @default(autoincrement())
+  name         String         @db.VarChar(100)
+  status       Int?           @default(1) @db.SmallInt
+  created_at   DateTime?      @default(now()) @db.Timestamp(6)
+  mst_creators mst_creators[]
 }
 
 model mst_dbest {
@@ -211,6 +186,59 @@ model trs_project {
   modidate        DateTime?     @db.Timestamp(6)
   dtl_project     dtl_project[]
   mst_brand       mst_brand?    @relation(fields: [prj_brand], references: [brd_id], map: "fk_trs_project_brand")
+}
+
+model mst_creators {
+  id                 Int             @id @default(autoincrement())
+  name               String          @db.VarChar(150)
+  username           String          @db.VarChar(100)
+  photo_url          String?
+  followers          Int?            @default(0)
+  total_post         Int?            @default(0)
+  engagement_rate    Decimal?        @default(0.00) @db.Decimal(5, 2)
+  average_view       Int?            @default(0)
+  average_view_brand Int?            @default(0)
+  cpv_all            Decimal?        @default(0.00) @db.Decimal(12, 2)
+  cpv_branded        Decimal?        @default(0.00) @db.Decimal(12, 2)
+  social_media       String          @db.VarChar(50)
+  tier               String          @db.VarChar(50)
+  gender             String          @db.VarChar(10)
+  city_id            Int?
+  category_id        Int?
+  last_scraped_at    DateTime?       @default(now()) @db.Timestamp(6)
+  created_at         DateTime?       @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?       @default(now()) @db.Timestamp(6)
+  mst_categories     mst_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction, map: "fk_creator_category")
+  mst_cities         mst_cities?     @relation(fields: [city_id], references: [id], onUpdate: NoAction, map: "fk_creator_city")
+
+  @@index([social_media, tier, gender, city_id, category_id], map: "idx_creators_filter")
+}
+
+model Order_Header {
+  order_id           String    @id
+  kode_order         String
+  tanggal_order      DateTime  @db.Date
+  waktu_order        DateTime
+  shift              String
+  day_night          String?
+  truck_type         String?
+  ritase_request     Int?      @default(0)
+  status_order       String?
+  remarks_ordering   String?
+  created_by         String?
+  created_at         DateTime?
+  updated_by         String?
+  updated_at         DateTime?
+  delivery_note      String?
+  remarks_delivery   String?
+  ratio_cb_1tr       Int       @default(0)
+  ratio_cb_2tr       Int       @default(0)
+  shell_state_cb_1tr String?
+  shell_state_cb_2tr String?
+  request_type       String    @default("ORDER")
+
+  @@index([kode_order])
+  @@index([tanggal_order, shift, day_night])
 }
 
 enum Role {

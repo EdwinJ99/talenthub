@@ -3,7 +3,6 @@
 import { signOut, useSession } from "next-auth/react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import NotificationCenter from "./NotificationCenter";
 import Sidebar from "../Sidebar/Sidebar";
 
 type DefaultLayoutProps = {
@@ -141,7 +140,7 @@ export default function DefaultLayout({ children }: DefaultLayoutProps) {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <NotificationCenter enabled={mounted && Boolean(session?.user?.id)} />
+            
 
               <div className="relative" ref={profileRef}>
                 <button
