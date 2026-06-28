@@ -1,8 +1,6 @@
 import Swal from "sweetalert2";
 
-export const confirmDelete = async (
-  title = "Hapus Data?"
-) => {
+export const confirmDelete = async (title = "Hapus Data?") => {
   return Swal.fire({
     title,
     text: "Data yang dihapus tidak dapat dikembalikan.",
@@ -327,19 +325,54 @@ export const confirmGenerateInvoice = async () => {
           });
         });
     },
+
   });
 };
 
 export const confirmFinishProject = async () => {
   return Swal.fire({
+
     title: "Finish Project?",
     text: "Project akan ditandai selesai dan tidak dapat diubah kembali.",
     icon: "question",
     showCancelButton: true,
     confirmButtonText: "Ya, Finish",
+
     cancelButtonText: "Batal",
     reverseButtons: true,
     confirmButtonColor: "#16a34a",
+  });
+};
+
+
+export const showAlertValidationError = (message: string = "Please Select Min 1 KOL") => {
+  return Swal.fire({
+    title: "",
+    text: message,
+    icon: "error",
+    iconColor: "#C22A1E", 
+    confirmButtonColor: "#000000",
+    confirmButtonText: "OK",
+    customClass: {
+      popup: "rounded-xl font-sans",
+      title: "text-xl font-bold text-slate-900",
+      htmlContainer: "text-lg font-bold text-slate-900 pt-2",
+    },
+    showCloseButton: true,
+  });
+};
+
+
+export const showAlertSuccess = (message: string) => {
+  return Swal.fire({
+    title: "Success",
+    text: message,
+    icon: "success",
+    confirmButtonColor: "#000000",
+    customClass: {
+      popup: "rounded-xl font-sans",
+    },
+        showCloseButton: true,
   });
 };
 
@@ -528,5 +561,6 @@ export const confirmApproveCreator = async () => {
     cancelButtonText: "Batal",
     reverseButtons: true,
     confirmButtonColor: "#16a34a",
+
   });
 };

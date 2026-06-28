@@ -70,9 +70,8 @@ model Session {
   User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-
 model User {
-  id          String    @id @default(cuid()) // Tambahkan ini
+  id          String    @id @default(cuid())
   name        String?
   email       String    @unique
   password    String
@@ -93,20 +92,21 @@ model items {
 }
 
 model mst_brand {
-  brd_id      Int       @id @default(autoincrement())
-  brd_initial String?   @db.VarChar(5)
-  brd_nama    String?   @db.VarChar(100)
-  brd_alamat  String?   @db.VarChar(100)
-  brd_email   String?   @db.VarChar(100)
-  brd_notelp  String?   @db.VarChar(15)
-  brd_pic1    String?   @db.VarChar(100)
-  brd_pic2    String?   @db.VarChar(100)
-  brd_pic3    String?   @db.VarChar(100)
-  brd_status  Int?      @default(1)
-  creaby      String?   @db.VarChar(20)
-  creadate    DateTime? @default(now()) @db.Timestamp(6)
-  modiby      String?   @db.VarChar(20)
-  modidate    DateTime? @default(now()) @db.Timestamp(6)
+  brd_id      Int           @id @default(autoincrement())
+  brd_initial String?       @db.VarChar(5)
+  brd_nama    String?       @db.VarChar(100)
+  brd_alamat  String?       @db.VarChar(100)
+  brd_email   String?       @db.VarChar(100)
+  brd_notelp  String?       @db.VarChar(15)
+  brd_pic1    String?       @db.VarChar(100)
+  brd_pic2    String?       @db.VarChar(100)
+  brd_pic3    String?       @db.VarChar(100)
+  brd_status  Int?          @default(1)
+  creaby      String?       @db.VarChar(20)
+  creadate    DateTime?     @default(now()) @db.Timestamp(6)
+  modiby      String?       @db.VarChar(20)
+  modidate    DateTime?     @default(now()) @db.Timestamp(6)
+  trs_project trs_project[]
 }
 
 model mst_payment {
@@ -122,13 +122,95 @@ model mst_payment {
 }
 
 model mst_sow {
-  sow_id     Int       @id @default(autoincrement())
-  sow_nama   String?   @db.VarChar(100)
-  sow_status Int?      @default(1)
+  sow_id      Int           @id @default(autoincrement())
+  sow_nama    String?       @db.VarChar(100)
+  sow_status  Int?          @default(1)
+  creaby      String?       @db.VarChar(20)
+  creadate    DateTime?     @default(now()) @db.Timestamp(6)
+  modiby      String?       @db.VarChar(20)
+  modidate    DateTime?     @default(now()) @db.Timestamp(6)
+  dtl_project dtl_project[]
+}
+
+model dtl_project {
+  drf_id           Int         @id @default(autoincrement())
+  drf_projectid    Int
+  drf_sow          Int
+  drf_username     String?     @db.VarChar(100)
+  drf_nama         String?     @db.VarChar(100)
+  drf_pathprofile  String?
+  drf_totalpost    Int?
+  drf_followers    Int?
+  drf_er           Float?
+  drf_avgviewall   Int?
+  drf_avgviewbrand Int?
+  drf_cpvall       Int?
+  drf_cpvallbrand  Int?
+  drf_rate         Float?
+  drf_platform     String?     @db.VarChar(100)
+  drf_qty          Int?
+  drf_url          String?
+  creaby           String?     @db.VarChar(20)
+  creadate         DateTime?   @default(now()) @db.Timestamp(6)
+  modiby           String?     @db.VarChar(20)
+  modidate         DateTime?   @default(now()) @db.Timestamp(6)
+  mst_sow          mst_sow     @relation(fields: [drf_sow], references: [sow_id], onUpdate: NoAction, map: "fk_dtl_project_to_sow")
+  trs_project      trs_project @relation(fields: [drf_projectid], references: [prj_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dtl_project_to_trs")
+}
+
+model mst_categories {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  status     Int?      @default(1) @db.SmallInt
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model mst_cities {
+  id         Int       @id @default(autoincrement())
+  name       String    @db.VarChar(100)
+  status     Int?      @default(1) @db.SmallInt
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model mst_dbest {
+  bst_id     Int       @id @default(autoincrement())
+  bst_nama   String?   @db.VarChar(100)
+  bst_alamat String?   @db.VarChar(100)
+  bst_status Int?      @default(1)
   creaby     String?   @db.VarChar(20)
   creadate   DateTime? @default(now()) @db.Timestamp(6)
   modiby     String?   @db.VarChar(20)
   modidate   DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model mst_general_filters {
+  id     Int    @id @default(autoincrement())
+  type   String @db.VarChar(50)
+  name   String @db.VarChar(100)
+  status Int?   @default(1) @db.SmallInt
+}
+
+model trs_project {
+  prj_id          Int           @id
+  prj_brand       Int?
+  prj_nama        String?       @db.VarChar(100)
+  prj_quotationno String?       @db.VarChar(100)
+  prj_invoiceno   String?       @db.VarChar(100)
+  prj_dstartdate  DateTime?     @db.Date
+  prj_denddate    DateTime?     @db.Date
+  prj_qstartdate  DateTime?     @db.Date
+  prj_qenddate    DateTime?     @db.Date
+  prj_rstartdate  DateTime?     @db.Date
+  prj_renddate    DateTime?     @db.Date
+  prj_istartdate  DateTime?     @db.Date
+  prj_ienddate    DateTime?     @db.Date
+  prj_status      Int?
+  creaby          String?       @db.VarChar(20)
+  creadate        DateTime?     @db.Timestamp(6)
+  modiby          String?       @db.VarChar(20)
+  modidate        DateTime?     @db.Timestamp(6)
+  dtl_project     dtl_project[]
+  mst_brand       mst_brand?    @relation(fields: [prj_brand], references: [brd_id], map: "fk_trs_project_brand")
 }
 
 enum Role {
