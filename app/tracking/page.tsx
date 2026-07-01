@@ -1,52 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DefaultLayout from "@/components/Layout/DefaultLayout";
 import Link from "next/link";
 import { confirmDelete, showSuccess } from "@/lib/alert";
-
-const initialProjects = [
-  {
-    id: "TRS-10192929",
-    name: "NEW YEAR 2",
-    brand: "CAFE PRO",
-    date: "24 Mei 2026 • 05.33",
-    projectDate: "2026-05-24",
-    status: "Draft",
-  },
-  {
-    id: "TRS-10192930",
-    name: "RAMADHAN SALE",
-    brand: "KOPI KITA",
-    date: "25 Mei 2026 • 08.15",
-    projectDate: "2026-05-25",
-    status: "Quotation",
-  },
-  {
-    id: "TRS-10192931",
-    name: "SUMMER EVENT",
-    brand: "ASTRA MOTOR",
-    date: "26 Mei 2026 • 09.20",
-    projectDate: "2026-05-26",
-    status: "Running",
-  },
-  {
-    id: "TRS-10192932",
-    name: "OPENING STORE",
-    brand: "ALFAMART",
-    date: "27 Mei 2026 • 10.45",
-    projectDate: "2026-05-27",
-    status: "Report",
-  },
-  {
-    id: "TRS-10192933",
-    name: "PROMO 2026",
-    brand: "INDOMARET",
-    date: "28 Mei 2026 • 13.10",
-    projectDate: "2026-05-28",
-    status: "Invoice",
-  },
-];
 
 const getStepIndex = (status: string) =>
   steps.findIndex(
@@ -60,30 +17,57 @@ const steps = [
   { label: "Running", href: "/tracking/running" },
   { label: "Report", href: "/tracking/report" },
   { label: "Invoice", href: "/tracking/invoice" },
-]
+] 
 
-const brands = [
-  "CAFE PRO",
-  "KOPI KITA",
-  "ASTRA MOTOR",
-  "ALFAMART",
-  "INDOMARET",
-]
+type Project = {
+  id: number;
+  code: string;
+  name: string;
+  brandId: number;
+  brand: string;
+  date: string;
+  projectDate: string;
+  status: string;
+};
 
-const statuses = [
-  "Draft",
-  "Quotation",
-  "Running",
-  "Report",
-  "Invoice",
-]
+type Brand = {
+  id: number;
+  name: string;
+};
 
 export default function TrackingPage() {
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
+
+  const statuses = Array.from(
+    new Set(projects.map((item) => item.status))
+  );
+  
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  useEffect(() => {
+  loadData();
+}, []);
+
+const loadData = async () => {
+  try {
+    const res = await fetch("/api/tracking");
+
+    if (!res.ok) {
+      throw new Error("Gagal mengambil data");
+    }
+
+    const data = await res.json();
+
+    setProjects(data.projects);
+    setBrands(data.brands);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const filteredProjects = projects.filter((project) => {
   const brandMatch =
@@ -92,11 +76,13 @@ export default function TrackingPage() {
   const statusMatch =
     !selectedStatus || project.status === selectedStatus;
 
-  const startMatch =
-    !startDate || project.projectDate >= startDate;
+const startMatch =
+  !startDate ||
+  new Date(project.projectDate) >= new Date(startDate);
 
-  const endMatch =
-    !endDate || project.projectDate <= endDate;
+const endMatch =
+  !endDate ||
+  new Date(project.projectDate) <= new Date(endDate);
 
   return (
     brandMatch &&
@@ -128,19 +114,21 @@ export default function TrackingPage() {
       ).length,
     };
 
-const handleDelete = async (projectId: string) => {
+const handleDelete = async (projectId: number) => {
   const result = await confirmDelete("Hapus Project?");
 
   if (!result.isConfirmed) return;
 
-  setProjects((prev) =>
-    prev.filter((item) => item.id !== projectId)
+  await fetch(`/api/tracking?id=${projectId}`, {
+    method: "DELETE",
+  });
+
+  await showSuccess(
+    "Berhasil",
+    "Project berhasil dihapus."
   );
 
-await showSuccess(
-  "Berhasil",
-  "Project berhasil dihapus."
-);
+  loadData();
 };
 
   return (
@@ -175,7 +163,7 @@ await showSuccess(
             <SelectBox
               label="Brand"
               placeholder="Select Brand"
-              options={brands}
+              options={brands.map((item) => item.name)}
               value={selectedBrand}
               onChange={setSelectedBrand}
             />
@@ -334,20 +322,13 @@ function ProjectCard({
   stepIndex,
   onDelete,
 }: {
-project: {
-  id: string
-  name: string
-  brand: string
-  date: string
-  projectDate: string
-  status: string
-}
+  project: Project;
   step: {
-    label: string
-    href: string
-  }
-  stepIndex: number
-onDelete: (projectId: string) => Promise<void>
+    label: string;
+    href: string;
+  };
+  stepIndex: number;
+  onDelete: (projectId: number) => Promise<void>;
 }) {
 
 const statusColors = {
@@ -383,7 +364,8 @@ const statusColors = {
 };
 
 const currentColor =
-  statusColors[project.status as keyof typeof statusColors];
+  statusColors[project.status as keyof typeof statusColors] ??
+  statusColors.Draft;
 
 const stepIcons = {
   Draft: "📝",
@@ -421,17 +403,27 @@ const stepStyles = {
 
       <div className="mt-3 grid gap-3 md:grid-cols-3">
         <div>
-          <p className="text-sm font-bold text-slate-900">{project.id}</p>
+          <p className="text-sm font-bold text-slate-900">{project.code}</p>
           <span
             className={`mt-3 inline-flex rounded-full border px-5 py-1 text-xs font-semibold ${currentColor.badge}`}
           >
-        {step.label}
+            {project.status}
           </span>
-          <p className="mt-5 text-xs text-slate-500">{project.date}</p>
+          <p className="mt-5 text-xs text-slate-500">
+          {project.date
+            ? new Date(project.date).toLocaleDateString("id-ID")
+            : "-"}
+        </p>
         </div>
 
-        <InfoBox title="PROJECT NAME" value={project.name} />
-        <InfoBox title="BRAND" value={project.brand} />
+        <InfoBox
+          title="PROJECT NAME"
+          value={project.name}
+        />
+        <InfoBox
+          title="BRAND"
+          value={project.brand}
+        />
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -441,7 +433,7 @@ const stepStyles = {
 
             return (
             <Link
-              key={step.label}
+              key={project.status}
               href={`${step.href}?projectId=${project.id}`}
               className={`rounded-xl border p-3 text-center transition hover:-translate-y-0.5 hover:shadow-sm ${
                 active
@@ -472,7 +464,7 @@ const stepStyles = {
               </p>
 
               <p className="text-[10px] sm:text-[11px] font-bold text-slate-800">
-                {step.label}
+                {project.status}
               </p>
             </Link>
             )

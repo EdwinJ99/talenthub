@@ -1,27 +1,381 @@
 import { authOptions } from "@/auth";
-import { getTrackingPageData, normalizeOrderingFilter } from "@/lib/tracking-report";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+async function authorize() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return null;
+  }
+
+  return session;
+}
+
+async function generateProjectCode() {
+  const now = new Date();
+
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+
+  const prefix = `TRS-${yy}${mm}${dd}`;
+
+  const lastProject = await prisma.trs_project.findFirst({
+    where: {
+      prj_kode: {
+        startsWith: prefix,
+      },
+    },
+    orderBy: {
+      prj_kode: "desc",
+    },
+    select: {
+      prj_kode: true,
+    },
+  });
+
+  let running = 1;
+
+  if (lastProject?.prj_kode) {
+    const parts = lastProject.prj_kode.split("-");
+    running = Number(parts[2]) + 1;
+  }
+
+  return `${prefix}-${String(running).padStart(4, "0")}`;
+}
+
+function getProjectStatus(status: number | null) {
+  switch (status) {
+    case 1:
+      return "Draft";
+    case 2:
+      return "Quotation";
+    case 3:
+      return "Running";
+    case 4:
+      return "Report";
+    case 5:
+      return "Invoice";
+    default:
+      return "-";
+  }
+}
+
+// ================= GET =================
+export async function GET(request: Request) {
+  const session = await authorize();
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   try {
     const { searchParams } = new URL(request.url);
-    const filter = await normalizeOrderingFilter({
-      date: searchParams.get("date") ?? undefined,
-      shift: searchParams.get("shift") ?? undefined,
-      dayNight: searchParams.get("dayNight") ?? undefined,
+    const id = searchParams.get("id");
+
+// ================= GET DETAIL =================
+if (id) {
+  const project = await prisma.trs_project.findUnique({
+    where: {
+      prj_id: Number(id),
+    },
+    include: {
+      mst_brand: true,
+    },
+  });
+
+  if (!project) {
+    return NextResponse.json(
+      {
+        error: "Project tidak ditemukan",
+      },
+      {
+        status: 404,
+      }
+    );
+  }
+
+  return NextResponse.json({
+    id: project.prj_id,
+    code: project.prj_kode,
+
+    brandId: project.prj_brand,
+    brand: project.mst_brand?.brd_nama ?? "",
+
+    name: project.prj_nama,
+
+    quotationNo: project.prj_quotationno,
+    invoiceNo: project.prj_invoiceno,
+
+    draftStartDate: project.prj_dstartdate,
+    draftEndDate: project.prj_denddate,
+
+    quotationStartDate: project.prj_qstartdate,
+    quotationEndDate: project.prj_qenddate,
+
+    runningStartDate: project.prj_rstartdate,
+    runningEndDate: project.prj_renddate,
+
+    invoiceStartDate: project.prj_istartdate,
+    invoiceEndDate: project.prj_ienddate,
+    status: getProjectStatus(project.prj_status),
+
+    createdBy: project.creaby,
+    createdAt: project.creadate,
+
+    modifiedBy: project.modiby,
+    modifiedAt: project.modidate,
+  });
+}
+
+    // ================= GET ALL =================
+    const [projects, brands] = await Promise.all([
+      prisma.trs_project.findMany({
+        include: {
+          mst_brand: true,
+        },
+        orderBy: {
+          prj_id: "desc",
+        },
+      }),
+
+      prisma.mst_brand.findMany({
+        where: {
+          brd_status: 1,
+        },
+        orderBy: {
+          brd_nama: "asc",
+        },
+      }),
+    ]);
+
+const result = projects.map((item) => ({
+  id: item.prj_id,
+  code: item.prj_kode,
+  name: item.prj_nama,
+  brandId: item.prj_brand,
+  brand: item.mst_brand?.brd_nama ?? "",
+  date: item.creadate,
+  projectDate: item.prj_dstartdate,
+  status: getProjectStatus(item.prj_status),
+}));
+
+    return NextResponse.json({
+      projects: result,
+      brands: brands.map((item) => ({
+        id: item.brd_id,
+        name: item.brd_nama,
+      })),
+    });
+  } catch (error) {
+    console.error("GET TRACKING ERROR:", error);
+
+    return NextResponse.json(
+      {
+        error: "Gagal mengambil data",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
+
+// ================= POST =================
+export async function POST(request: Request) {
+  const session = await authorize();
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  try {
+const body = await request.json();
+
+const projectCode = await generateProjectCode();
+
+const project = await prisma.trs_project.create({
+  data: {
+    prj_kode: projectCode,
+
+    prj_brand: Number(body.prj_brand),
+    prj_nama: body.prj_nama,
+    prj_quotationno: body.prj_quotationno ?? null,
+    prj_invoiceno: body.prj_invoiceno ?? null,
+
+    prj_dstartdate: new Date(body.prj_dstartdate),
+
+    prj_denddate: new Date(body.prj_denddate),
+
+    prj_qstartdate: body.prj_qstartdate
+      ? new Date(body.prj_qstartdate)
+      : null,
+    prj_qenddate: body.prj_qenddate
+      ? new Date(body.prj_qenddate)
+      : null,
+
+    prj_rstartdate: body.prj_rstartdate
+      ? new Date(body.prj_rstartdate)
+      : null,
+    prj_renddate: body.prj_renddate
+      ? new Date(body.prj_renddate)
+      : null,
+
+    prj_istartdate: body.prj_istartdate
+      ? new Date(body.prj_istartdate)
+      : null,
+    prj_ienddate: body.prj_ienddate
+      ? new Date(body.prj_ienddate)
+      : null,
+
+    prj_status: body.prj_status || 1,
+
+    creaby: session.user.name ?? "admin",
+    creadate: new Date(),
+    modidate: new Date(),
+  },
+});
+
+    return NextResponse.json({
+      message: "Project berhasil dibuat",
+      data: project,
+    });
+  } catch (error) {
+    console.error("POST TRACKING ERROR:", error);
+
+    return NextResponse.json(
+      { error: "Gagal menambah project" },
+      { status: 500 }
+    );
+  }
+}
+
+// ================= PUT =================
+export async function PUT(request: Request) {
+  const session = await authorize();
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = Number(searchParams.get("id"));
+
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: "ID tidak valid" },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+
+    const project = await prisma.trs_project.update({
+      where: {
+        prj_id: id,
+      },
+      data: {
+        prj_brand: Number(body.prj_brand),
+        prj_nama: body.prj_nama,
+        prj_quotationno: body.prj_quotationno ?? null,
+        prj_invoiceno: body.prj_invoiceno ?? null,
+
+        prj_dstartdate: new Date(body.prj_dstartdate),
+
+        prj_denddate: new Date(body.prj_denddate),
+
+        prj_qstartdate: body.prj_qstartdate
+          ? new Date(body.prj_qstartdate)
+          : null,
+        prj_qenddate: body.prj_qenddate
+          ? new Date(body.prj_qenddate)
+          : null,
+
+        prj_rstartdate: body.prj_rstartdate
+          ? new Date(body.prj_rstartdate)
+          : null,
+        prj_renddate: body.prj_renddate
+          ? new Date(body.prj_renddate)
+          : null,
+
+        prj_istartdate: body.prj_istartdate
+          ? new Date(body.prj_istartdate)
+          : null,
+        prj_ienddate: body.prj_ienddate
+          ? new Date(body.prj_ienddate)
+          : null,
+
+        prj_status: body.prj_status,
+
+        modiby: session.user.name ?? "admin",
+        modidate: new Date(),
+      },
     });
 
-    const trackingData = await getTrackingPageData(filter);
-    return NextResponse.json(trackingData);
+      return NextResponse.json({
+    message: "Project berhasil diperbarui",
+    data: project,
+  });
   } catch (error) {
-    console.error("Failed to load tracking data", error);
-    return NextResponse.json({ error: "Gagal mengambil data tracking" }, { status: 500 });
+    console.error("PUT TRACKING ERROR:", error);
+
+    return NextResponse.json(
+      { error: "Gagal update project" },
+      { status: 500 }
+    );
+  }
+}
+
+// ================= DELETE =================
+export async function DELETE(request: Request) {
+  const session = await authorize();
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = Number(searchParams.get("id"));
+
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: "ID tidak valid" },
+        { status: 400 }
+      );
+    }
+
+  const project = await prisma.trs_project.delete({
+    where: {
+      prj_id: id,
+    },
+  });
+
+  return NextResponse.json({
+    message: "Project berhasil dihapus",
+    data: project,
+  });
+  } catch (error) {
+    console.error("DELETE TRACKING ERROR:", error);
+
+    return NextResponse.json(
+      { error: "Gagal menghapus project" },
+      { status: 500 }
+    );
   }
 }
