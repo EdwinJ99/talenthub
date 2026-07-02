@@ -59,7 +59,10 @@ export default function DraftPage() {
   const res = await fetch(`/api/tracking?id=${projectId}`);
   const data = await res.json();
 
-  setProjectDetail(data);
+  setProjectDetail((prev: any) => ({
+    ...prev,
+    ...data,
+  }));
 };
 
 const loadCreators = async () => {
