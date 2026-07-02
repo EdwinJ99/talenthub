@@ -1,6 +1,4 @@
 import { ReactNode } from "react";
-import Link from "next/link";
-import EyeIcon from "@/components/icons/EyeIcon";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import CreatorTable from "./CreatorTable";
 
@@ -32,16 +30,7 @@ export default function QuotationSection({
       </p>
 
       {/* Show Entries */}
-<div className="mt-8 flex items-center gap-2 text-xs">
-  <span>Show</span>
-
-  <input
-    defaultValue="10"
-    className="h-10 w-16 border border-slate-300 px-3"
-  />
-
-  <span>entries</span>
-</div>
+<p className="mt-8 text-xs text-slate-500">10 data per halaman</p>
 
 <CreatorTable
   creators={creators}

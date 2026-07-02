@@ -58,6 +58,8 @@ function getProjectStatus(status: number | null) {
       return "Report";
     case 5:
       return "Invoice";
+    case 6:
+      return "Finish";
     default:
       return "-";
   }
@@ -344,6 +346,10 @@ export async function PUT(request: Request) {
 
         case 5:
           updateData.prj_istartdate = new Date();
+          break;
+
+        case 6:
+          updateData.prj_ienddate = new Date();
           break;
       }
     }

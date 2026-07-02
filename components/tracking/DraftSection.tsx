@@ -1,7 +1,4 @@
 import { ReactNode } from "react";
-import Link from "next/link";
-import EyeIcon from "@/components/icons/EyeIcon";
-import DeleteIcon from "@/components/icons/DeleteIcon";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import CreatorTable from "./CreatorTable";
 
@@ -30,14 +27,7 @@ export default function DraftSection({
           <p className="text-sm text-slate-700">Data From Creator</p>
 
           <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-2 text-xs">
-              <span>Show</span>
-              <input
-                defaultValue="10"
-                className="h-10 w-16 border border-slate-300 px-3"
-              />
-              <span>entries</span>
-            </div>
+            <p className="text-xs text-slate-500">10 data per halaman</p>
 
           <button
             onClick={handleEditDraft}

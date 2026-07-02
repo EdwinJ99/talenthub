@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import Link from "next/link";
 
 import EyeIcon from "@/components/icons/EyeIcon";
@@ -21,8 +21,16 @@ export default function CreatorTable({
   showDelete = false,
   onDelete,
 }: Props) {
+  const pageSize = 10;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(creators.length / pageSize));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (safeCurrentPage - 1) * pageSize;
+  const visibleCreators = creators.slice(startIndex, startIndex + pageSize);
+
   return (
-    <div className="mt-6 w-full overflow-x-auto rounded-xl border border-slate-200 scrollbar-thin">
+    <div className="mt-6">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 scrollbar-thin">
       <table className="min-w-[1400px] w-full border-collapse text-sm whitespace-nowrap">
         <thead>
           <tr className="border-y border-slate-300 bg-white text-left">
@@ -64,18 +72,19 @@ export default function CreatorTable({
         </thead>
 
         <tbody>
-          {creators.map((creator) => (
+          {visibleCreators.map((creator, index) => (
             <tr
               key={creator.id}
               className="border-b border-slate-200"
             >
               <td className="border-x px-4 py-3 text-center">
-                {creator.id}
+                {startIndex + index + 1}
               </td>
 
               <td className="border-x px-4 py-3 text-center">
                 <img
                   src={creator.photo || "/images/avatar.png"}
+                  alt={creator.name || "Creator"}
                   className="mx-auto h-11 w-11 rounded-full object-cover"
                 />
               </td>
@@ -153,6 +162,51 @@ export default function CreatorTable({
           ))}
         </tbody>
       </table>
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
+        <span>
+          Showing {creators.length > 0 ? startIndex + 1 : 0} to{" "}
+          {Math.min(startIndex + pageSize, creators.length)} of {creators.length} entries
+        </span>
+
+        <div className="flex overflow-hidden rounded-md border border-gray-200">
+            <button
+              type="button"
+              disabled={safeCurrentPage === 1}
+              onClick={() => setCurrentPage(Math.max(1, safeCurrentPage - 1))}
+              className="border-r border-gray-200 bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className={`border-r border-gray-200 px-3 py-1 ${
+                    pageNumber === safeCurrentPage
+                      ? "bg-blue-50 font-bold text-blue-600"
+                      : "hover:bg-gray-50"
+                  }`}
+                >
+                  {pageNumber}
+                </button>
+              )
+            )}
+
+            <button
+              type="button"
+              disabled={safeCurrentPage === totalPages}
+              onClick={() => setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))}
+              className="bg-gray-100 px-3 py-1 hover:bg-gray-200 disabled:opacity-50"
+            >
+              Next
+            </button>
+        </div>
+      </div>
     </div>
   );
 }

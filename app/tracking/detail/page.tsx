@@ -193,10 +193,11 @@ const statusIndex: Record<string, number> = {
 };
 
 const currentStep =
-  statusIndex[projectDetail?.status ?? "Draft"];
+  statusIndex[projectDetail?.status ?? "Draft"] ?? 0;
 
-  const progressWidth =
-    currentStep === 0 ? "0%" : `${(currentStep / (steps.length - 1)) * 100}%`;
+const isProjectFinished = ["finish", "finished", "done", "completed"].includes(
+  String(projectDetail?.status ?? "").toLowerCase()
+);
 
 const renderTrackingSection = () => {
   switch (projectDetail?.status) {
@@ -259,58 +260,76 @@ console.log(creators);
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
           <h1 className="text-2xl font-bold text-slate-900">Detail Project</h1>
 
-          <span className="mt-4 inline-flex rounded-full border border-orange-300 bg-orange-50 px-6 py-2 text-sm font-semibold text-orange-600">
+          <span
+            className={`mt-4 inline-flex rounded-full border px-6 py-2 text-sm font-semibold ${
+              isProjectFinished
+                ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                : "border-orange-300 bg-orange-50 text-orange-600"
+            }`}
+          >
             {projectDetail?.status}
           </span>
 
           <div className="mt-10 overflow-x-auto">
-            <div className="relative min-w-[1000px] px-8">
-              {/* Garis utama */}
-              <div className="absolute left-14 right-14 top-3 h-1 bg-slate-300" />
-
-              {/* Progress garis aktif */}
+            <div className="relative min-w-[1000px] px-10">
               <div
-                className="absolute left-14 top-3 h-1 rounded-full bg-orange-500"
-                style={{
-                  width: progressWidth,
-                }}
+                className={`absolute left-0 top-3 h-1 w-[60px] rounded-full ${
+                  currentStep > 0 || isProjectFinished
+                    ? "bg-emerald-500"
+                    : "bg-orange-500"
+                }`}
               />
 
-              <div className="relative flex justify-between">
+              <div className="relative flex items-start justify-between">
                 {steps.map((step, index) => {
-                  const active = index <= currentStep;
+                  const completed = index < currentStep || isProjectFinished;
+                  const active = index === currentStep && !isProjectFinished;
+                  const connectorColor =
+                    isProjectFinished || index < currentStep
+                      ? "bg-emerald-500"
+                      : index === currentStep
+                        ? "bg-orange-500"
+                        : "bg-slate-300";
 
                   return (
-                    <div key={step.label} className="flex w-28 flex-col items-center">
+                    <div key={step.label} className="contents">
                       <div
-                        className={`relative h-7 w-7 rounded-full border-4 ${
-                          active
-                            ? "border-orange-500 bg-orange-500"
-                            : "border-slate-300 bg-white"
-                        }`}
+                        className="relative flex w-20 shrink-0 flex-col items-center"
                       >
-                        {index === 0 && (
-                          <div className="absolute right-full top-1/2 h-1 w-6 -translate-y-1/2 bg-orange-500" />
-                        )}
+                        <div
+                          className={`relative z-10 h-7 w-7 rounded-full border-4 ${
+                            completed
+                              ? "border-emerald-500 bg-emerald-500"
+                              : active
+                                ? "border-orange-500 bg-orange-500"
+                                : "border-slate-300 bg-white"
+                          }`}
+                        />
+
+                        <p className="mt-3 text-sm font-semibold text-emerald-600">
+                          {step.label}
+                        </p>
+
+                        <p className="mt-1 text-xs text-slate-400">
+                          {step.date
+                            ? new Date(step.date).toLocaleDateString("id-ID")
+                            : "-"}
+                        </p>
                       </div>
 
-                      <p
-                        className={`mt-3 text-sm font-semibold ${
-                          active ? "text-slate-900" : "text-slate-500"
-                        }`}
-                      >
-                        {step.label}
-                      </p>
-
-                      <p className="mt-1 text-xs text-slate-400">
-                      {step.date
-                        ? new Date(step.date).toLocaleDateString("id-ID")
-                        : "-"}
-                      </p>
+                      {index < steps.length - 1 && (
+                        <div className={`-mx-5 mt-3 h-1 min-w-10 flex-1 rounded-full ${connectorColor}`} />
+                      )}
                     </div>
                   );
                 })}
               </div>
+
+              <div
+                className={`absolute right-0 top-3 h-1 w-[60px] rounded-full ${
+                  isProjectFinished ? "bg-emerald-500" : "bg-slate-300"
+                }`}
+              />
             </div>
           </div>
 
