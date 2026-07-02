@@ -23,18 +23,6 @@ model Account {
   User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Notification {
-  id         String           @id
-  type       NotificationType
-  title      String
-  message    String
-  order_id   String?
-  kode_order String
-  created_at DateTime         @default(now())
-
-  @@index([order_id])
-}
-
 model Session {
   id           String   @id
   sessionToken String   @unique
@@ -106,29 +94,19 @@ model mst_sow {
 }
 
 model dtl_project {
-  drf_id           Int         @id @default(autoincrement())
-  drf_projectid    Int
-  drf_sow          Int
-  drf_username     String?     @db.VarChar(100)
-  drf_nama         String?     @db.VarChar(100)
-  drf_pathprofile  String?
-  drf_totalpost    Int?
-  drf_followers    Int?
-  drf_er           Float?
-  drf_avgviewall   Int?
-  drf_avgviewbrand Int?
-  drf_cpvall       Int?
-  drf_cpvallbrand  Int?
-  drf_rate         Float?
-  drf_platform     String?     @db.VarChar(100)
-  drf_qty          Int?
-  drf_url          String?
-  creaby           String?     @db.VarChar(20)
-  creadate         DateTime?   @default(now()) @db.Timestamp(6)
-  modiby           String?     @db.VarChar(20)
-  modidate         DateTime?   @default(now()) @db.Timestamp(6)
-  mst_sow          mst_sow     @relation(fields: [drf_sow], references: [sow_id], onUpdate: NoAction, map: "fk_dtl_project_to_sow")
-  trs_project      trs_project @relation(fields: [drf_projectid], references: [prj_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dtl_project_to_trs")
+  drf_id        Int          @id @default(autoincrement())
+  drf_projectid Int
+  drf_sow       Int
+  drf_rate      Decimal?     @db.Decimal(12, 2)
+  drf_qty       Int          @default(1)
+  creaby        String?      @db.VarChar(20)
+  creadate      DateTime?    @default(now()) @db.Timestamp(6)
+  modiby        String?      @db.VarChar(20)
+  modidate      DateTime?    @default(now()) @db.Timestamp(6)
+  drf_creatorid Int
+  mst_creators  mst_creators @relation(fields: [drf_creatorid], references: [id], map: "fk_dtl_project_creator")
+  mst_sow       mst_sow      @relation(fields: [drf_sow], references: [sow_id], onUpdate: NoAction, map: "fk_dtl_project_to_sow")
+  trs_project   trs_project  @relation(fields: [drf_projectid], references: [prj_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dtl_project_to_trs")
 }
 
 model mst_categories {
@@ -166,26 +144,27 @@ model mst_general_filters {
 }
 
 model trs_project {
-  prj_id          Int           @id
-  prj_brand       Int?
-  prj_nama        String?       @db.VarChar(100)
+  prj_id          Int           @id @default(autoincrement())
+  prj_brand       Int
+  prj_nama        String        @db.VarChar(100)
   prj_quotationno String?       @db.VarChar(100)
   prj_invoiceno   String?       @db.VarChar(100)
-  prj_dstartdate  DateTime?     @db.Date
-  prj_denddate    DateTime?     @db.Date
+  prj_dstartdate  DateTime      @db.Date
+  prj_denddate    DateTime      @db.Date
   prj_qstartdate  DateTime?     @db.Date
   prj_qenddate    DateTime?     @db.Date
   prj_rstartdate  DateTime?     @db.Date
   prj_renddate    DateTime?     @db.Date
   prj_istartdate  DateTime?     @db.Date
   prj_ienddate    DateTime?     @db.Date
-  prj_status      Int?
-  creaby          String?       @db.VarChar(20)
-  creadate        DateTime?     @db.Timestamp(6)
+  prj_status      Int           @default(1)
+  creaby          String        @db.VarChar(20)
+  creadate        DateTime      @default(now()) @db.Timestamp(6)
   modiby          String?       @db.VarChar(20)
-  modidate        DateTime?     @db.Timestamp(6)
+  modidate        DateTime?     @default(now()) @db.Timestamp(6)
+  prj_kode        String        @unique(map: "uq_project_kode") @db.VarChar(20)
   dtl_project     dtl_project[]
-  mst_brand       mst_brand?    @relation(fields: [prj_brand], references: [brd_id], map: "fk_trs_project_brand")
+  mst_brand       mst_brand     @relation(fields: [prj_brand], references: [brd_id], map: "fk_trs_project_brand")
 }
 
 model mst_creators {
@@ -208,45 +187,13 @@ model mst_creators {
   last_scraped_at    DateTime?       @default(now()) @db.Timestamp(6)
   created_at         DateTime?       @default(now()) @db.Timestamp(6)
   updated_at         DateTime?       @default(now()) @db.Timestamp(6)
+  dtl_project        dtl_project[]
   mst_categories     mst_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction, map: "fk_creator_category")
   mst_cities         mst_cities?     @relation(fields: [city_id], references: [id], onUpdate: NoAction, map: "fk_creator_city")
 
   @@index([social_media, tier, gender, city_id, category_id], map: "idx_creators_filter")
 }
 
-model Order_Header {
-  order_id           String    @id
-  kode_order         String
-  tanggal_order      DateTime  @db.Date
-  waktu_order        DateTime
-  shift              String
-  day_night          String?
-  truck_type         String?
-  ritase_request     Int?      @default(0)
-  status_order       String?
-  remarks_ordering   String?
-  created_by         String?
-  created_at         DateTime?
-  updated_by         String?
-  updated_at         DateTime?
-  delivery_note      String?
-  remarks_delivery   String?
-  ratio_cb_1tr       Int       @default(0)
-  ratio_cb_2tr       Int       @default(0)
-  shell_state_cb_1tr String?
-  shell_state_cb_2tr String?
-  request_type       String    @default("ORDER")
-
-  @@index([kode_order])
-  @@index([tanggal_order, shift, day_night])
-}
-
 enum Role {
   ADMIN
-}
-
-enum NotificationType {
-  ORDER_CREATED
-  DELIVERY_CONFIRMED
-  RECEIVING_CHECKED
 }

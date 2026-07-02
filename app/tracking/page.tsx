@@ -12,11 +12,11 @@ const getStepIndex = (status: string) =>
   );
 
 const steps = [
-  { label: "Draft", href: "/tracking/draft" },
-  { label: "Quotation", href: "/tracking/quotation" },
-  { label: "Running", href: "/tracking/running" },
-  { label: "Report", href: "/tracking/report" },
-  { label: "Invoice", href: "/tracking/invoice" },
+  { label: "Draft", href: "/tracking/detail" },
+  { label: "Quotation", href: "/tracking/detail" },
+  { label: "Running", href: "/tracking/detail" },
+  { label: "Report", href: "/tracking/detail" },
+  { label: "Invoice", href: "/tracking/detail" },
 ] 
 
 type Project = {
@@ -433,7 +433,7 @@ const stepStyles = {
 
             return (
             <Link
-              key={project.status}
+              key={step.label}
               href={`${step.href}?projectId=${project.id}`}
               className={`rounded-xl border p-3 text-center transition hover:-translate-y-0.5 hover:shadow-sm ${
                 active
@@ -464,7 +464,7 @@ const stepStyles = {
               </p>
 
               <p className="text-[10px] sm:text-[11px] font-bold text-slate-800">
-                {project.status}
+                {step.label}
               </p>
             </Link>
             )

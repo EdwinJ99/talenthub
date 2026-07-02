@@ -282,58 +282,93 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
 
+    const updateData: any = {
+      modiby: session.user.name ?? "admin",
+      modidate: new Date(),
+    };
+
+    // ================= Data Project =================
+    if (body.prj_brand !== undefined)
+      updateData.prj_brand = Number(body.prj_brand);
+
+    if (body.prj_nama !== undefined)
+      updateData.prj_nama = body.prj_nama;
+
+    if (body.prj_quotationno !== undefined)
+      updateData.prj_quotationno = body.prj_quotationno;
+
+    if (body.prj_invoiceno !== undefined)
+      updateData.prj_invoiceno = body.prj_invoiceno;
+
+    if (body.prj_dstartdate)
+      updateData.prj_dstartdate = new Date(body.prj_dstartdate);
+
+    if (body.prj_denddate)
+      updateData.prj_denddate = new Date(body.prj_denddate);
+
+    if (body.prj_qstartdate)
+      updateData.prj_qstartdate = new Date(body.prj_qstartdate);
+
+    if (body.prj_qenddate)
+      updateData.prj_qenddate = new Date(body.prj_qenddate);
+
+    if (body.prj_rstartdate)
+      updateData.prj_rstartdate = new Date(body.prj_rstartdate);
+
+    if (body.prj_renddate)
+      updateData.prj_renddate = new Date(body.prj_renddate);
+
+    if (body.prj_istartdate)
+      updateData.prj_istartdate = new Date(body.prj_istartdate);
+
+    if (body.prj_ienddate)
+      updateData.prj_ienddate = new Date(body.prj_ienddate);
+
+    // ================= Status =================
+    if (body.prj_status !== undefined) {
+      updateData.prj_status = Number(body.prj_status);
+
+      // otomatis isi tanggal mulai setiap status
+      switch (Number(body.prj_status)) {
+        case 2:
+          updateData.prj_qstartdate = new Date();
+          break;
+
+        case 3:
+          updateData.prj_rstartdate = new Date();
+          break;
+
+        case 4:
+          updateData.prj_reportstartdate = new Date();
+          break;
+
+        case 5:
+          updateData.prj_istartdate = new Date();
+          break;
+      }
+    }
+
     const project = await prisma.trs_project.update({
       where: {
         prj_id: id,
       },
-      data: {
-        prj_brand: Number(body.prj_brand),
-        prj_nama: body.prj_nama,
-        prj_quotationno: body.prj_quotationno ?? null,
-        prj_invoiceno: body.prj_invoiceno ?? null,
-
-        prj_dstartdate: new Date(body.prj_dstartdate),
-
-        prj_denddate: new Date(body.prj_denddate),
-
-        prj_qstartdate: body.prj_qstartdate
-          ? new Date(body.prj_qstartdate)
-          : null,
-        prj_qenddate: body.prj_qenddate
-          ? new Date(body.prj_qenddate)
-          : null,
-
-        prj_rstartdate: body.prj_rstartdate
-          ? new Date(body.prj_rstartdate)
-          : null,
-        prj_renddate: body.prj_renddate
-          ? new Date(body.prj_renddate)
-          : null,
-
-        prj_istartdate: body.prj_istartdate
-          ? new Date(body.prj_istartdate)
-          : null,
-        prj_ienddate: body.prj_ienddate
-          ? new Date(body.prj_ienddate)
-          : null,
-
-        prj_status: body.prj_status,
-
-        modiby: session.user.name ?? "admin",
-        modidate: new Date(),
-      },
+      data: updateData,
     });
 
-      return NextResponse.json({
-    message: "Project berhasil diperbarui",
-    data: project,
-  });
+    return NextResponse.json({
+      message: "Project berhasil diperbarui",
+      data: project,
+    });
   } catch (error) {
     console.error("PUT TRACKING ERROR:", error);
 
     return NextResponse.json(
-      { error: "Gagal update project" },
-      { status: 500 }
+      {
+        error: "Gagal update project",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
