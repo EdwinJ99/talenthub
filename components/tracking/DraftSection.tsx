@@ -11,6 +11,7 @@ type DraftSectionProps = {
 
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
+  readOnly?: boolean;
 };
 
 export default function DraftSection({
@@ -20,6 +21,7 @@ export default function DraftSection({
   handleGenerateQuotation,
   handleSort,
   getSortIcon,
+  readOnly = false,
 }: DraftSectionProps) {
   return (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
@@ -29,19 +31,21 @@ export default function DraftSection({
           <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <p className="text-xs text-slate-500">10 data per halaman</p>
 
-          <button
-            onClick={handleEditDraft}
-            className="w-full rounded-xl border border-slate-300 bg-white px-6 py-2 text-sm font-semibold text-slate-800 md:w-auto"
-          >
-            ✎ Edit Draft
-          </button>
+          {!readOnly && (
+            <button
+              onClick={handleEditDraft}
+              className="w-full rounded-xl border border-slate-300 bg-white px-6 py-2 text-sm font-semibold text-slate-800 md:w-auto"
+            >
+              ✎ Edit Draft
+            </button>
+          )}
           </div>
 
           <CreatorTable
             creators={creators}
             handleSort={handleSort}
             getSortIcon={getSortIcon}
-            showDelete
+            showDelete={!readOnly}
             onDelete={handleDelete}
           />
 
@@ -59,12 +63,14 @@ export default function DraftSection({
             <FileDocumentIcon className="h-4 w-4" />
             Send Spreadsheet
           </button>
-          <button
-            onClick={handleGenerateQuotation}
-            className="w-full rounded-xl bg-black px-6 py-3 text-center text-sm font-semibold text-white md:w-auto"
-          >
-            Generate Quotation
-          </button>
+          {!readOnly && (
+            <button
+              onClick={handleGenerateQuotation}
+              className="w-full rounded-xl bg-black px-6 py-3 text-center text-sm font-semibold text-white md:w-auto"
+            >
+              Generate Quotation
+            </button>
+          )}
 
           </div>
         </section>

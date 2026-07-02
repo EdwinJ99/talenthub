@@ -22,6 +22,7 @@ export default function DraftPage() {
   const [projectDetail, setProjectDetail] = useState<any>(null);
   const searchParams = useSearchParams();
   const projectId = searchParams.get("projectId");
+  const requestedView = searchParams.get("view");
 
   const steps = [
   {
@@ -202,8 +203,17 @@ const isProjectFinished = ["finish", "finished", "done", "completed"].includes(
   String(projectDetail?.status ?? "").toLowerCase()
 );
 
+const canViewRequestedStep =
+  requestedView !== null &&
+  Object.prototype.hasOwnProperty.call(statusIndex, requestedView) &&
+  statusIndex[requestedView] <= currentStep;
+const viewedStatus = canViewRequestedStep
+  ? requestedView
+  : projectDetail?.status;
+const isHistoricalView = viewedStatus !== projectDetail?.status;
+
 const renderTrackingSection = () => {
-  switch (projectDetail?.status) {
+  switch (viewedStatus) {
     case "Draft":
       return (
         <DraftSection
@@ -213,6 +223,7 @@ const renderTrackingSection = () => {
           handleGenerateQuotation={handleGenerateQuotation}
           handleSort={handleSort}
           getSortIcon={getSortIcon}
+          readOnly={isHistoricalView}
         />
       );
 
@@ -224,6 +235,7 @@ case "Quotation":
       handleSort={handleSort}
       getSortIcon={getSortIcon}
       handleStartProject={handleStartProject}
+      readOnly={isHistoricalView}
     />
   );
 
@@ -272,7 +284,6 @@ console.log(creators);
           >
             {projectDetail?.status}
           </span>
-
           <div className="mt-10 overflow-x-auto">
             <div className="relative min-w-[1000px] px-10">
               <div
@@ -309,7 +320,7 @@ console.log(creators);
                           }`}
                         />
 
-                        <p className="mt-3 text-sm font-semibold text-emerald-600">
+                        <p className="mt-3 text-sm font-semibold text-slate-900">
                           {step.label}
                         </p>
 

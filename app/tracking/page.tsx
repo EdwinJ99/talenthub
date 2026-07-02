@@ -219,7 +219,6 @@ const handleDelete = async (projectId: number) => {
           <ProjectCard
             key={project.id}
             project={project}
-            step={steps[stepIndex]}
             stepIndex={stepIndex}
             onDelete={handleDelete}
           />
@@ -318,15 +317,10 @@ function SummaryCard({
 
 function ProjectCard({
   project,
-  step,
   stepIndex,
   onDelete,
 }: {
   project: Project;
-  step: {
-    label: string;
-    href: string;
-  };
   stepIndex: number;
   onDelete: (projectId: number) => Promise<void>;
 }) {
@@ -429,45 +423,71 @@ const stepStyles = {
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
           {steps.map((step, index) => {
-          const active = index === stepIndex
+          const active = index === stepIndex;
+          const completed = index < stepIndex;
+          const stepClassName = `rounded-xl border p-3 text-center transition ${
+            active
+              ? `${stepStyles[step.label as keyof typeof stepStyles]} hover:-translate-y-0.5 hover:shadow-sm`
+              : completed
+                ? "border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-sm"
+                : "cursor-not-allowed border-slate-200 bg-white opacity-60"
+          }`;
 
-            return (
-            <Link
-              key={step.label}
-              href={`${step.href}?projectId=${project.id}`}
-              className={`rounded-xl border p-3 text-center transition hover:-translate-y-0.5 hover:shadow-sm ${
-                active
-                  ? stepStyles[
-                      step.label as keyof typeof stepStyles
-                    ]
-                  : "border-slate-200 bg-white"
-              }`}
-            >
+          const stepContent = (
+            <>
               <div
                 className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl border text-lg ${
                   active
-                    ? stepStyles[
-                        step.label as keyof typeof stepStyles
-                      ]
-                    : "border-slate-200 bg-white text-slate-400"
+                    ? stepStyles[step.label as keyof typeof stepStyles]
+                    : completed
+                      ? "border-slate-200 bg-white text-slate-500"
+                      : "border-slate-200 bg-white text-slate-400"
                 }`}
               >
-                {
-                  stepIcons[
-                    step.label as keyof typeof stepIcons
-                  ]
-                }
+                {stepIcons[step.label as keyof typeof stepIcons]}
               </div>
 
-              <p className="text-[9px] sm:text-[10px] font-bold tracking-widest text-slate-500">
+              <p className="text-[9px] font-bold tracking-widest text-slate-500 sm:text-[10px]">
                 STEP
               </p>
 
-              <p className="text-[10px] sm:text-[11px] font-bold text-slate-800">
+              <p className="text-[10px] font-bold text-slate-800 sm:text-[11px]">
                 {step.label}
               </p>
-            </Link>
-            )
+            </>
+          );
+
+          if (active || completed) {
+            return (
+              <Link
+                key={step.label}
+                href={`${step.href}?projectId=${project.id}&view=${step.label}`}
+                className={stepClassName}
+                title={
+                  active
+                    ? `Buka tahap ${step.label}`
+                    : `Lihat riwayat ${step.label}`
+                }
+              >
+                {stepContent}
+              </Link>
+            );
+          }
+
+          return (
+            <div
+              key={step.label}
+              className={stepClassName}
+              aria-disabled="true"
+              title={
+                completed
+                  ? "Tahap ini sudah selesai"
+                  : "Tahap ini belum tersedia"
+              }
+            >
+              {stepContent}
+            </div>
+          );
           })}
         </div>
 

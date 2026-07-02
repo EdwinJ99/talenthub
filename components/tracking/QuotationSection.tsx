@@ -10,6 +10,7 @@ type Props = {
   getSortIcon: (field: string) => ReactNode;
 
   handleStartProject: () => void;
+  readOnly?: boolean;
 };
 
 export default function QuotationSection({
@@ -18,6 +19,7 @@ export default function QuotationSection({
   handleSort,
   getSortIcon,
   handleStartProject,
+  readOnly = false,
 }: Props) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
@@ -83,12 +85,14 @@ export default function QuotationSection({
           Send Spreadsheet
         </button>
 
-        <button
-          onClick={handleStartProject}
-          className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
-        >
-          Start Project
-        </button>
+        {!readOnly && (
+          <button
+            onClick={handleStartProject}
+            className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
+          >
+            Start Project
+          </button>
+        )}
       </div>
     </section>
   );
