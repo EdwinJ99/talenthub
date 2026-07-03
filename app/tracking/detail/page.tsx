@@ -123,6 +123,8 @@ const handleGenerateQuotation = async () => {
     "Berhasil",
     "Quotation berhasil dibuat."
   );
+
+  router.push(`/tracking/detail?projectId=${projectId}&view=Quotation`);
 };
 
 const handleStartProject = async () => {
@@ -326,7 +328,11 @@ console.log(creators);
 
                         <p className="mt-1 text-xs text-slate-400">
                           {step.date
-                            ? new Date(step.date).toLocaleDateString("id-ID")
+                            ? new Date(step.date).toLocaleDateString("id-ID", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                              })
                             : "-"}
                         </p>
                       </div>
@@ -355,7 +361,11 @@ console.log(creators);
               label="Date"
               value={
                   projectDetail?.createdAt
-                      ? new Date(projectDetail.createdAt).toLocaleDateString("id-ID")
+                      ? new Date(projectDetail.createdAt).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        })
                       : ""
               }
           />
