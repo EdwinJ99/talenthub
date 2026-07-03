@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import DefaultLayout from "@/components/Layout/DefaultLayout";
 import Link from "next/link";
 import { confirmDelete, showSuccess } from "@/lib/alert";
+import TrackingStepIcon from "@/components/icons/TrackingStepIcon";
 
 const getStepIndex = (status: string) =>
   steps.findIndex(
@@ -361,14 +362,6 @@ const currentColor =
   statusColors[project.status as keyof typeof statusColors] ??
   statusColors.Draft;
 
-const stepIcons = {
-  Draft: "📝",
-  Quotation: "📋",
-  Running: "🚀",
-  Report: "📊",
-  Invoice: "💰",
-};
-
 const stepStyles = {
   Draft:
     "border-orange-300 bg-orange-50 text-orange-600",
@@ -405,8 +398,16 @@ const stepStyles = {
           </span>
           <p className="mt-5 text-xs text-slate-500">
           {project.date
-            ? new Date(project.date).toLocaleDateString("id-ID")
-            : "-"}
+            ? `${new Date(project.date).toLocaleDateString("id-ID", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })} • ${new Date(project.date).toLocaleTimeString("id-ID", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })}`
+            : "-"} 
         </p>
         </div>
 
@@ -421,40 +422,40 @@ const stepStyles = {
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+        <div className="grid grid-cols-5 gap-2">
           {steps.map((step, index) => {
           const active = index === stepIndex;
-          const completed = index < stepIndex;
-          const stepClassName = `rounded-xl border p-3 text-center transition ${
-            active
-              ? `${stepStyles[step.label as keyof typeof stepStyles]} hover:-translate-y-0.5 hover:shadow-sm`
-              : completed
-                ? "border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-sm"
-                : "cursor-not-allowed border-slate-200 bg-white opacity-60"
-          }`;
+            const completed = index < stepIndex;
+            const stepClassName = `rounded-xl border p-3 transition ${
+              active
+                ? `${stepStyles[step.label as keyof typeof stepStyles]} hover:-translate-y-0.5 hover:shadow-sm`
+                : completed
+                  ? "border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-sm"
+                  : "cursor-not-allowed border-slate-200 bg-white opacity-60"
+            }`;
 
           const stepContent = (
-            <>
+            <div className="flex flex-col items-center text-center">
               <div
-                className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl border text-lg ${
+                className={`mb-2 flex h-10 w-10 items-center justify-center rounded-xl border ${
                   active
                     ? stepStyles[step.label as keyof typeof stepStyles]
-                    : completed
-                      ? "border-slate-200 bg-white text-slate-500"
-                      : "border-slate-200 bg-white text-slate-400"
+                    : "border-slate-300 bg-white"
                 }`}
               >
-                {stepIcons[step.label as keyof typeof stepIcons]}
+                <TrackingStepIcon
+                  step={step.label}
+                  className="h-7 w-7"
+                  active={active}
+                />
               </div>
-
-              <p className="text-[9px] font-bold tracking-widest text-slate-500 sm:text-[10px]">
+              <p className="text-[8px] font-bold tracking-widest text-slate-500 sm:text-[9px]">
                 STEP
               </p>
-
               <p className="text-[10px] font-bold text-slate-800 sm:text-[11px]">
                 {step.label}
               </p>
-            </>
+            </div>
           );
 
           if (active || completed) {
