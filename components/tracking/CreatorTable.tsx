@@ -33,7 +33,7 @@ export default function CreatorTable({
       <div className="w-full overflow-x-auto rounded-xl border border-slate-200 scrollbar-thin">
       <table className="min-w-[1400px] w-full border-collapse text-sm whitespace-nowrap">
         <thead>
-          <tr className="border-y border-slate-300 bg-white text-left">
+          <tr className="border-y border-slate-300 bg-gray-100 text-left">
             {[
               { label: "No.", field: "no" },
               { label: "Photo", field: "photo" },
@@ -65,7 +65,7 @@ export default function CreatorTable({
               </th>
             ))}
 
-            <th className="border-x px-4 py-4 text-xs font-bold">
+            <th className="sticky right-0 border-x bg-gray-100 px-4 py-4 text-xs font-bold">
               Action Detail
             </th>
           </tr>
@@ -75,7 +75,7 @@ export default function CreatorTable({
           {visibleCreators.map((creator, index) => (
             <tr
               key={creator.id}
-              className="border-b border-slate-200"
+              className="border-b border-slate-200 bg-white"
             >
               <td className="border-x px-4 py-3 text-center">
                 {startIndex + index + 1}
@@ -145,7 +145,7 @@ export default function CreatorTable({
                 {creator.total?.toLocaleString()}
               </td>
 
-              <td className="border-x px-4 py-3">
+              <td className="sticky right-0 border-x bg-white px-4 py-3">
                 <div className="flex justify-center gap-3">
                   <Link href={`/tracking/detail/detail/${creator.id}`}>
                     <EyeIcon className="h-5 w-5 text-sky-600" />
