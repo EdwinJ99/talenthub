@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { showAlertValidationError, showAlertSuccess } from "@/lib/alert"
+import { showAlertValidationError, showAlertSuccess } from "@/lib/alert";
 
 const SortIcon = () => <span className="text-gray-400 text-xs ml-1">⇅</span>;
 
@@ -17,7 +17,7 @@ type Creator = {
   avrBrand: string;
   cpvAll: string;
   cpvBranded: string;
-  
+
   social_media: string;
   tier: string;
   gender: string;
@@ -25,8 +25,6 @@ type Creator = {
   category_id: number | null;
   followersRaw: number;
 };
-
-const BRAND_OPTIONS = ["Samsung", "Gojek", "Tokopedia", "Unilever", "Indofood"];
 
 export default function CreatorDiscoveryPage() {
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
@@ -37,6 +35,10 @@ export default function CreatorDiscoveryPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
+
+  const [brandsOptions, setBrandsOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
 
   // PERBAIKAN 1: Set default ke true agar data langsung tampil saat halaman dibuka
   const [isFiltered, setIsFiltered] = useState(true);
@@ -94,6 +96,22 @@ export default function CreatorDiscoveryPage() {
     loadDropdownFilters();
   }, []);
 
+  useEffect(() => {
+    async function loadBrands() {
+      try {
+        // PERBAIKAN: Arahkan ke endpoint baru yang berada di dalam folder discovery
+        const res = await fetch("/api/discovery/brand");
+        if (res.ok) {
+          const data = await res.json();
+          setBrandsOptions(data);
+        }
+      } catch (error) {
+        console.error("Error fetching brands:", error);
+      }
+    }
+    loadBrands();
+  }, []);
+
   // Jalankan fetch ulang setiap kali appliedFilters berubah (Server-side & Local Sync)
   useEffect(() => {
     async function fetchCreators() {
@@ -114,7 +132,7 @@ export default function CreatorDiscoveryPage() {
       }
     }
     fetchCreators();
-  }, [appliedFilters]); // << Trigger fetch ulang saat filter di-apply!
+  }, [appliedFilters]); 
 
   // --- LOGIC FILTER ---
   const handleSelectOption = (id: string, value: string) => {
@@ -175,17 +193,16 @@ export default function CreatorDiscoveryPage() {
   };
 
   const handleApplyFilter = () => {
-    // Salin filter yang sedang dipilih ke state appliedFilters
     setAppliedFilters(filters);
     setIsFiltered(true);
     setCurrentPage(1);
   };
 
   const clearFilters = () => {
-    setFilters({}); // Reset dropdown UI
-    setAppliedFilters({}); // Reset filter yang aktif
+    setFilters({});
+    setAppliedFilters({});
     setOtherInputs({});
-    setIsFiltered(true); // Kembalikan ke semua data (tanpa filter)
+    setIsFiltered(true);
     setSelectedRows([]);
     setCurrentPage(1);
   };
@@ -199,10 +216,9 @@ export default function CreatorDiscoveryPage() {
 
   // --- LOGIC CHECKBOX & PAGINATION WITH FILTER (BUG FIX VERSION) ---
   const filteredCreators = creatorsData.filter((creator) => {
-    // Jika tidak ada filter yang diterapkan, loloskan semua data
     if (!isFiltered) return true;
 
-    // 1. Filter Social Media (Aman terhadap huruf besar/kecil)
+    // 1. Filter Social Media 
     if (
       appliedFilters.social_media &&
       creator.social_media?.toLowerCase() !==
@@ -211,7 +227,7 @@ export default function CreatorDiscoveryPage() {
       return false;
     }
 
-    // 2. Filter Tier (Berdasarkan Followers Murni)
+    // 2. Filter Tier
     if (appliedFilters.tier) {
       const count = creator.followersRaw ?? 0;
       if (appliedFilters.tier.startsWith("Nano")) {
@@ -233,16 +249,16 @@ export default function CreatorDiscoveryPage() {
       return false;
     }
 
-    // 4. Filter Category (Dibuat fleksibel: ngecek ID atau teks relasi jika ada)
+    // 4. Filter Category 
     if (appliedFilters.category) {
       const matchId =
-        creator.category_id?.toString() === appliedFilters.category;  
+        creator.category_id?.toString() === appliedFilters.category;
 
       // Jika kedua kecocokan di atas salah, maka coret data ini
       if (!matchId) return false;
     }
 
-    // 5. Filter City (Dibuat fleksibel: ngecek ID atau teks relasi jika ada)
+    // 5. Filter City 
     if (appliedFilters.city) {
       const matchCityId = creator.city_id?.toString() === appliedFilters.city;
 
@@ -297,35 +313,63 @@ export default function CreatorDiscoveryPage() {
     setIsBrandDropdownOpen(false);
   };
 
-  const handleSubmitProject = (e: React.FormEvent) => {
+  const handleSubmitProject = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 1. Validasi Input Form
     if (!projectName || !selectedBrand || !startDate || !endDate) {
-      alert("Please fill all project details!");
+      showAlertValidationError("Please fill all project details!");
       return;
     }
 
-    const newProject = {
-      id: Date.now(),
-      projectName,
-      brand: selectedBrand,
-      startDate,
-      endDate,
-      creatorIds: [...selectedRows],
-    };
-
-    setTrsProject((prev) => [...prev, newProject]);
-
-    showAlertSuccess(
-      `Project "${projectName}" successfully added to trs_project!`
+    // 2. Ambil data object Creator secara utuh dari rows yang dicentang user
+    const selectedCreatorsData = creatorsData.filter((creator) =>
+      selectedRows.includes(creator.no)
     );
 
-    setIsModalOpen(false);
-    setProjectName("");
-    setSelectedBrand("");
-    setStartDate("");
-    setEndDate("");
+    try {
+      // 3. Kirim data ke API Route Backend
+      const res = await fetch("/api/discovery/project", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          projectName: projectName,
+          brandId: selectedBrand, // Membawa ID dari brand terpilih
+          startDate: startDate,
+          endDate: endDate,
+          selectedCreators: selectedCreatorsData, // Membawa kumpulan object data KOL terpilih
+        }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        showAlertValidationError(result.error || "Failed to save project.");
+        return;
+      }
+
+      // 4. Jika Sukses, berikan alert dan reset form state modal
+      showAlertSuccess(
+        `Project "${projectName}" successfully saved to database!`
+      );
+
+      setIsModalOpen(false);
+      setProjectName("");
+      setSelectedBrand("");
+      setStartDate("");
+      setEndDate("");
+      setSelectedRows([]); // Kosongkan centang tabel setelah berhasil disimpan
+    } catch (error) {
+      console.error("Connection error while submitting project:", error);
+      showAlertValidationError(
+        "A connection error occurred while saving the project."
+      );
+    }
   };
 
+  
   return (
     <section className="p-6 bg-slate-50 min-h-screen relative">
       {/* Header */}
@@ -373,8 +417,33 @@ export default function CreatorDiscoveryPage() {
                         filters[filter.id] ? "text-slate-900" : "text-slate-400"
                       }
                     >
-                      {filters[filter.id] || `Select ${filter.label}`}
+                      {(() => {
+                        const selectedValue = filters[filter.id];
+
+                        // Jika belum ada yang dipilih, tampilkan placeholder bawaan
+                        if (!selectedValue) return `Select ${filter.label}`;
+
+                        // Cari apakah nilai yang terpilih ada di dalam daftar options
+                        const foundOption = filter.options?.find(
+                          (opt: string | { id: string; name: string }) =>
+                            typeof opt === "object"
+                              ? opt.id === selectedValue
+                              : opt === selectedValue
+                        );
+
+                        // Jika ketemu dan tipenya object (City/Category)
+                        if (
+                          typeof foundOption === "object" &&
+                          foundOption !== null
+                        ) {
+                          return foundOption.name;
+                        }
+
+                        // Jika tipe string murni (Gender/Tier)
+                        return selectedValue;
+                      })()}
                     </span>
+
                     <svg
                       className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${
                         openDropdownId === filter.id ? "rotate-180" : ""
@@ -395,21 +464,31 @@ export default function CreatorDiscoveryPage() {
                   {openDropdownId === filter.id && (
                     <div className="absolute z-40 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                       <div className="py-1">
-                        {filter.options?.map((option: string) => (
-                          <div
-                            key={option}
-                            onClick={() =>
-                              handleSelectOption(filter.id, option)
-                            }
-                            className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
-                              filters[filter.id] === option
-                                ? "bg-blue-50 text-blue-600 font-medium"
-                                : "hover:bg-slate-50 text-slate-700"
-                            }`}
-                          >
-                            {option}
-                          </div>
-                        ))}
+                        {filter.options?.map(
+                          (option: string | { id: string; name: string }) => {
+                            // Cek apakah opsi berupa object (untuk city/category) atau string biasa
+                            const isObject =
+                              typeof option === "object" && option !== null;
+                            const optionValue = isObject ? option.id : option; // Nilai untuk state (ID / String)
+                            const optionLabel = isObject ? option.name : option; // Teks untuk layar
+
+                            return (
+                              <div
+                                key={optionValue}
+                                onClick={() =>
+                                  handleSelectOption(filter.id, optionValue)
+                                }
+                                className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
+                                  filters[filter.id] === optionValue
+                                    ? "bg-blue-50 text-blue-600 font-medium"
+                                    : "hover:bg-slate-50 text-slate-700"
+                                }`}
+                              >
+                                {optionLabel}
+                              </div>
+                            );
+                          }
+                        )}
                       </div>
 
                       {(filter.id === "category" || filter.id === "city") && (
@@ -495,7 +574,7 @@ export default function CreatorDiscoveryPage() {
               value={entriesPerPage}
               onChange={(e) => {
                 setEntriesPerPage(Number(e.target.value));
-                setCurrentPage(1); // Reset ke halaman pertama setiap kali jumlah entri berubah
+                setCurrentPage(1);
               }}
               className="border border-gray-300 rounded px-2 py-1 bg-white cursor-pointer focus:outline-none focus:border-blue-500"
             >
@@ -508,12 +587,12 @@ export default function CreatorDiscoveryPage() {
             <span>entries</span>
           </div>
 
-          {/* Table Container */}
+            
           {/* Table Container */}
           <div className="overflow-x-auto border border-gray-200 rounded-lg w-full max-h-[500px] overflow-y-auto">
             <table className="w-full text-sm border-collapse min-w-[1100px]">
               <thead>
-                {/* Tambahkan sticky top-0 dan bg-gray-100 agar header tidak transparan saat ditimpa data yang di-scroll */}
+             
                 <tr className="bg-gray-100 border-b border-gray-200 text-left sticky top-0 z-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
                   <th className="p-3 w-12 border-r border-gray-200 text-center bg-gray-100">
                     <input
@@ -556,7 +635,7 @@ export default function CreatorDiscoveryPage() {
                     key={row.no}
                     className="border-b border-gray-200 hover:bg-gray-50 text-gray-800"
                   >
-                    {/* ... isi td kamu tetap sama seperti sebelumnya ... */}
+                   
                     <td className="p-3 border-r border-gray-200 text-center">
                       <input
                         type="checkbox"
@@ -638,8 +717,9 @@ export default function CreatorDiscoveryPage() {
             </span>
 
             {totalPages > 1 && (
-              <div className="flex border border-gray-200 rounded-md overflow-hidden">
+              <div className="flex border border-gray-200 rounded-md overflow-hidden items-center bg-white">
                 <button
+                  type="button"
                   onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                   disabled={currentPage === 1}
                   className="px-3 py-1 bg-gray-100 border-r border-gray-200 disabled:opacity-50 hover:bg-gray-200"
@@ -647,29 +727,83 @@ export default function CreatorDiscoveryPage() {
                   Previous
                 </button>
 
-                {[...Array(totalPages)].map((_, i) => {
-                  const pageNum = i + 1;
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setCurrentPage(pageNum)}
-                      className={`px-3 py-1 border-r border-gray-200 ${
-                        pageNum === currentPage
-                          ? "bg-blue-50 font-bold text-blue-600"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
+                {(() => {
+                  const pageNumbers = [];
+                  const siblings = 1; // Jumlah angka di kiri & kanan halaman aktif
+
+                  if (totalPages <= 7) {
+                    // Jika total halaman sedikit, tampilkan semua tanpa ellipsis
+                    for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
+                  } else {
+                    const showLeftDots = currentPage > 3;
+                    const showRightDots = currentPage < totalPages - 2;
+
+                    if (!showLeftDots && showRightDots) {
+                      // Dekat dengan halaman awal (1, 2, 3, 4, 5, ..., 18)
+                      for (let i = 1; i <= 5; i++) pageNumbers.push(i);
+                      pageNumbers.push("...");
+                      pageNumbers.push(totalPages);
+                    } else if (showLeftDots && !showRightDots) {
+                      // Dekat dengan halaman akhir (1, ..., 14, 15, 16, 17, 18)
+                      pageNumbers.push(1);
+                      pageNumbers.push("...");
+                      for (let i = totalPages - 4; i <= totalPages; i++)
+                        pageNumbers.push(i);
+                    } else if (showLeftDots && showRightDots) {
+                      // Berada di tengah-tengah (1, ..., 7, 8, 9, ..., 18)
+                      pageNumbers.push(1);
+                      pageNumbers.push("...");
+                      for (
+                        let i = currentPage - siblings;
+                        i <= currentPage + siblings;
+                        i++
+                      ) {
+                        pageNumbers.push(i);
+                      }
+                      pageNumbers.push("...");
+                      pageNumbers.push(totalPages);
+                    }
+                  }
+
+                  return pageNumbers.map((page, index) => {
+                    if (page === "...") {
+                      return (
+                        <span
+                          key={`dots-${index}`}
+                          className="px-3 py-1 border-r border-gray-200 bg-gray-50 text-gray-400 select-none"
+                        >
+                          ...
+                        </span>
+                      );
+                    }
+
+                    return (
+                      <button
+                        key={`page-${page}`}
+                        type="button"
+                        // PERBAIKAN: Berikan proteksi atau sertakan pengecekan tipe data
+                        onClick={() =>
+                          typeof page === "number" && setCurrentPage(page)
+                        }
+                        className={`px-3 py-1 border-r border-gray-200 transition-colors ${
+                          page === currentPage
+                            ? "bg-blue-50 font-bold text-blue-600"
+                            : "hover:bg-gray-50 text-gray-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  });
+                })()}
 
                 <button
+                  type="button"
                   onClick={() =>
                     setCurrentPage((p) => Math.min(p + 1, totalPages))
                   }
                   disabled={currentPage === totalPages}
-                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200"
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
                 >
                   Next
                 </button>
@@ -689,6 +823,7 @@ export default function CreatorDiscoveryPage() {
                 Create New Project
               </h3>
               <button
+                type="button"
                 onClick={handleCloseModal}
                 className="text-black hover:bg-black/10 rounded-lg p-1 text-xl font-bold transition-colors w-7 h-7 flex items-center justify-center leading-none"
               >
@@ -729,7 +864,9 @@ export default function CreatorDiscoveryPage() {
                       selectedBrand ? "text-slate-900" : "text-slate-400"
                     }
                   >
-                    {selectedBrand || "Choose Brand"}
+                    {/* PERBAIKAN: Menampilkan nama brand yang terpilih berdasarkan ID-nya */}
+                    {brandsOptions.find((b) => b.id === selectedBrand)?.name ||
+                      "Choose Brand"}
                   </span>
                   <svg
                     className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${
@@ -750,22 +887,30 @@ export default function CreatorDiscoveryPage() {
 
                 {isBrandDropdownOpen && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                    {BRAND_OPTIONS.map((brand) => (
-                      <div
-                        key={brand}
-                        onClick={() => {
-                          setSelectedBrand(brand);
-                          setIsBrandDropdownOpen(false);
-                        }}
-                        className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
-                          selectedBrand === brand
-                            ? "bg-blue-50 text-blue-600 font-medium"
-                            : "hover:bg-slate-50 text-slate-700"
-                        }`}
-                      >
-                        {brand}
+                    {/* PERBAIKAN 1 & 2: Menggunakan brandsOptions dan memberikan tipe data pada parameter brand */}
+                    {brandsOptions.map(
+                      (brand: { id: string; name: string }) => (
+                        <div
+                          key={brand.id}
+                          onClick={() => {
+                            setSelectedBrand(brand.id); // Menyimpan ID brand ke state
+                            setIsBrandDropdownOpen(false);
+                          }}
+                          className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
+                            selectedBrand === brand.id
+                              ? "bg-blue-50 text-blue-600 font-medium"
+                              : "hover:bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          {brand.name}
+                        </div>
+                      )
+                    )}
+                    {brandsOptions.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-gray-400 italic text-center">
+                        No brands available
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </div>

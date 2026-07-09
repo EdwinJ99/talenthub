@@ -3,17 +3,19 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// /app/api/filter/route.ts atau lokasi file API Anda
+
 export async function GET() {
   try {
     const [cities, categories, generalFilters] = await Promise.all([
       prisma.mst_cities.findMany({
         where: { status: 1 },
-        select: { name: true },
+        select: { id: true, name: true }, // Ambil ID juga
         orderBy: { name: "asc" },
       }),
       prisma.mst_categories.findMany({
         where: { status: 1 },
-        select: { name: true },
+        select: { id: true, name: true }, // Ambil ID juga
         orderBy: { name: "asc" },
       }),
       prisma.mst_general_filters.findMany({
@@ -37,8 +39,9 @@ export async function GET() {
     const dynamicFilters = [
       { id: "socialMedia", label: "Social Media", options: socialMediaOptions },
       { id: "tier", label: "Tier", options: tierOptions },
-      { id: "category", label: "Category", options: categories.map((c) => c.name) },
-      { id: "city", label: "City", options: cities.map((c) => c.name) },
+      // Modifikasi di sini: Kirim dalam bentuk array of object { id, name }
+      { id: "category", label: "Category", options: categories.map((c) => ({ id: c.id.toString(), name: c.name })) },
+      { id: "city", label: "City", options: cities.map((c) => ({ id: c.id.toString(), name: c.name })) },
       { id: "gender", label: "Gender", options: genderOptions },
     ];
 
