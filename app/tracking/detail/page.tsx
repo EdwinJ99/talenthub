@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   confirmDelete,
   confirmGenerateQuotation,
+  confirmStartProject,
+  showRunningContentModal,
   showSuccess,
 } from "@/lib/alert";
 
@@ -54,6 +56,7 @@ export default function DraftPage() {
   const [creators, setCreators] = useState<any[]>([]);
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [checkedCreators, setCheckedCreators] = useState<number[]>([]);
   const router = useRouter();
 
   const loadProject = async () => {
@@ -67,21 +70,34 @@ export default function DraftPage() {
 };
 
 const loadCreators = async () => {
-  const res = await fetch(`/api/tracking/detail?projectId=${projectId}`);
+  try {
+    const res = await fetch(`/api/tracking/detail?projectId=${projectId}`);
 
-  const data = await res.json();
+    if (!res.ok) {
+      // Jika respons tidak OK (misal: 500 Internal Server Error), lempar galat
+      throw new Error(`Failed to fetch creators: ${res.statusText}`);
+    }
 
-  console.log(data);
+    const data = await res.json();
 
-  setCreators(data.creators);
+    const loadedCreators = data.creators || [];
+    setCreators(loadedCreators); // Pastikan creators adalah array
 
-  setProjectDetail((prev: any) => ({
-    ...prev,
-    subtotal: data.subtotal,
-    dpp: data.dpp,
-    ppn: data.ppn,
-    grandTotal: data.grandTotal,
-  }));
+    // Set creator yang sudah punya link content sebagai "checked"
+    const alreadyChecked = loadedCreators.filter((c: any) => c.drf_link_content).map((c: any) => c.drf_id);
+    setCheckedCreators(alreadyChecked);
+
+    setProjectDetail((prev: any) => ({
+      ...prev,
+      subtotal: data.subtotal,
+      dpp: data.dpp,
+      ppn: data.ppn,
+      grandTotal: data.grandTotal,
+    }));
+  } catch (error) {
+    console.error("Error loading creators:", error);
+    setCreators([]); // Atur ke array kosong jika terjadi galat
+  }
 };
 
 
@@ -128,8 +144,95 @@ const handleGenerateQuotation = async () => {
 };
 
 const handleStartProject = async () => {
-  // nanti isi update status ke Running
-  console.log("Start Project");
+  const result = await confirmStartProject();
+
+  if (!result.isConfirmed) return;
+
+  const res = await fetch(`/api/tracking?id=${projectId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prj_status: 3, // 3 = Running
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    console.log(err);
+    return;
+  }
+
+  await loadProject();
+
+  await showSuccess(
+    "Berhasil",
+    "Project telah dimulai."
+  );
+
+  router.push(`/tracking/detail?projectId=${projectId}&view=Running`);
+};
+
+const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") => {
+  // Helper to format date string to YYYY-MM-DD, handles null/undefined
+  const formatDateForInput = (dateStr: string | null | undefined) => {
+    return dateStr ? new Date(dateStr).toISOString().split('T')[0] : "";
+  };
+
+  const result: any = await showRunningContentModal({
+    id: creator.id,
+    name: creator.name,
+    planning_upload: formatDateForInput(creator.drf_planning_upload),
+    actual_upload: formatDateForInput(creator.drf_actual_upload),
+    link_content: creator.drf_link_content ?? "",
+  }, mode);
+
+  // Jika user menutup modal atau dalam mode view, jangan lakukan apa-apa
+  if (!result || mode === 'view') return;
+
+  try {
+    const params = new URLSearchParams({ id: creator.drf_id.toString() });
+    const response = await fetch(`/api/tracking/detail?${params.toString()}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        drf_planning_upload: result.planning_upload,
+        drf_actual_upload: result.actual_upload,
+        drf_link_content: result.link_content,
+      }),
+    });
+
+    if (!response.ok) {
+      // Handle non-JSON error responses gracefully
+      const errorText = await response.text();
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData.error || "Failed to update data");
+      } catch (e) {
+        // If parsing as JSON fails, throw the raw text
+        throw new Error(errorText || `Request failed with status ${response.status}`);
+      }
+    }
+
+    const updatedCreator = await response.json();
+
+    // Update state creators dengan data baru
+    setCreators((prevData) =>
+      prevData.map((c) => (c.drf_id === updatedCreator.drf_id ? { ...c, ...updatedCreator } : c))
+    );
+
+    // Tambahkan id creator ke `checkedCreators` agar ikonnya berubah jadi mata
+    if (result.link_content) {
+      setCheckedCreators((prev) => [...new Set([...prev, creator.drf_id])]);
+    }
+
+    await showSuccess("Berhasil", "Data konten berhasil diperbarui.");
+  } catch (error) {
+    console.error("Error updating running content:", error);
+  }
 };
 
 const handleDelete = async (id: number) => {
@@ -169,11 +272,15 @@ const handleDelete = async (id: number) => {
     setSortDirection(direction);
 
     const sorted = [...creators].sort((a: any, b: any) => {
-      const aValue = a[field];
-      const bValue = b[field];
+      // Use a safe getter for potentially nested or missing properties
+      const get = (obj: any, path: string) => path.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
+      const aValue = get(a, field);
+      const bValue = get(b, field);
 
-      if (typeof aValue === "number") {
-        return direction === "asc" ? aValue - bValue : bValue - aValue;
+      if (aValue == null || bValue == null) return 0;
+
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return direction === 'asc' ? aValue - bValue : bValue - aValue;
       }
 
       return direction === "asc"
@@ -244,7 +351,12 @@ case "Quotation":
     case "Running":
       return (
         <RunningSection
+          creators={creators}
           projectDetail={projectDetail}
+          checkedCreators={checkedCreators}
+          handleSort={handleSort}
+          getSortIcon={getSortIcon}
+          handleUpdateRunningContent={handleUpdateRunningContent}
         />
       );
 

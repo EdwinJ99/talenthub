@@ -377,17 +377,25 @@ export const showAlertSuccess = (message: string) => {
 };
 
 export const showRunningContentModal = async (
-  mode: "edit" | "view" = "edit"
+  data: {
+    id: number;
+    name: string;
+    planning_upload: string;
+    actual_upload: string;
+    link_content: string;
+  },
+  mode: "edit" | "view"
 ) => {
   const isView = mode === "view";
 
-  return Swal.fire({
-    showConfirmButton: false,
-    showCloseButton: false,
-    width: 700,
-    padding: 0,
+  return new Promise((resolve) => {
+    Swal.fire({
+      showConfirmButton: false,
+      showCloseButton: false,
+      width: 700,
+      padding: 0,
 
-    html: `
+      html: `
       <div style="padding:24px">
 
         <div
@@ -426,8 +434,8 @@ export const showRunningContentModal = async (
           <label>Influencer Name</label>
 
           <input
-            value="Raymond Chin"
-            ${isView ? "readonly" : ""}
+            value="${data.name}"
+            readonly
             style="
               width:100%;
               height:50px;
@@ -436,6 +444,7 @@ export const showRunningContentModal = async (
               border-radius:8px;
               padding:0 14px;
               box-sizing:border-box;
+              background-color:#eee;
             "
           />
         </div>
@@ -452,7 +461,9 @@ export const showRunningContentModal = async (
             <label>Planning Upload</label>
 
             <input
+              id="planning_upload"
               type="date"
+              value="${data.planning_upload}"
               ${isView ? "readonly" : ""}
               style="
                 width:100%;
@@ -470,7 +481,9 @@ export const showRunningContentModal = async (
             <label>Actual Upload</label>
 
             <input
+              id="actual_upload"
               type="date"
+              value="${data.actual_upload}"
               ${isView ? "readonly" : ""}
               style="
                 width:100%;
@@ -489,7 +502,8 @@ export const showRunningContentModal = async (
           <label>Link Content</label>
 
           <input
-            value="http://content.ig.com"
+            id="link_content"
+            value="${data.link_content}"
             ${isView ? "readonly" : ""}
             style="
               width:100%;
@@ -529,25 +543,37 @@ export const showRunningContentModal = async (
       </div>
     `,
 
-    didOpen: () => {
-      document
-        .getElementById("closeRunningModal")
-        ?.addEventListener("click", () => Swal.close());
-
-      document
-        .getElementById("updateRunning")
-        ?.addEventListener("click", async () => {
-          Swal.close();
-
-          await Swal.fire({
-            icon: "success",
-            title: "Berhasil",
-            text: "Data berhasil diperbarui.",
-            timer: 1500,
-            showConfirmButton: false,
+      didOpen: () => {
+        document
+          .getElementById("closeRunningModal")
+          ?.addEventListener("click", () => {
+            Swal.close();
+            resolve(null);
           });
-        });
-    },
+
+        const updateButton = document.getElementById("updateRunning");
+        if (updateButton) {
+          updateButton.addEventListener("click", async () => {
+            const planning_upload =
+              (document.getElementById("planning_upload") as HTMLInputElement)
+                ?.value || "";
+            const actual_upload =
+              (document.getElementById("actual_upload") as HTMLInputElement)
+                ?.value || "";
+            const link_content =
+              (document.getElementById("link_content") as HTMLInputElement)
+                ?.value || "";
+
+            resolve({
+              planning_upload,
+              actual_upload,
+              link_content,
+            });
+            Swal.close();
+          });
+        }
+      },
+    });
   });
 };
 
