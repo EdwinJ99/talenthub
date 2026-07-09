@@ -336,10 +336,10 @@ export default function CreatorDiscoveryPage() {
         },
         body: JSON.stringify({
           projectName: projectName,
-          brandId: selectedBrand, // Membawa ID dari brand terpilih
+          brandId: selectedBrand,
           startDate: startDate,
           endDate: endDate,
-          selectedCreators: selectedCreatorsData, // Membawa kumpulan object data KOL terpilih
+          selectedCreators: selectedCreatorsData, 
         }),
       });
 
@@ -360,7 +360,7 @@ export default function CreatorDiscoveryPage() {
       setSelectedBrand("");
       setStartDate("");
       setEndDate("");
-      setSelectedRows([]); // Kosongkan centang tabel setelah berhasil disimpan
+      setSelectedRows([]); 
     } catch (error) {
       console.error("Connection error while submitting project:", error);
       showAlertValidationError(
@@ -381,7 +381,7 @@ export default function CreatorDiscoveryPage() {
       </div>
 
       <div className="grid grid-cols-[300px_1fr] gap-6 items-start">
-        {/* Sidebar Filter */}
+
         <div
           ref={dropdownRef}
           className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"
@@ -431,7 +431,6 @@ export default function CreatorDiscoveryPage() {
                               : opt === selectedValue
                         );
 
-                        // Jika ketemu dan tipenya object (City/Category)
                         if (
                           typeof foundOption === "object" &&
                           foundOption !== null
@@ -439,7 +438,6 @@ export default function CreatorDiscoveryPage() {
                           return foundOption.name;
                         }
 
-                        // Jika tipe string murni (Gender/Tier)
                         return selectedValue;
                       })()}
                     </span>
