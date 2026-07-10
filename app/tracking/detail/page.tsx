@@ -100,10 +100,8 @@ const loadCreators = async () => {
   }
 };
 
-
 useEffect(() => {
   if (!projectId) return;
-
   loadProject();
   loadCreators();
 }, [projectId]);
@@ -181,7 +179,7 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
   };
 
   const result: any = await showRunningContentModal({
-    id: creator.id,
+    id: creator.drf_id,
     name: creator.name,
     planning_upload: formatDateForInput(creator.drf_planning_upload),
     actual_upload: formatDateForInput(creator.drf_actual_upload),
@@ -332,6 +330,8 @@ const renderTrackingSection = () => {
           handleGenerateQuotation={handleGenerateQuotation}
           handleSort={handleSort}
           getSortIcon={getSortIcon}
+          showView={true}
+          onView={(creator) => handleUpdateRunningContent(creator, "view")}
           readOnly={isHistoricalView}
         />
       );
@@ -343,6 +343,8 @@ case "Quotation":
       projectDetail={projectDetail}
       handleSort={handleSort}
       getSortIcon={getSortIcon}
+      showView={true}
+      onView={(creator) => handleUpdateRunningContent(creator, "view")}
       handleStartProject={handleStartProject}
       readOnly={isHistoricalView}
     />

@@ -14,6 +14,8 @@ type Props = {
   showDelete?: boolean;
   onDelete?: (id: number) => void;
   onEdit?: (id: number) => void;
+  showView?: boolean;
+  onView?: (creator: any) => void;
   onCheck?: (id: number) => void;
   checkedCreators?: number[];
   handleSort: (field: string) => void;
@@ -26,6 +28,8 @@ export default function CreatorTable({
   showDelete = false,
   onDelete,
   onEdit,
+  showView = false,
+  onView,
   onCheck,
   checkedCreators = [],
 }: Props) {
@@ -136,7 +140,7 @@ export default function CreatorTable({
                   </td>
 
                   <td className="border-x px-4 py-3 text-center">
-                    {creator.sow ?? 'N/A'}
+                    {creator.sow ?? "N/A"}
                   </td>
 
                   <td className="border-x px-4 py-3 text-center">
@@ -157,12 +161,17 @@ export default function CreatorTable({
 
                   <td className="sticky right-0 border-x bg-white px-4 py-3">
                     <div className="flex justify-center gap-3">
-                      {isChecked ? (
-                        <button onClick={() => onEdit?.(creator.drf_id)}>
+                      {isChecked && onEdit ? (
+                        <button onClick={() => onEdit(creator)}>
                           <EyeIcon className="h-5 w-5 text-sky-600" />
                         </button>
                       ) : (
                         <>
+                          {showView && onView && (
+                            <Link href={`/tracking/detail/detail/${creator.drf_creatorid}`} className="cursor-pointer">
+                              <EyeIcon className="h-5 w-5 text-sky-600" />
+                            </Link>
+                          )}
                           {onEdit && (
                             <button onClick={() => onEdit(creator.drf_id)}>
                               <EditIcon className="h-5 w-5 text-blue-500" />

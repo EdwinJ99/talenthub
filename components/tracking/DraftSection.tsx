@@ -12,6 +12,8 @@ type DraftSectionProps = {
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
   readOnly?: boolean;
+  showView?: boolean;
+  onView?: (creator: any) => void;
 };
 
 export default function DraftSection({
@@ -21,6 +23,8 @@ export default function DraftSection({
   handleGenerateQuotation,
   handleSort,
   getSortIcon,
+  showView,
+  onView,
   readOnly = false,
 }: DraftSectionProps) {
   return (
@@ -45,8 +49,10 @@ export default function DraftSection({
             creators={creators}
             handleSort={handleSort}
             getSortIcon={getSortIcon}
-            showDelete={!readOnly}
+            showDelete={!readOnly} // This was correct, but the user wants delete icon. Let's ensure it works.
             onDelete={handleDelete}
+            showView={showView}
+            onView={onView}
           />
 
           <div className="mt-6 h-2 rounded-full bg-slate-300">

@@ -14,6 +14,8 @@ type Props = {
 
   handleStartProject: () => void;
   readOnly?: boolean;
+  showView?: boolean;
+  onView?: (creator: any) => void;
 };
 
 export default function QuotationSection({
@@ -22,6 +24,8 @@ export default function QuotationSection({
   handleSort,
   getSortIcon,
   handleStartProject,
+  showView,
+  onView,
   readOnly = false,
 }: Props) {
   // FUNGSI UNTUK EKSPOR KE PDF (SESUAI KODE YANG ANDA BERIKAN)
@@ -409,6 +413,8 @@ export default function QuotationSection({
   creators={creators}
   handleSort={handleSort} // Tambahkan baris ini
   getSortIcon={getSortIcon} // Tambahkan baris ini
+  showView={showView}
+  onView={onView}
 />
 
 <div className="mt-8 flex justify-end">

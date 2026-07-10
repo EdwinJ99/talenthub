@@ -83,7 +83,7 @@ export async function GET(request: Request) {
         cpvBranded: Number(item.mst_creators.cpv_branded),
 
         sowId: item.drf_sow,
-        sow: item.mst_sow.sow_nama,
+        sow: item.mst_sow?.sow_nama,
 
         qty: item.drf_qty,
         rate: Number(item.drf_rate),
