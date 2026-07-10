@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     if (isNaN(projectId)) {
       return NextResponse.json(
         {
-          error: "Project ID tidak valid",
+          error: "Invalid Project ID",
         },
         { status: 400 }
       );
@@ -101,7 +101,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(
       {
-        error: "Gagal mengambil detail project",
+        error: "Failed to fetch project details",
       },
       { status: 500 }
     );
@@ -164,7 +164,7 @@ export async function DELETE(req: Request) {
     if (isNaN(id)) {
       return NextResponse.json(
         {
-          error: "ID tidak valid",
+          error: "Invalid ID",
         },
         { status: 400 }
       );
@@ -177,14 +177,14 @@ export async function DELETE(req: Request) {
     });
 
     return NextResponse.json({
-      message: "Creator berhasil dihapus dari project",
+      message: "Creator has been successfully removed from the project",
     });
   } catch (error) {
     console.error(error);
 
     return NextResponse.json(
       {
-        error: "Gagal menghapus creator",
+        error: "Failed to delete creator",
       },
       { status: 500 }
     );

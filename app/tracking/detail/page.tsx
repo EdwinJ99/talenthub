@@ -134,8 +134,8 @@ const handleGenerateQuotation = async () => {
   await loadProject();
 
   await showSuccess(
-    "Berhasil",
-    "Quotation berhasil dibuat."
+    "Success",
+    "Quotation has been generated successfully."
   );
 
   router.push(`/tracking/detail?projectId=${projectId}&view=Quotation`);
@@ -165,8 +165,8 @@ const handleStartProject = async () => {
   await loadProject();
 
   await showSuccess(
-    "Berhasil",
-    "Project telah dimulai."
+    "Success",
+    "The project has been started."
   );
 
   router.push(`/tracking/detail?projectId=${projectId}&view=Running`);
@@ -227,7 +227,7 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
       setCheckedCreators((prev) => [...new Set([...prev, creator.drf_id])]);
     }
 
-    await showSuccess("Berhasil", "Data konten berhasil diperbarui.");
+    await showSuccess("Success", "Content data has been updated successfully.");
   } catch (error) {
     console.error("Error updating running content:", error);
   }
@@ -235,7 +235,7 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
 
 const handleDelete = async (id: number) => {
   const result = await confirmDelete(
-    "Hapus Creator?",
+    "Delete Creator?",
   );
 
   if (!result.isConfirmed) return;
@@ -254,8 +254,8 @@ const handleDelete = async (id: number) => {
     await loadCreators();
 
     await showSuccess(
-      "Berhasil",
-      "Creator berhasil dihapus dari project."
+      "Success",
+      "Creator has been successfully removed from the project."
     );
   } catch (err) {
     console.error(err);
@@ -290,7 +290,7 @@ const handleDelete = async (id: number) => {
   };
 
   const getSortIcon = (field: string) => {
-    if (sortField !== field) return "↕";
+    if (sortField !== field) return "↕"; // This is a symbol, no translation needed.
     return sortDirection === "asc" ? "▲" : "▼";
   };
 
@@ -389,7 +389,7 @@ console.log(creators);
     <DefaultLayout>
       <div className="space-y-5">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-          <h1 className="text-2xl font-bold text-slate-900">Detail Project</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Project Details</h1>
 
           <span
             className={`mt-4 inline-flex rounded-full border px-6 py-2 text-sm font-semibold ${

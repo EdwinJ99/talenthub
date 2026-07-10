@@ -29,11 +29,11 @@ export default function DraftSection({
 }: DraftSectionProps) {
   return (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-          <h2 className="text-2xl font-bold text-slate-900">List Of Creator</h2>
-          <p className="text-sm text-slate-700">Data From Creator</p>
+          <h2 className="text-2xl font-bold text-slate-900">Creator List</h2>
+          <p className="text-sm text-slate-700">Data from Creator</p>
 
           <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <p className="text-xs text-slate-500">10 data per halaman</p>
+            <p className="text-xs text-slate-500">10 entries per page</p>
 
           {!readOnly && (
             <button

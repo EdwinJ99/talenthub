@@ -90,8 +90,8 @@ export default function QuotationSection({
 
       const dateToFormat = projectDetail?.date
         ? new Date(projectDetail.date)
-        : new Date();
-      const formattedDate = dateToFormat.toLocaleDateString("id-ID", {
+        : new Date(); // Keep using new Date() as a fallback
+      const formattedDate = dateToFormat.toLocaleDateString("en-GB", {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -128,7 +128,7 @@ export default function QuotationSection({
     autoTable(doc, {
       startY: 74,
 
-      head: [["Description", "SOW", "platfom", "Cost"]],
+      head: [["Description", "SOW", "Platform", "Cost"]],
 
       body: creators.map((creator) => [
         creator.name || "N/A",
@@ -263,7 +263,7 @@ export default function QuotationSection({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
 
-    doc.text("Terms Of Payment", contentLeft - 2, termsY);
+    doc.text("Terms of Payment", contentLeft - 2, termsY);
 
     doc.text(
       "1. The Payment Will be after campaign finish",
@@ -272,21 +272,21 @@ export default function QuotationSection({
     );
 
     doc.text(
-      "2. Due Date 14 Days After Invoice is received",
+      "2. Due Date is 14 Days After Invoice is received",
       contentLeft - 2,
       termsY + 12
     );
 
-    doc.text("Terms of revision", contentLeft - 2, termsY + 23);
+    doc.text("Terms of Revision", contentLeft - 2, termsY + 23);
 
     const revisionText = doc.splitTextToSize(
-      "1. maximum revisions is 2x (two times). additional revision will be charged propotionally",
+      "1. Maximum revision is 2x (two times). Additional revisions will be charged proportionally.",
       68
     );
 
     doc.text(revisionText, contentLeft - 2, termsY + 29);
 
-    doc.text("Cancellation & Pinalty Fee :", contentLeft - 2, termsY + 45);
+    doc.text("Cancellation & Penalty Fee:", contentLeft - 2, termsY + 45);
 
     const cancellationText = doc.splitTextToSize(
       "1. Cancellation fee after approval quotation by sign or email is 50% from total project amount.",
@@ -356,7 +356,7 @@ export default function QuotationSection({
     doc.setFont("times", "bold");
     doc.setFontSize(10);
 
-    doc.text("Provide by", signatureX + col1 / 2, signatureY + 5, {
+    doc.text("Provided by", signatureX + col1 / 2, signatureY + 5, {
       align: "center",
     });
 
@@ -398,16 +398,15 @@ export default function QuotationSection({
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-      <h2 className="text-2xl font-bold text-slate-900">
-        List Of Creator
-      </h2>
-
+      <h2 className="text-2xl font-bold text-slate-900">Creator List</h2>
       <p className="text-sm text-slate-700">
-        Quotation Creator
+        Creators included in this quotation.
       </p>
 
       {/* Show Entries */}
-<p className="mt-8 text-xs text-slate-500">10 data per halaman</p>
+      <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <p className="text-xs text-slate-500">10 entries per page</p>
+      </div>
 
 <CreatorTable
   creators={creators}
