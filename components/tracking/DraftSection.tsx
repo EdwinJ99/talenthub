@@ -1,9 +1,11 @@
 import { ReactNode } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import CreatorTable from "./CreatorTable";
+import { exportToExcel } from "@/lib/excelExport";
 
 type DraftSectionProps = {
   creators: any[];
+  projectDetail: any;
 
   handleDelete: (id: number) => void;
   handleEditDraft: () => void;
@@ -18,6 +20,7 @@ type DraftSectionProps = {
 
 export default function DraftSection({
   creators,
+  projectDetail,
   handleDelete,
   handleEditDraft,
   handleGenerateQuotation,
@@ -27,6 +30,11 @@ export default function DraftSection({
   onView,
   readOnly = false,
 }: DraftSectionProps) {
+  const handleDownload = () => {
+    // Use project code for filename, fallback to a static name
+    const fileName = projectDetail?.prj_kode ?? "Project_Draft";
+    exportToExcel(creators, projectDetail, fileName);
+  };
   return (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
           <h2 className="text-2xl font-bold text-slate-900">Creator List</h2>
@@ -61,7 +69,10 @@ export default function DraftSection({
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
 
-          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto">
+          <button
+            onClick={handleDownload}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto"
+          >
             <FileDocumentIcon className="h-4 w-4" />
             Download Spreadsheet
           </button>

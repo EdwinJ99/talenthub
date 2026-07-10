@@ -325,6 +325,7 @@ const renderTrackingSection = () => {
       return (
         <DraftSection
           creators={creators}
+          projectDetail={projectDetail}
           handleDelete={handleDelete}
           handleEditDraft={handleEditDraft}
           handleGenerateQuotation={handleGenerateQuotation}
