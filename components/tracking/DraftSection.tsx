@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import CreatorTable from "./CreatorTable";
-import { exportToExcel } from "@/lib/excelExport";
+import { createExcelBlob, exportToExcel } from "@/lib/excelExport";
+import { showAlertValidationError, showSuccess } from "@/lib/alert";
 
 type DraftSectionProps = {
   creators: any[];
@@ -36,10 +37,53 @@ export default function DraftSection({
   invalidSowCreatorIds,
   readOnly = false,
 }: DraftSectionProps) {
+  const [sending, setSending] = useState(false);
+
+  const getSpreadsheetFileName = () =>
+    `${projectDetail?.code ?? projectDetail?.prj_kode ?? "Project_Draft"}.xlsx`;
+
   const handleDownload = () => {
     // Use project code for filename, fallback to a static name
     const fileName = projectDetail?.prj_kode ?? "Project_Draft";
     exportToExcel(creators, projectDetail, fileName);
+  };
+
+  const handleSendSpreadsheet = async () => {
+    if (!projectDetail?.id) {
+      await showAlertValidationError("Data project tidak ditemukan.");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const formData = new FormData();
+      formData.append(
+        "spreadsheet",
+        createExcelBlob(creators, projectDetail),
+        getSpreadsheetFileName()
+      );
+
+      const response = await fetch(
+        `/api/tracking/${projectDetail.id}/send-spreadsheet`,
+        { method: "POST", body: formData }
+      );
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "Gagal mengirim spreadsheet.");
+      }
+
+      await showSuccess(
+        "Email sent",
+        `Spreadsheet berhasil dikirim ke ${result.email}.`
+      );
+    } catch (error) {
+      await showAlertValidationError(
+        error instanceof Error ? error.message : "Gagal mengirim spreadsheet."
+      );
+    } finally {
+      setSending(false);
+    }
   };
   return (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
@@ -86,9 +130,13 @@ export default function DraftSection({
             <FileDocumentIcon className="h-4 w-4" />
             Download Spreadsheet
           </button>
-          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto">
+          <button
+            onClick={handleSendSpreadsheet}
+            disabled={sending}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+          >
             <FileDocumentIcon className="h-4 w-4" />
-            Send Spreadsheet
+            {sending ? "Sending..." : "Send Spreadsheet"}
           </button>
           {!readOnly && (
             <button

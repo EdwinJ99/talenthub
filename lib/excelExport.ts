@@ -1,9 +1,8 @@
 import * as XLSX from "xlsx-js-style";
 
-export const exportToExcel = (
+export const createExcelWorkbook = (
   creators: any[],
-  projectDetail: any,
-  fileName: string
+  projectDetail: any
 ) => {
   // 1. Define headers for the table
   const headers = [
@@ -149,8 +148,27 @@ export const exportToExcel = (
   // Add autofilter
   ws["!autofilter"] = { ref: `A5:O${data.length + 5}` };
 
-  // 9. Create workbook and download the file
+  // 9. Create workbook
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Creators");
+
+  return wb;
+};
+
+export const exportToExcel = (
+  creators: any[],
+  projectDetail: any,
+  fileName: string
+) => {
+  const wb = createExcelWorkbook(creators, projectDetail);
   XLSX.writeFile(wb, `${fileName}.xlsx`);
+};
+
+export const createExcelBlob = (creators: any[], projectDetail: any) => {
+  const wb = createExcelWorkbook(creators, projectDetail);
+  const workbookData = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+
+  return new Blob([workbookData], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
 };
