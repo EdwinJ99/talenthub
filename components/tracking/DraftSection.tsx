@@ -1,9 +1,12 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import CreatorTable from "./CreatorTable";
+import { createExcelBlob, exportToExcel } from "@/lib/excelExport";
+import { showAlertValidationError, showSuccess } from "@/lib/alert";
 
 type DraftSectionProps = {
   creators: any[];
+  projectDetail: any;
 
   handleDelete: (id: number) => void;
   handleEditDraft: () => void;
@@ -12,24 +15,83 @@ type DraftSectionProps = {
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
   readOnly?: boolean;
+  showView?: boolean;
+  onView?: (creator: any) => void;
+  sowOptions: { sow_id: number; sow_nama: string | null }[];
+  onSowChange: (creatorId: number, sowId: number | null) => void;
+  invalidSowCreatorIds?: number[];
 };
 
 export default function DraftSection({
   creators,
+  projectDetail,
   handleDelete,
   handleEditDraft,
   handleGenerateQuotation,
   handleSort,
   getSortIcon,
+  showView,
+  onView,
+  sowOptions,
+  onSowChange,
+  invalidSowCreatorIds,
   readOnly = false,
 }: DraftSectionProps) {
+  const [sending, setSending] = useState(false);
+
+  const getSpreadsheetFileName = () =>
+    `${projectDetail?.code ?? projectDetail?.prj_kode ?? "Project_Draft"}.xlsx`;
+
+  const handleDownload = () => {
+    // Use project code for filename, fallback to a static name
+    const fileName = projectDetail?.prj_kode ?? "Project_Draft";
+    exportToExcel(creators, projectDetail, fileName);
+  };
+
+  const handleSendSpreadsheet = async () => {
+    if (!projectDetail?.id) {
+      await showAlertValidationError("Data project tidak ditemukan.");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const formData = new FormData();
+      formData.append(
+        "spreadsheet",
+        createExcelBlob(creators, projectDetail),
+        getSpreadsheetFileName()
+      );
+
+      const response = await fetch(
+        `/api/tracking/${projectDetail.id}/send-spreadsheet`,
+        { method: "POST", body: formData }
+      );
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "Gagal mengirim spreadsheet.");
+      }
+
+      await showSuccess(
+        "Email sent",
+        `Spreadsheet berhasil dikirim ke ${result.email}.`
+      );
+    } catch (error) {
+      await showAlertValidationError(
+        error instanceof Error ? error.message : "Gagal mengirim spreadsheet."
+      );
+    } finally {
+      setSending(false);
+    }
+  };
   return (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-          <h2 className="text-2xl font-bold text-slate-900">List Of Creator</h2>
-          <p className="text-sm text-slate-700">Data From Creator</p>
+          <h2 className="text-2xl font-bold text-slate-900">Creator List</h2>
+          <p className="text-sm text-slate-700">Data from Creator</p>
 
           <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <p className="text-xs text-slate-500">10 data per halaman</p>
+            <p className="text-xs text-slate-500">10 entries per page</p>
 
           {!readOnly && (
             <button
@@ -45,8 +107,14 @@ export default function DraftSection({
             creators={creators}
             handleSort={handleSort}
             getSortIcon={getSortIcon}
-            showDelete={!readOnly}
+            showDelete={!readOnly} // This was correct, but the user wants delete icon. Let's ensure it works.
             onDelete={handleDelete}
+            showView={showView}
+            onView={onView}
+            sowOptions={sowOptions}
+            onSowChange={onSowChange}
+            sowReadOnly={readOnly}
+            invalidSowCreatorIds={invalidSowCreatorIds}
           />
 
           <div className="mt-6 h-2 rounded-full bg-slate-300">
@@ -55,13 +123,20 @@ export default function DraftSection({
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
 
-          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto">
+          <button
+            onClick={handleDownload}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto"
+          >
             <FileDocumentIcon className="h-4 w-4" />
             Download Spreadsheet
           </button>
-          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto">
+          <button
+            onClick={handleSendSpreadsheet}
+            disabled={sending}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
+          >
             <FileDocumentIcon className="h-4 w-4" />
-            Send Spreadsheet
+            {sending ? "Sending..." : "Send Spreadsheet"}
           </button>
           {!readOnly && (
             <button

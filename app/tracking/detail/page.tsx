@@ -7,6 +7,7 @@ import {
   confirmDelete,
   confirmGenerateQuotation,
   confirmStartProject,
+  showAlertValidationError,
   showRunningContentModal,
   showSuccess,
 } from "@/lib/alert";
@@ -54,6 +55,10 @@ export default function DraftPage() {
 ];
 
   const [creators, setCreators] = useState<any[]>([]);
+  const [sowOptions, setSowOptions] = useState<
+    { sow_id: number; sow_nama: string | null }[]
+  >([]);
+  const [invalidSowCreatorIds, setInvalidSowCreatorIds] = useState<number[]>([]);
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [checkedCreators, setCheckedCreators] = useState<number[]>([]);
@@ -100,19 +105,70 @@ const loadCreators = async () => {
   }
 };
 
+const loadSows = async () => {
+  try {
+    const res = await fetch("/api/sow", { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch SOW");
+    setSowOptions(await res.json());
+  } catch (error) {
+    console.error("Error loading SOW:", error);
+    setSowOptions([]);
+  }
+};
 
 useEffect(() => {
   if (!projectId) return;
-
   loadProject();
   loadCreators();
+  loadSows();
 }, [projectId]);
+
+const handleSowChange = async (creatorId: number, sowId: number | null) => {
+  try {
+    const res = await fetch(`/api/tracking/detail?id=${creatorId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ drf_sow: sowId }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error ?? "Failed to update SOW");
+    }
+
+    const selectedSow = sowOptions.find((sow) => sow.sow_id === sowId);
+    setCreators((current) =>
+      current.map((creator) =>
+        creator.drf_id === creatorId
+          ? { ...creator, sowId, sow: selectedSow?.sow_nama ?? null }
+          : creator
+      )
+    );
+    setInvalidSowCreatorIds((current) =>
+      current.filter((id) => id !== creatorId)
+    );
+  } catch (error) {
+    console.error("Error updating SOW:", error);
+    await loadCreators();
+  }
+};
 
   const handleEditDraft = () => {
   router.push(`/discovery?projectId=${projectId}&mode=edit`);
 };
 
 const handleGenerateQuotation = async () => {
+  const creatorsWithoutSow = creators.filter((creator) => !creator.sowId);
+
+  if (creatorsWithoutSow.length > 0) {
+    setInvalidSowCreatorIds(creatorsWithoutSow.map((creator) => creator.drf_id));
+    await showAlertValidationError(
+      "Lengkapi SOW untuk semua creator sebelum Generate Quotation."
+    );
+    return;
+  }
+
+  setInvalidSowCreatorIds([]);
   const result = await confirmGenerateQuotation();
 
   if (!result.isConfirmed) return;
@@ -129,15 +185,19 @@ const handleGenerateQuotation = async () => {
 
   if (!res.ok) {
     const err = await res.json();
-    console.log(err);
+    setInvalidSowCreatorIds(err.missingSowCreatorIds ?? []);
+    await showAlertValidationError(
+      err.error ?? "Lengkapi SOW seluruh creator sebelum generate quotation."
+    );
     return;
   }
 
   await loadProject();
+  await loadCreators();
 
   await showSuccess(
-    "Berhasil",
-    "Quotation berhasil dibuat."
+    "Success",
+    "Quotation has been generated successfully."
   );
 
   router.push(`/tracking/detail?projectId=${projectId}&view=Quotation`);
@@ -167,8 +227,8 @@ const handleStartProject = async () => {
   await loadProject();
 
   await showSuccess(
-    "Berhasil",
-    "Project telah dimulai."
+    "Success",
+    "The project has been started."
   );
 
   router.push(`/tracking/detail?projectId=${projectId}&view=Running`);
@@ -181,7 +241,7 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
   };
 
   const result: any = await showRunningContentModal({
-    id: creator.id,
+    id: creator.drf_id,
     name: creator.name,
     planning_upload: formatDateForInput(creator.drf_planning_upload),
     actual_upload: formatDateForInput(creator.drf_actual_upload),
@@ -229,7 +289,7 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
       setCheckedCreators((prev) => [...new Set([...prev, creator.drf_id])]);
     }
 
-    await showSuccess("Berhasil", "Data konten berhasil diperbarui.");
+    await showSuccess("Success", "Content data has been updated successfully.");
   } catch (error) {
     console.error("Error updating running content:", error);
   }
@@ -237,7 +297,7 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
 
 const handleDelete = async (id: number) => {
   const result = await confirmDelete(
-    "Hapus Creator?",
+    "Delete Creator?",
   );
 
   if (!result.isConfirmed) return;
@@ -256,8 +316,8 @@ const handleDelete = async (id: number) => {
     await loadCreators();
 
     await showSuccess(
-      "Berhasil",
-      "Creator berhasil dihapus dari project."
+      "Success",
+      "Creator has been successfully removed from the project."
     );
   } catch (err) {
     console.error(err);
@@ -292,7 +352,7 @@ const handleDelete = async (id: number) => {
   };
 
   const getSortIcon = (field: string) => {
-    if (sortField !== field) return "↕";
+    if (sortField !== field) return "↕"; // This is a symbol, no translation needed.
     return sortDirection === "asc" ? "▲" : "▼";
   };
 
@@ -327,11 +387,17 @@ const renderTrackingSection = () => {
       return (
         <DraftSection
           creators={creators}
+          projectDetail={projectDetail}
           handleDelete={handleDelete}
           handleEditDraft={handleEditDraft}
           handleGenerateQuotation={handleGenerateQuotation}
           handleSort={handleSort}
           getSortIcon={getSortIcon}
+          showView={true}
+          onView={(creator) => handleUpdateRunningContent(creator, "view")}
+          sowOptions={sowOptions}
+          onSowChange={handleSowChange}
+          invalidSowCreatorIds={invalidSowCreatorIds}
           readOnly={isHistoricalView}
         />
       );
@@ -343,6 +409,8 @@ case "Quotation":
       projectDetail={projectDetail}
       handleSort={handleSort}
       getSortIcon={getSortIcon}
+      showView={true}
+      onView={(creator) => handleUpdateRunningContent(creator, "view")}
       handleStartProject={handleStartProject}
       readOnly={isHistoricalView}
     />
@@ -387,7 +455,7 @@ console.log(creators);
     <DefaultLayout>
       <div className="space-y-5">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-          <h1 className="text-2xl font-bold text-slate-900">Detail Project</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Project Details</h1>
 
           <span
             className={`mt-4 inline-flex rounded-full border px-6 py-2 text-sm font-semibold ${

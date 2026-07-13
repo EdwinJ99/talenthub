@@ -8,12 +8,18 @@ import CheckIcon from "@/components/icons/CheckIcon";
 
 type Props = {
   creators: any[];
+  sowOptions?: { sow_id: number; sow_nama: string | null }[];
+  onSowChange?: (creatorId: number, sowId: number | null) => void;
+  sowReadOnly?: boolean;
+  invalidSowCreatorIds?: number[];
 
   getSortIcon: (field: string) => ReactNode;
 
   showDelete?: boolean;
   onDelete?: (id: number) => void;
   onEdit?: (id: number) => void;
+  showView?: boolean;
+  onView?: (creator: any) => void;
   onCheck?: (id: number) => void;
   checkedCreators?: number[];
   handleSort: (field: string) => void;
@@ -21,11 +27,17 @@ type Props = {
 
 export default function CreatorTable({
   creators,
+  sowOptions,
+  onSowChange,
+  sowReadOnly = false,
+  invalidSowCreatorIds = [],
   handleSort,
   getSortIcon,
   showDelete = false,
   onDelete,
   onEdit,
+  showView = false,
+  onView,
   onCheck,
   checkedCreators = [],
 }: Props) {
@@ -82,6 +94,7 @@ export default function CreatorTable({
           <tbody>
             {visibleCreators.map((creator, index) => {
               const isChecked = checkedCreators.includes(creator.drf_id);
+              const hasInvalidSow = invalidSowCreatorIds.includes(creator.drf_id);
               return (
                 <tr
                   key={creator.id}
@@ -136,7 +149,33 @@ export default function CreatorTable({
                   </td>
 
                   <td className="border-x px-4 py-3 text-center">
-                    {creator.sow ?? 'N/A'}
+                    {sowOptions ? (
+                      <select
+                        value={creator.sowId ?? ""}
+                        disabled={sowReadOnly}
+                        onChange={(event) =>
+                          onSowChange?.(
+                            creator.drf_id,
+                            event.target.value === "" ? null : Number(event.target.value)
+                          )
+                        }
+                        aria-label={`SOW untuk ${creator.name ?? "creator"}`}
+                        className={`min-w-40 rounded-md border px-2 py-1.5 text-sm outline-none disabled:cursor-not-allowed disabled:bg-slate-100 ${
+                          hasInvalidSow
+                            ? "border-red-500 bg-red-50 text-red-700 focus:border-red-500"
+                            : "border-slate-300 bg-white text-slate-700 focus:border-sky-500"
+                        }`}
+                      >
+                        <option value="">Pilih SOW</option>
+                        {sowOptions.map((sow) => (
+                          <option key={sow.sow_id} value={sow.sow_id}>
+                            {sow.sow_nama ?? `SOW #${sow.sow_id}`}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      creator.sow ?? "N/A"
+                    )}
                   </td>
 
                   <td className="border-x px-4 py-3 text-center">
@@ -157,12 +196,17 @@ export default function CreatorTable({
 
                   <td className="sticky right-0 border-x bg-white px-4 py-3">
                     <div className="flex justify-center gap-3">
-                      {isChecked ? (
-                        <button onClick={() => onEdit?.(creator.drf_id)}>
+                      {isChecked && onEdit ? (
+                        <button onClick={() => onEdit(creator)}>
                           <EyeIcon className="h-5 w-5 text-sky-600" />
                         </button>
                       ) : (
                         <>
+                          {showView && onView && (
+                            <Link href={`/tracking/detail/detail/${creator.drf_creatorid}`} className="cursor-pointer">
+                              <EyeIcon className="h-5 w-5 text-sky-600" />
+                            </Link>
+                          )}
                           {onEdit && (
                             <button onClick={() => onEdit(creator.drf_id)}>
                               <EditIcon className="h-5 w-5 text-blue-500" />

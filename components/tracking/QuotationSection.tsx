@@ -1,9 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import CreatorTable from "./CreatorTable";
+import { showAlertValidationError, showSuccess } from "@/lib/alert";
 
 type Props = {
   creators: any[];
@@ -14,6 +15,8 @@ type Props = {
 
   handleStartProject: () => void;
   readOnly?: boolean;
+  showView?: boolean;
+  onView?: (creator: any) => void;
 };
 
 export default function QuotationSection({
@@ -22,10 +25,19 @@ export default function QuotationSection({
   handleSort,
   getSortIcon,
   handleStartProject,
+  showView,
+  onView,
   readOnly = false,
 }: Props) {
+  const [sending, setSending] = useState(false);
+
+  const getQuotationFileName = () =>
+    projectDetail?.brand
+      ? `Quotation_${projectDetail.brand}.pdf`
+      : "Quotation_Preview.pdf";
+
   // FUNGSI UNTUK EKSPOR KE PDF (SESUAI KODE YANG ANDA BERIKAN)
-  const handleExportToPdf = () => {
+  const createQuotationPdf = () => {
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -86,8 +98,8 @@ export default function QuotationSection({
 
       const dateToFormat = projectDetail?.date
         ? new Date(projectDetail.date)
-        : new Date();
-      const formattedDate = dateToFormat.toLocaleDateString("id-ID", {
+        : new Date(); // Keep using new Date() as a fallback
+      const formattedDate = dateToFormat.toLocaleDateString("en-GB", {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -124,13 +136,12 @@ export default function QuotationSection({
     autoTable(doc, {
       startY: 74,
 
-      head: [["Description", "SOW", "platfom", "Cost"]],
+      head: [["Description", "SOW", "Platform", "Cost"]],
 
       body: creators.map((creator) => [
         creator.name || "N/A",
 
-        creator.sow ||
-          "1x Video Tiktok with yellowcard & 1x IG stories 15s tap link",
+        creator.sow ?? "-",
 
         creator.platform || "Instagram & Tiktok",
 
@@ -259,7 +270,7 @@ export default function QuotationSection({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7.5);
 
-    doc.text("Terms Of Payment", contentLeft - 2, termsY);
+    doc.text("Terms of Payment", contentLeft - 2, termsY);
 
     doc.text(
       "1. The Payment Will be after campaign finish",
@@ -268,21 +279,21 @@ export default function QuotationSection({
     );
 
     doc.text(
-      "2. Due Date 14 Days After Invoice is received",
+      "2. Due Date is 14 Days After Invoice is received",
       contentLeft - 2,
       termsY + 12
     );
 
-    doc.text("Terms of revision", contentLeft - 2, termsY + 23);
+    doc.text("Terms of Revision", contentLeft - 2, termsY + 23);
 
     const revisionText = doc.splitTextToSize(
-      "1. maximum revisions is 2x (two times). additional revision will be charged propotionally",
+      "1. Maximum revision is 2x (two times). Additional revisions will be charged proportionally.",
       68
     );
 
     doc.text(revisionText, contentLeft - 2, termsY + 29);
 
-    doc.text("Cancellation & Pinalty Fee :", contentLeft - 2, termsY + 45);
+    doc.text("Cancellation & Penalty Fee:", contentLeft - 2, termsY + 45);
 
     const cancellationText = doc.splitTextToSize(
       "1. Cancellation fee after approval quotation by sign or email is 50% from total project amount.",
@@ -352,7 +363,7 @@ export default function QuotationSection({
     doc.setFont("times", "bold");
     doc.setFontSize(10);
 
-    doc.text("Provide by", signatureX + col1 / 2, signatureY + 5, {
+    doc.text("Provided by", signatureX + col1 / 2, signatureY + 5, {
       align: "center",
     });
 
@@ -385,30 +396,63 @@ export default function QuotationSection({
     // =====================================================
     // 9. SAVE PDF
     // =====================================================
-    const fileName = projectDetail?.brand
-      ? `Quotation_${projectDetail.brand}.pdf`
-      : "Quotation_Preview.pdf";
+    return doc;
+  };
 
-    doc.save(fileName);
+  const handleExportToPdf = () => {
+    createQuotationPdf().save(getQuotationFileName());
+  };
+
+  const handleSendPdf = async () => {
+    if (!projectDetail?.id) {
+      await showAlertValidationError("Data project tidak ditemukan.");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const pdf = createQuotationPdf().output("blob");
+      const formData = new FormData();
+      formData.append("quotation", pdf, getQuotationFileName());
+
+      const response = await fetch(
+        `/api/tracking/${projectDetail.id}/send-quotation`,
+        { method: "POST", body: formData }
+      );
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "Gagal mengirim quotation.");
+      }
+
+      await showSuccess("Email sent", `Quotation berhasil dikirim ke ${result.email}.`);
+    } catch (error) {
+      await showAlertValidationError(
+        error instanceof Error ? error.message : "Gagal mengirim quotation."
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-      <h2 className="text-2xl font-bold text-slate-900">
-        List Of Creator
-      </h2>
-
+      <h2 className="text-2xl font-bold text-slate-900">Creator List</h2>
       <p className="text-sm text-slate-700">
-        Quotation Creator
+        Creators included in this quotation.
       </p>
 
       {/* Show Entries */}
-<p className="mt-8 text-xs text-slate-500">10 data per halaman</p>
+      <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <p className="text-xs text-slate-500">10 entries per page</p>
+      </div>
 
 <CreatorTable
   creators={creators}
   handleSort={handleSort} // Tambahkan baris ini
   getSortIcon={getSortIcon} // Tambahkan baris ini
+  showView={showView}
+  onView={onView}
 />
 
 <div className="mt-8 flex justify-end">
@@ -455,11 +499,12 @@ export default function QuotationSection({
         </button>
 
         <button
-          // onClick={handleSendPdf} // Anda bisa membuat fungsi ini nanti
-          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50"
+          onClick={handleSendPdf}
+          disabled={sending}
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FileDocumentIcon className="h-4 w-4" />
-          Send PDF
+          {sending ? "Sending..." : "Send PDF"}
         </button>
 
         {!readOnly && (

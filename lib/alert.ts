@@ -1,13 +1,13 @@
 import Swal from "sweetalert2";
 
-export const confirmDelete = async (title = "Hapus Data?") => {
+export const confirmDelete = async (title = "Delete Data?") => {
   return Swal.fire({
     title,
-    text: "Data yang dihapus tidak dapat dikembalikan.",
+    text: "You won't be able to revert this!",
     icon: "warning",
     showCancelButton: true,
-    confirmButtonText: "Ya, Hapus",
-    cancelButtonText: "Batal",
+    confirmButtonText: "Yes, Delete",
+    cancelButtonText: "Cancel",
     reverseButtons: true,
     confirmButtonColor: "#dc2626",
   });
@@ -15,7 +15,7 @@ export const confirmDelete = async (title = "Hapus Data?") => {
 
 export const showSuccess = async (
   title = "Berhasil",
-  text = "Data berhasil diproses."
+  text = "Data has been processed successfully."
 ) => {
   return Swal.fire({
     icon: "success",
@@ -29,11 +29,11 @@ export const showSuccess = async (
 export const confirmGenerateQuotation = async () => {
   return Swal.fire({
     title: "Generate Quotation?",
-    text: "Draft project akan diproses menjadi quotation.",
+    text: "The project draft will be processed into a quotation.",
     icon: "question",
     showCancelButton: true,
-    confirmButtonText: "Ya, Generate",
-    cancelButtonText: "Batal",
+    confirmButtonText: "Yes, Generate",
+    cancelButtonText: "Cancel",
     reverseButtons: true,
     confirmButtonColor: "#16a34a",
   });
@@ -42,11 +42,11 @@ export const confirmGenerateQuotation = async () => {
 export const confirmStartProject = async () => {
   return Swal.fire({
     title: "Start Project?",
-    text: "Project akan dipindahkan ke tahap Running.",
+    text: "The project will be moved to the Running stage.",
     icon: "question",
     showCancelButton: true,
-    confirmButtonText: "Ya, Start",
-    cancelButtonText: "Batal",
+    confirmButtonText: "Yes, Start",
+    cancelButtonText: "Cancel",
     reverseButtons: true,
     confirmButtonColor: "#16a34a",
   });
@@ -55,11 +55,11 @@ export const confirmStartProject = async () => {
 export const confirmGenerateReport = async () => {
   return Swal.fire({
     title: "Generate Report?",
-    text: "Campaign akan dipindahkan ke tahap Report.",
+    text: "The campaign will be moved to the Report stage.",
     icon: "question",
     showCancelButton: true,
-    confirmButtonText: "Ya, Generate",
-    cancelButtonText: "Batal",
+    confirmButtonText: "Yes, Generate",
+    cancelButtonText: "Cancel",
     reverseButtons: true,
     confirmButtonColor: "#16a34a",
   });
@@ -133,7 +133,7 @@ export const confirmGenerateInvoice = async () => {
               box-sizing:border-box;
             "
           >
-            <option value="">Pilih Bank</option>
+            <option value="">Select Bank</option>
             <option>BCA</option>
             <option>Mandiri</option>
             <option>BNI</option>
@@ -149,7 +149,7 @@ export const confirmGenerateInvoice = async () => {
               margin-top:5px;
             "
           >
-            Bank wajib dipilih
+            Bank is required
           </div>
         </div>
 
@@ -188,7 +188,7 @@ export const confirmGenerateInvoice = async () => {
               margin-top:5px;
             "
           >
-            Nomor rekening wajib diisi
+            Account number is required
           </div>
         </div>
 
@@ -227,7 +227,7 @@ export const confirmGenerateInvoice = async () => {
               margin-top:5px;
             "
           >
-            Nama rekening wajib diisi
+            Account name is required
           </div>
         </div>
 
@@ -318,8 +318,8 @@ export const confirmGenerateInvoice = async () => {
 
           Swal.fire({
             icon: "success",
-            title: "Berhasil",
-            text: "Invoice berhasil dibuat.",
+            title: "Success",
+            text: "Invoice has been created successfully.",
             timer: 1500,
             showConfirmButton: false,
           });
@@ -333,12 +333,12 @@ export const confirmFinishProject = async () => {
   return Swal.fire({
 
     title: "Finish Project?",
-    text: "Project akan ditandai selesai dan tidak dapat diubah kembali.",
+    text: "The project will be marked as finished and cannot be changed again.",
     icon: "question",
     showCancelButton: true,
-    confirmButtonText: "Ya, Finish",
+    confirmButtonText: "Yes, Finish",
 
-    cancelButtonText: "Batal",
+    cancelButtonText: "Cancel",
     reverseButtons: true,
     confirmButtonColor: "#16a34a",
   });
@@ -580,11 +580,11 @@ export const showRunningContentModal = async (
 export const confirmApproveCreator = async () => {
   return Swal.fire({
     title: "Approve Content?",
-    text: "Content creator akan ditandai selesai dan siap direview.",
+    text: "The creator's content will be marked as complete and ready for review.",
     icon: "question",
     showCancelButton: true,
-    confirmButtonText: "Ya, Approve",
-    cancelButtonText: "Batal",
+    confirmButtonText: "Yes, Approve",
+    cancelButtonText: "Cancel",
     reverseButtons: true,
     confirmButtonColor: "#16a34a",
 

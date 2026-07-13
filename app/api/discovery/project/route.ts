@@ -58,6 +58,7 @@ export async function POST(request: Request) {
           drf_rate: 0, // Default Rate awal
           drf_status: 0, // Default status draft sesuai skema (DEFAULT 0)
           creaby: usernameLogin, // Menggunakan user yang login
+
           creadate: new Date(),
         };
       });
