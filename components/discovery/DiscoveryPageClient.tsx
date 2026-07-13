@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { showAlertValidationError, showAlertSuccess } from "@/lib/alert";
 
 const SortIcon = () => <span className="text-gray-400 text-xs ml-1">⇅</span>;
 
 // Tipe data
 type Creator = {
-  
   no: number;
   name: string;
   username: string;
@@ -28,6 +28,16 @@ type Creator = {
 };
 
 export default function CreatorDiscoveryPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // --- MODE EDIT: dideteksi dari query ?projectId=xxx ---
+  const projectId = searchParams.get("projectId");
+  const isEditMode = Boolean(projectId);
+
+  // ID creator yang sudah ada di project ini (untuk disembunyikan dari list)
+  const [existingCreatorIds, setExistingCreatorIds] = useState<number[]>([]);
+
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [filters, setFilters] = useState<Record<string, string>>({});
 
@@ -37,11 +47,8 @@ export default function CreatorDiscoveryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
 
-  const [brandsOptions, setBrandsOptions] = useState<
-    { id: string; name: string }[]
-  >([]);
+const [brandsOptions, setBrandsOptions] = useState<{ id: string; name: string }[]>([]);
 
-  // PERBAIKAN 1: Set default ke true agar data langsung tampil saat halaman dibuka
   const [isFiltered, setIsFiltered] = useState(true);
 
   const [creatorsData, setCreatorsData] = useState<Creator[]>([]);
@@ -49,12 +56,11 @@ export default function CreatorDiscoveryPage() {
     {}
   );
 
-  // State dropdown filter utama
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [otherInputs, setOtherInputs] = useState<Record<string, string>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // --- STATES MODAL ADD PROJECT ---
+  // --- STATES MODAL ADD PROJECT (hanya dipakai kalau BUKAN edit mode) ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [selectedBrand, setSelectedBrand] = useState("");
@@ -62,10 +68,6 @@ export default function CreatorDiscoveryPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
-  // Simulasi penampung database trs_project
-  const [trsProject, setTrsProject] = useState<any[]>([]);
-
-  // Menutup dropdown otomatis jika klik di luar komponen
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -93,14 +95,12 @@ export default function CreatorDiscoveryPage() {
         setLoadingFilters(false);
       }
     }
-
     loadDropdownFilters();
   }, []);
 
   useEffect(() => {
     async function loadBrands() {
       try {
-        // PERBAIKAN: Arahkan ke endpoint baru yang berada di dalam folder discovery
         const res = await fetch("/api/discovery/brand");
         if (res.ok) {
           const data = await res.json();
@@ -113,11 +113,29 @@ export default function CreatorDiscoveryPage() {
     loadBrands();
   }, []);
 
-  // Jalankan fetch ulang setiap kali appliedFilters berubah (Server-side & Local Sync)
+  // --- BARU: kalau edit mode, ambil creator yang SUDAH ada di project ---
+  useEffect(() => {
+    if (!isEditMode || !projectId) return;
+
+    async function loadExistingCreators() {
+      try {
+        const res = await fetch(`/api/tracking/detail?projectId=${projectId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const ids = (data.creators || []).map((c: any) => c.creatorId);
+          setExistingCreatorIds(ids);
+        }
+      } catch (error) {
+        console.error("Error fetching existing project creators:", error);
+      }
+    }
+
+    loadExistingCreators();
+  }, [isEditMode, projectId]);
+
   useEffect(() => {
     async function fetchCreators() {
       try {
-        // Bangun query params secara dinamis dari appliedFilters
         const params = new URLSearchParams();
         Object.entries(appliedFilters).forEach(([key, val]) => {
           if (val) params.append(key, val);
@@ -133,9 +151,8 @@ export default function CreatorDiscoveryPage() {
       }
     }
     fetchCreators();
-  }, [appliedFilters]); 
+  }, [appliedFilters]);
 
-  // --- LOGIC FILTER ---
   const handleSelectOption = (id: string, value: string) => {
     setFilters((prev) => ({ ...prev, [id]: value }));
     setOpenDropdownId(null);
@@ -208,18 +225,20 @@ export default function CreatorDiscoveryPage() {
     setCurrentPage(1);
   };
 
-  // --- LOGIC CHECKBOX & PAGINATION WITH FILTER ---
   const toggleSelect = (no: number) => {
     setSelectedRows((prev) =>
       prev.includes(no) ? prev.filter((id) => id !== no) : [...prev, no]
     );
   };
 
-  // --- LOGIC CHECKBOX & PAGINATION WITH FILTER (BUG FIX VERSION) ---
   const filteredCreators = creatorsData.filter((creator) => {
+    // --- BARU: sembunyikan creator yang sudah ada di project (mode edit) ---
+    if (isEditMode && existingCreatorIds.includes(creator.no)) {
+      return false;
+    }
+
     if (!isFiltered) return true;
 
-    // 1. Filter Social Media 
     if (
       appliedFilters.social_media &&
       creator.social_media?.toLowerCase() !==
@@ -228,7 +247,6 @@ export default function CreatorDiscoveryPage() {
       return false;
     }
 
-    // 2. Filter Tier
     if (appliedFilters.tier) {
       const count = creator.followersRaw ?? 0;
       if (appliedFilters.tier.startsWith("Nano")) {
@@ -242,7 +260,6 @@ export default function CreatorDiscoveryPage() {
       }
     }
 
-    // 3. Filter Gender
     if (
       appliedFilters.gender &&
       creator.gender?.toLowerCase() !== appliedFilters.gender?.toLowerCase()
@@ -250,32 +267,25 @@ export default function CreatorDiscoveryPage() {
       return false;
     }
 
-    // 4. Filter Category 
     if (appliedFilters.category) {
       const matchId =
         creator.category_id?.toString() === appliedFilters.category;
-
-      // Jika kedua kecocokan di atas salah, maka coret data ini
       if (!matchId) return false;
     }
 
-    // 5. Filter City 
     if (appliedFilters.city) {
       const matchCityId = creator.city_id?.toString() === appliedFilters.city;
-
       if (!matchCityId) return false;
     }
 
     return true;
   });
 
-  // 2. Hitung pagination dari hasil data yang sudah di-filter di atas
   const totalEntries = filteredCreators.length;
   const totalPages = Math.ceil(totalEntries / entriesPerPage);
   const startIndex = (currentPage - 1) * entriesPerPage;
   const endIndex = Math.min(startIndex + entriesPerPage, totalEntries);
 
-  // 3. Potong data yang sudah lolos filter untuk tampilan halaman aktif
   const currentData = filteredCreators.slice(startIndex, endIndex);
 
   const toggleSelectAll = () => {
@@ -296,7 +306,7 @@ export default function CreatorDiscoveryPage() {
     }
   };
 
-  // --- LOGIC SUBMIT MODAL PROJECT ---
+  // --- LOGIC MODAL (khusus mode BUAT project baru) ---
   const handleOpenModal = () => {
     if (selectedRows.length === 0) {
       showAlertValidationError("Please Select Min 1 KOL");
@@ -317,30 +327,25 @@ export default function CreatorDiscoveryPage() {
   const handleSubmitProject = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. Validasi Input Form
     if (!projectName || !selectedBrand || !startDate || !endDate) {
       showAlertValidationError("Please fill all project details!");
       return;
     }
 
-    // 2. Ambil data object Creator secara utuh dari rows yang dicentang user
     const selectedCreatorsData = creatorsData.filter((creator) =>
       selectedRows.includes(creator.no)
     );
 
     try {
-      // 3. Kirim data ke API Route Backend
       const res = await fetch("/api/discovery/project", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           projectName: projectName,
           brandId: selectedBrand,
           startDate: startDate,
           endDate: endDate,
-          selectedCreators: selectedCreatorsData, 
+          selectedCreators: selectedCreatorsData,
         }),
       });
 
@@ -351,7 +356,6 @@ export default function CreatorDiscoveryPage() {
         return;
       }
 
-      // 4. Jika Sukses, berikan alert dan reset form state modal
       showAlertSuccess(
         `Project "${projectName}" successfully saved to database!`
       );
@@ -361,7 +365,7 @@ export default function CreatorDiscoveryPage() {
       setSelectedBrand("");
       setStartDate("");
       setEndDate("");
-      setSelectedRows([]); 
+      setSelectedRows([]);
     } catch (error) {
       console.error("Connection error while submitting project:", error);
       showAlertValidationError(
@@ -370,19 +374,58 @@ export default function CreatorDiscoveryPage() {
     }
   };
 
-  
+  // --- BARU: LOGIC UPDATE PROJECT (khusus mode EDIT, tambah creator ke project lama) ---
+  const handleUpdateProject = async () => {
+    if (selectedRows.length === 0) {
+      showAlertValidationError("Please Select Min 1 KOL");
+      return;
+    }
+
+    const selectedCreatorsData = creatorsData.filter((creator) =>
+      selectedRows.includes(creator.no)
+    );
+
+    try {
+      const res = await fetch(`/api/discovery/${projectId}/creators`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ selectedCreators: selectedCreatorsData }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        showAlertValidationError(result.error || "Failed to update project.");
+        return;
+      }
+
+      showAlertSuccess("Creator berhasil ditambahkan ke project!");
+      setSelectedRows([]);
+
+      // TODO: sesuaikan path ini dengan route halaman draft/tracking kamu
+     router.push(`/tracking/detail?projectId=${projectId}&view=Draft`);
+    } catch (error) {
+      console.error("Connection error while updating project:", error);
+      showAlertValidationError(
+        "A connection error occurred while updating the project."
+      );
+    }
+  };
+
   return (
     <section className="p-6 bg-slate-50 min-h-screen relative">
-      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Discovery</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          {isEditMode ? "Add More Creators" : "Discovery"}
+        </h1>
         <p className="text-sm text-slate-500">
-          Discover the right creators for your campaigns
+          {isEditMode
+            ? "Select additional creators to add to this project"
+            : "Discover the right creators for your campaigns"}
         </p>
       </div>
 
       <div className="grid grid-cols-[300px_1fr] gap-6 items-start">
-
         <div
           ref={dropdownRef}
           className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm"
@@ -420,11 +463,8 @@ export default function CreatorDiscoveryPage() {
                     >
                       {(() => {
                         const selectedValue = filters[filter.id];
-
-                        // Jika belum ada yang dipilih, tampilkan placeholder bawaan
                         if (!selectedValue) return `Select ${filter.label}`;
 
-                        // Cari apakah nilai yang terpilih ada di dalam daftar options
                         const foundOption = filter.options?.find(
                           (opt: string | { id: string; name: string }) =>
                             typeof opt === "object"
@@ -465,11 +505,10 @@ export default function CreatorDiscoveryPage() {
                       <div className="py-1">
                         {filter.options?.map(
                           (option: string | { id: string; name: string }) => {
-                            // Cek apakah opsi berupa object (untuk city/category) atau string biasa
                             const isObject =
                               typeof option === "object" && option !== null;
-                            const optionValue = isObject ? option.id : option; // Nilai untuk state (ID / String)
-                            const optionLabel = isObject ? option.name : option; // Teks untuk layar
+                            const optionValue = isObject ? option.id : option;
+                            const optionLabel = isObject ? option.name : option;
 
                             return (
                               <div
@@ -536,7 +575,6 @@ export default function CreatorDiscoveryPage() {
           )}
         </div>
 
-        {/* Main Content Area */}
         <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">
@@ -545,7 +583,6 @@ export default function CreatorDiscoveryPage() {
             <p className="text-gray-500">Creator Found</p>
           </div>
 
-          {/* Action Bar */}
           <div className="flex items-center gap-4 mb-6">
             {selectedRows.length > 0 && (
               <div className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg font-medium text-sm">
@@ -558,15 +595,15 @@ export default function CreatorDiscoveryPage() {
                 </button>
               </div>
             )}
+            {/* --- BARU: tombol berubah tergantung mode --- */}
             <button
-              onClick={handleOpenModal}
+              onClick={isEditMode ? handleUpdateProject : handleOpenModal}
               className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-md font-medium text-sm hover:bg-gray-800 transition-colors"
             >
-              <span>+</span> Add to Project
+              <span>+</span> {isEditMode ? "Update Project" : "Add to Project"}
             </button>
           </div>
 
-          {/* Show Entries */}
           <div className="flex items-center gap-2 text-sm mb-4">
             <span>Show</span>
             <select
@@ -586,12 +623,9 @@ export default function CreatorDiscoveryPage() {
             <span>entries</span>
           </div>
 
-            
-          {/* Table Container */}
           <div className="overflow-x-auto border border-gray-200 rounded-lg w-full max-h-[500px] overflow-y-auto">
             <table className="w-full text-sm border-collapse min-w-[1100px]">
               <thead>
-             
                 <tr className="bg-gray-100 border-b border-gray-200 text-left sticky top-0 z-10 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
                   <th className="p-3 w-12 border-r border-gray-200 text-center bg-gray-100">
                     <input
@@ -634,7 +668,6 @@ export default function CreatorDiscoveryPage() {
                     key={row.no}
                     className="border-b border-gray-200 hover:bg-gray-50 text-gray-800"
                   >
-                   
                     <td className="p-3 border-r border-gray-200 text-center">
                       <input
                         type="checkbox"
@@ -699,8 +732,9 @@ export default function CreatorDiscoveryPage() {
                       colSpan={10}
                       className="p-8 text-center text-gray-400 italic"
                     >
-                      No data available. Please select and apply filters to
-                      discover creators.
+                      {isEditMode
+                        ? "Semua creator yang tersedia sudah ada di project ini, atau coba ubah filter."
+                        : "No data available. Please select and apply filters to discover creators."}
                     </td>
                   </tr>
                 )}
@@ -708,7 +742,6 @@ export default function CreatorDiscoveryPage() {
             </table>
           </div>
 
-          {/* Pagination Controls */}
           <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
             <span>
               Showing {totalEntries > 0 ? startIndex + 1 : 0} to {endIndex} of{" "}
@@ -728,28 +761,24 @@ export default function CreatorDiscoveryPage() {
 
                 {(() => {
                   const pageNumbers = [];
-                  const siblings = 1; // Jumlah angka di kiri & kanan halaman aktif
+                  const siblings = 1;
 
                   if (totalPages <= 7) {
-                    // Jika total halaman sedikit, tampilkan semua tanpa ellipsis
                     for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
                   } else {
                     const showLeftDots = currentPage > 3;
                     const showRightDots = currentPage < totalPages - 2;
 
                     if (!showLeftDots && showRightDots) {
-                      // Dekat dengan halaman awal (1, 2, 3, 4, 5, ..., 18)
                       for (let i = 1; i <= 5; i++) pageNumbers.push(i);
                       pageNumbers.push("...");
                       pageNumbers.push(totalPages);
                     } else if (showLeftDots && !showRightDots) {
-                      // Dekat dengan halaman akhir (1, ..., 14, 15, 16, 17, 18)
                       pageNumbers.push(1);
                       pageNumbers.push("...");
                       for (let i = totalPages - 4; i <= totalPages; i++)
                         pageNumbers.push(i);
                     } else if (showLeftDots && showRightDots) {
-                      // Berada di tengah-tengah (1, ..., 7, 8, 9, ..., 18)
                       pageNumbers.push(1);
                       pageNumbers.push("...");
                       for (
@@ -780,7 +809,6 @@ export default function CreatorDiscoveryPage() {
                       <button
                         key={`page-${page}`}
                         type="button"
-                        // PERBAIKAN: Berikan proteksi atau sertakan pengecekan tipe data
                         onClick={() =>
                           typeof page === "number" && setCurrentPage(page)
                         }
@@ -812,11 +840,10 @@ export default function CreatorDiscoveryPage() {
         </div>
       </div>
 
-      {/* --- POPUP COMPONENT: CREATE NEW PROJECT --- */}
-      {isModalOpen && (
+      {/* --- MODAL CREATE NEW PROJECT: hanya tampil kalau BUKAN edit mode --- */}
+      {!isEditMode && isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
-            {/* Header Modal */}
             <div className="bg-[#E9B35A] px-5 py-3.5 flex items-center justify-between text-white">
               <h3 className="font-semibold text-base tracking-wide text-center flex-1 ml-6">
                 Create New Project
@@ -830,7 +857,6 @@ export default function CreatorDiscoveryPage() {
               </button>
             </div>
 
-            {/* Form Body */}
             <form onSubmit={handleSubmitProject} className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -863,7 +889,6 @@ export default function CreatorDiscoveryPage() {
                       selectedBrand ? "text-slate-900" : "text-slate-400"
                     }
                   >
-                    {/* PERBAIKAN: Menampilkan nama brand yang terpilih berdasarkan ID-nya */}
                     {brandsOptions.find((b) => b.id === selectedBrand)?.name ||
                       "Choose Brand"}
                   </span>
@@ -886,13 +911,12 @@ export default function CreatorDiscoveryPage() {
 
                 {isBrandDropdownOpen && (
                   <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-40 overflow-y-auto">
-                    {/* PERBAIKAN 1 & 2: Menggunakan brandsOptions dan memberikan tipe data pada parameter brand */}
                     {brandsOptions.map(
                       (brand: { id: string; name: string }) => (
                         <div
                           key={brand.id}
                           onClick={() => {
-                            setSelectedBrand(brand.id); // Menyimpan ID brand ke state
+                            setSelectedBrand(brand.id);
                             setIsBrandDropdownOpen(false);
                           }}
                           className={`px-3 py-2 text-sm cursor-pointer transition-colors ${
