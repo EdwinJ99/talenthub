@@ -7,6 +7,7 @@ const SortIcon = () => <span className="text-gray-400 text-xs ml-1">⇅</span>;
 
 // Tipe data
 type Creator = {
+  
   no: number;
   name: string;
   username: string;
