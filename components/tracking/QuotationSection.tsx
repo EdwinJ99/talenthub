@@ -1,9 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 import CreatorTable from "./CreatorTable";
+import { showAlertValidationError, showSuccess } from "@/lib/alert";
 
 type Props = {
   creators: any[];
@@ -28,8 +29,15 @@ export default function QuotationSection({
   onView,
   readOnly = false,
 }: Props) {
+  const [sending, setSending] = useState(false);
+
+  const getQuotationFileName = () =>
+    projectDetail?.brand
+      ? `Quotation_${projectDetail.brand}.pdf`
+      : "Quotation_Preview.pdf";
+
   // FUNGSI UNTUK EKSPOR KE PDF (SESUAI KODE YANG ANDA BERIKAN)
-  const handleExportToPdf = () => {
+  const createQuotationPdf = () => {
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -388,11 +396,43 @@ export default function QuotationSection({
     // =====================================================
     // 9. SAVE PDF
     // =====================================================
-    const fileName = projectDetail?.brand
-      ? `Quotation_${projectDetail.brand}.pdf`
-      : "Quotation_Preview.pdf";
+    return doc;
+  };
 
-    doc.save(fileName);
+  const handleExportToPdf = () => {
+    createQuotationPdf().save(getQuotationFileName());
+  };
+
+  const handleSendPdf = async () => {
+    if (!projectDetail?.id) {
+      await showAlertValidationError("Data project tidak ditemukan.");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const pdf = createQuotationPdf().output("blob");
+      const formData = new FormData();
+      formData.append("quotation", pdf, getQuotationFileName());
+
+      const response = await fetch(
+        `/api/tracking/${projectDetail.id}/send-quotation`,
+        { method: "POST", body: formData }
+      );
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "Gagal mengirim quotation.");
+      }
+
+      await showSuccess("Email sent", `Quotation berhasil dikirim ke ${result.email}.`);
+    } catch (error) {
+      await showAlertValidationError(
+        error instanceof Error ? error.message : "Gagal mengirim quotation."
+      );
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -459,11 +499,12 @@ export default function QuotationSection({
         </button>
 
         <button
-          // onClick={handleSendPdf} // Anda bisa membuat fungsi ini nanti
-          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50"
+          onClick={handleSendPdf}
+          disabled={sending}
+          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <FileDocumentIcon className="h-4 w-4" />
-          Send PDF
+          {sending ? "Sending..." : "Send PDF"}
         </button>
 
         {!readOnly && (
