@@ -133,8 +133,7 @@ export default function QuotationSection({
       body: creators.map((creator) => [
         creator.name || "N/A",
 
-        creator.sow ||
-          "1x Video Tiktok with yellowcard & 1x IG stories 15s tap link",
+        creator.sow ?? "-",
 
         creator.platform || "Instagram & Tiktok",
 

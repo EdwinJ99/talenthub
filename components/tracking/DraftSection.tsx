@@ -16,6 +16,9 @@ type DraftSectionProps = {
   readOnly?: boolean;
   showView?: boolean;
   onView?: (creator: any) => void;
+  sowOptions: { sow_id: number; sow_nama: string | null }[];
+  onSowChange: (creatorId: number, sowId: number | null) => void;
+  invalidSowCreatorIds?: number[];
 };
 
 export default function DraftSection({
@@ -28,6 +31,9 @@ export default function DraftSection({
   getSortIcon,
   showView,
   onView,
+  sowOptions,
+  onSowChange,
+  invalidSowCreatorIds,
   readOnly = false,
 }: DraftSectionProps) {
   const handleDownload = () => {
@@ -61,6 +67,10 @@ export default function DraftSection({
             onDelete={handleDelete}
             showView={showView}
             onView={onView}
+            sowOptions={sowOptions}
+            onSowChange={onSowChange}
+            sowReadOnly={readOnly}
+            invalidSowCreatorIds={invalidSowCreatorIds}
           />
 
           <div className="mt-6 h-2 rounded-full bg-slate-300">

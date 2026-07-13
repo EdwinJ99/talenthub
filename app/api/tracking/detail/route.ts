@@ -108,7 +108,7 @@ export async function GET(request: Request) {
   }
 }
 
-// ================= PATCH for Running Content =================
+// ================= PATCH for detail project =================
 export async function PATCH(req: Request) {
   const session = await authorize();
 
@@ -126,19 +126,59 @@ export async function PATCH(req: Request) {
 
     const body = await req.json();
 
+    if (body.drf_sow !== undefined && body.drf_sow !== null) {
+      const sowId = Number(body.drf_sow);
+
+      if (!Number.isInteger(sowId)) {
+        return NextResponse.json({ error: "SOW tidak valid" }, { status: 400 });
+      }
+
+      const sow = await prisma.mst_sow.findUnique({
+        where: { sow_id: sowId },
+      });
+
+      if (!sow) {
+        return NextResponse.json({ error: "SOW tidak ditemukan" }, { status: 404 });
+      }
+    }
+
+    const dataToUpdate: {
+      drf_sow?: number | null;
+      drf_planning_upload?: Date | null;
+      drf_actual_upload?: Date | null;
+      drf_link_content?: string | null;
+      modiby: string;
+      modidate: Date;
+    } = {
+      modiby: session.user.name ?? "admin",
+      modidate: new Date(),
+    };
+
+    if (body.drf_sow !== undefined) {
+      dataToUpdate.drf_sow = body.drf_sow === null || body.drf_sow === ""
+        ? null
+        : Number(body.drf_sow);
+    }
+
+    if (body.drf_planning_upload !== undefined) {
+      dataToUpdate.drf_planning_upload = body.drf_planning_upload
+        ? new Date(body.drf_planning_upload)
+        : null;
+    }
+
+    if (body.drf_actual_upload !== undefined) {
+      dataToUpdate.drf_actual_upload = body.drf_actual_upload
+        ? new Date(body.drf_actual_upload)
+        : null;
+    }
+
+    if (body.drf_link_content !== undefined) {
+      dataToUpdate.drf_link_content = body.drf_link_content;
+    }
+
     const updatedCreator = await prisma.dtl_project.update({
       where: { drf_id: id },
-      data: {
-        drf_planning_upload: body.drf_planning_upload
-          ? new Date(body.drf_planning_upload)
-          : null,
-        drf_actual_upload: body.drf_actual_upload
-          ? new Date(body.drf_actual_upload)
-          : null,
-        drf_link_content: body.drf_link_content,
-        modiby: session.user.name ?? "admin",
-        modidate: new Date(),
-      },
+      data: dataToUpdate,
     });
 
     return NextResponse.json(updatedCreator);

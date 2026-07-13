@@ -39,7 +39,8 @@ export async function POST(request: Request) {
         return {
           drf_projectid: newProject.prj_id, // Mengambil ID dari project yang baru saja ter-insert otomatis di atas
           drf_creatorid: creator.creatorId || creator.id || 1, // Pastikan dapat ID dari front-end
-          drf_sow: 1, // Sesuai master mst_sow kamu (misal: 1)
+          // SOW dipilih pada tahap Draft, setelah project dan creator dibuat.
+          drf_sow: null,
           drf_qty: 1, // Default qty, sesuaikan jika ada input qty dari UI
           drf_rate: 0, // Default rate/harga, sesuaikan jika ada input budget dari UI
           creaby: "SYSTEM",

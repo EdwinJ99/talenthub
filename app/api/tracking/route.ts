@@ -284,6 +284,26 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
 
+    if (Number(body.prj_status) === 2) {
+      const detailsWithoutSow = await prisma.dtl_project.findMany({
+        where: {
+          drf_projectid: id,
+          drf_sow: null,
+        },
+        select: { drf_id: true },
+      });
+
+      if (detailsWithoutSow.length > 0) {
+        return NextResponse.json(
+          {
+            error: "Lengkapi SOW seluruh creator sebelum generate quotation",
+            missingSowCreatorIds: detailsWithoutSow.map((detail) => detail.drf_id),
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     const updateData: any = {
       modiby: session.user.name ?? "admin",
       modidate: new Date(),

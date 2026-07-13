@@ -7,6 +7,7 @@ import {
   confirmDelete,
   confirmGenerateQuotation,
   confirmStartProject,
+  showAlertValidationError,
   showRunningContentModal,
   showSuccess,
 } from "@/lib/alert";
@@ -54,6 +55,10 @@ export default function DraftPage() {
 ];
 
   const [creators, setCreators] = useState<any[]>([]);
+  const [sowOptions, setSowOptions] = useState<
+    { sow_id: number; sow_nama: string | null }[]
+  >([]);
+  const [invalidSowCreatorIds, setInvalidSowCreatorIds] = useState<number[]>([]);
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [checkedCreators, setCheckedCreators] = useState<number[]>([]);
@@ -100,17 +105,70 @@ const loadCreators = async () => {
   }
 };
 
+const loadSows = async () => {
+  try {
+    const res = await fetch("/api/sow", { cache: "no-store" });
+    if (!res.ok) throw new Error("Failed to fetch SOW");
+    setSowOptions(await res.json());
+  } catch (error) {
+    console.error("Error loading SOW:", error);
+    setSowOptions([]);
+  }
+};
+
 useEffect(() => {
   if (!projectId) return;
   loadProject();
   loadCreators();
+  loadSows();
 }, [projectId]);
+
+const handleSowChange = async (creatorId: number, sowId: number | null) => {
+  try {
+    const res = await fetch(`/api/tracking/detail?id=${creatorId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ drf_sow: sowId }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data.error ?? "Failed to update SOW");
+    }
+
+    const selectedSow = sowOptions.find((sow) => sow.sow_id === sowId);
+    setCreators((current) =>
+      current.map((creator) =>
+        creator.drf_id === creatorId
+          ? { ...creator, sowId, sow: selectedSow?.sow_nama ?? null }
+          : creator
+      )
+    );
+    setInvalidSowCreatorIds((current) =>
+      current.filter((id) => id !== creatorId)
+    );
+  } catch (error) {
+    console.error("Error updating SOW:", error);
+    await loadCreators();
+  }
+};
 
   const handleEditDraft = () => {
   router.push(`/discovery?projectId=${projectId}&mode=edit`);
 };
 
 const handleGenerateQuotation = async () => {
+  const creatorsWithoutSow = creators.filter((creator) => !creator.sowId);
+
+  if (creatorsWithoutSow.length > 0) {
+    setInvalidSowCreatorIds(creatorsWithoutSow.map((creator) => creator.drf_id));
+    await showAlertValidationError(
+      "Lengkapi SOW untuk semua creator sebelum Generate Quotation."
+    );
+    return;
+  }
+
+  setInvalidSowCreatorIds([]);
   const result = await confirmGenerateQuotation();
 
   if (!result.isConfirmed) return;
@@ -127,11 +185,15 @@ const handleGenerateQuotation = async () => {
 
   if (!res.ok) {
     const err = await res.json();
-    console.log(err);
+    setInvalidSowCreatorIds(err.missingSowCreatorIds ?? []);
+    await showAlertValidationError(
+      err.error ?? "Lengkapi SOW seluruh creator sebelum generate quotation."
+    );
     return;
   }
 
   await loadProject();
+  await loadCreators();
 
   await showSuccess(
     "Success",
@@ -333,6 +395,9 @@ const renderTrackingSection = () => {
           getSortIcon={getSortIcon}
           showView={true}
           onView={(creator) => handleUpdateRunningContent(creator, "view")}
+          sowOptions={sowOptions}
+          onSowChange={handleSowChange}
+          invalidSowCreatorIds={invalidSowCreatorIds}
           readOnly={isHistoricalView}
         />
       );
