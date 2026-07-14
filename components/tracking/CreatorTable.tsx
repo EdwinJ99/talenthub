@@ -12,6 +12,13 @@ type Props = {
   onSowChange?: (creatorId: number, sowId: number | null) => void;
   sowReadOnly?: boolean;
   invalidSowCreatorIds?: number[];
+  reportMode?: boolean;
+  runningMode?: boolean;
+  invalidRunningFields?: Record<number, {
+    planningUpload: boolean;
+    actualUpload: boolean;
+    linkContent: boolean;
+  }>;
 
   getSortIcon: (field: string) => ReactNode;
 
@@ -31,6 +38,9 @@ export default function CreatorTable({
   onSowChange,
   sowReadOnly = false,
   invalidSowCreatorIds = [],
+  reportMode = false,
+  runningMode = false,
+  invalidRunningFields = {},
   handleSort,
   getSortIcon,
   showDelete = false,
@@ -47,31 +57,48 @@ export default function CreatorTable({
   const safeCurrentPage = Math.min(currentPage, totalPages);
   const startIndex = (safeCurrentPage - 1) * pageSize;
   const visibleCreators = creators.slice(startIndex, startIndex + pageSize);
+  const headers = reportMode
+    ? [
+        { label: "No.", field: "no" },
+        { label: "Photo", field: "photo" },
+        { label: "Influencer Name", field: "name" },
+        { label: "Username", field: "username" },
+        { label: "URL Content", field: "drf_link_content" },
+        { label: "SOW", field: "sow" },
+      ]
+    : [
+        { label: "No.", field: "no" },
+        { label: "Photo", field: "photo" },
+        { label: "Influencer Name", field: "name" },
+        { label: "Username", field: "username" },
+        { label: "Followers", field: "followers" },
+        { label: "Post", field: "post" },
+        { label: "ER (%)", field: "engagementRate" },
+        { label: "Avr View", field: "averageView" },
+        { label: "Avr Brand", field: "averageViewBrand" },
+        { label: "CPV All", field: "cpvAll" },
+        { label: "CPV Branded", field: "cpvBranded" },
+        { label: "SOW", field: "sow" },
+        { label: "Platform", field: "platform" },
+        { label: "Qty", field: "qty" },
+        { label: "Rate", field: "rate" },
+        { label: "Total", field: "total" },
+        ...(runningMode
+          ? [
+              { label: "Planning Upload", field: "drf_planning_upload" },
+              { label: "Actual Upload", field: "drf_actual_upload" },
+              { label: "Link Content", field: "drf_link_content" },
+            ]
+          : []),
+      ];
 
   return (
     <div className="mt-6">
       <div className="w-full overflow-x-auto rounded-xl border border-slate-200 scrollbar-thin">
-        <table className="min-w-[1400px] w-full border-collapse text-sm whitespace-nowrap">
+        <table className={`${reportMode ? "min-w-[1000px]" : "min-w-[1400px]"} w-full border-collapse text-sm whitespace-nowrap`}>
           <thead>
             <tr className="border-y border-slate-300 bg-gray-100 text-left">
-              {[
-                { label: "No.", field: "no" },
-                { label: "Photo", field: "photo" },
-                { label: "Influencer Name", field: "name" },
-                { label: "Username", field: "username" },
-                { label: "Followers", field: "followers" },
-                { label: "Post", field: "post" },
-                { label: "ER (%)", field: "engagementRate" },
-                { label: "Avr View", field: "averageView" },
-                { label: "Avr Brand", field: "averageViewBrand" },
-                { label: "CPV All", field: "cpvAll" },
-                { label: "CPV Branded", field: "cpvBranded" },
-                { label: "SOW", field: "sow" },
-                { label: "Platform", field: "platform" },
-                { label: "Qty", field: "qty" },
-                { label: "Rate", field: "rate" },
-                { label: "Total", field: "total" },
-              ].map((head) => (
+              {headers.map((head) => (
                 <th
                   key={head.field}
                   onClick={() => handleSort(head.field)}
@@ -95,6 +122,34 @@ export default function CreatorTable({
             {visibleCreators.map((creator, index) => {
               const isChecked = checkedCreators.includes(creator.drf_id);
               const hasInvalidSow = invalidSowCreatorIds.includes(creator.drf_id);
+              const invalidRunning = invalidRunningFields[creator.drf_id];
+
+              if (reportMode) {
+                return (
+                  <tr key={creator.id} className="border-b border-slate-200 bg-white">
+                    <td className="border-x px-4 py-3 text-center">{startIndex + index + 1}</td>
+                    <td className="border-x px-4 py-3 text-center">
+                      <img src={creator.photo || "/images/avatar.png"} alt={creator.name || "Creator"} className="mx-auto h-11 w-11 rounded-full object-cover" />
+                    </td>
+                    <td className="border-x px-4 py-3">{creator.name}</td>
+                    <td className="border-x px-4 py-3">{creator.username}</td>
+                    <td className="border-x px-4 py-3 text-center">
+                      {creator.drf_link_content ? (
+                        <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">View content</a>
+                      ) : "-"}
+                    </td>
+                    <td className="border-x px-4 py-3">{creator.sow ?? "-"}</td>
+                    <td className="sticky right-0 border-x bg-white px-4 py-3 text-center">
+                      {showView ? (
+                        <Link href={`/tracking/detail/detail/${creator.drf_creatorid}`} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                          <EyeIcon className="h-4 w-4 text-sky-600" /> View
+                        </Link>
+                      ) : "-"}
+                    </td>
+                  </tr>
+                );
+              }
+
               return (
                 <tr
                   key={creator.id}
@@ -193,6 +248,26 @@ export default function CreatorTable({
                   <td className="border-x px-4 py-3 text-center">
                     {creator.total?.toLocaleString()}
                   </td>
+
+                  {runningMode && (
+                    <>
+                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.planningUpload ? "bg-red-50 text-red-700" : ""}`}>
+                        {creator.drf_planning_upload
+                          ? new Date(creator.drf_planning_upload).toLocaleDateString("id-ID")
+                          : "Belum diisi"}
+                      </td>
+                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.actualUpload ? "bg-red-50 text-red-700" : ""}`}>
+                        {creator.drf_actual_upload
+                          ? new Date(creator.drf_actual_upload).toLocaleDateString("id-ID")
+                          : "Belum diisi"}
+                      </td>
+                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.linkContent ? "bg-red-50 text-red-700" : ""}`}>
+                        {creator.drf_link_content ? (
+                          <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">View content</a>
+                        ) : "Belum diisi"}
+                      </td>
+                    </>
+                  )}
 
                   <td className="sticky right-0 border-x bg-white px-4 py-3">
                     <div className="flex justify-center gap-3">

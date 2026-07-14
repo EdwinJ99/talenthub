@@ -122,6 +122,7 @@ if (id) {
 
     runningStartDate: project.prj_rstartdate,
     runningEndDate: project.prj_renddate,
+    reportStartDate: project.prj_renddate,
 
     invoiceStartDate: project.prj_istartdate,
     invoiceEndDate: project.prj_ienddate,
@@ -284,6 +285,46 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
 
+    if (Number(body.prj_status) === 4) {
+      const runningDetails = await prisma.dtl_project.findMany({
+        where: { drf_projectid: id },
+        select: {
+          drf_id: true,
+          drf_planning_upload: true,
+          drf_actual_upload: true,
+          drf_link_content: true,
+        },
+      });
+
+      const missingRunningFields = runningDetails.reduce<Record<number, {
+        planningUpload: boolean;
+        actualUpload: boolean;
+        linkContent: boolean;
+      }>>((result, detail) => {
+        const fields = {
+          planningUpload: !detail.drf_planning_upload,
+          actualUpload: !detail.drf_actual_upload,
+          linkContent: !detail.drf_link_content?.trim(),
+        };
+
+        if (fields.planningUpload || fields.actualUpload || fields.linkContent) {
+          result[detail.drf_id] = fields;
+        }
+
+        return result;
+      }, {});
+
+      if (Object.keys(missingRunningFields).length > 0) {
+        return NextResponse.json(
+          {
+            error: "Lengkapi data Running seluruh creator sebelum generate report",
+            missingRunningFields,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     if (Number(body.prj_status) === 2) {
       const detailsWithoutSow = await prisma.dtl_project.findMany({
         where: {
@@ -361,7 +402,7 @@ export async function PUT(request: Request) {
           break;
 
         case 4:
-          updateData.prj_reportstartdate = new Date();
+          updateData.prj_renddate = new Date();
           break;
 
         case 5:

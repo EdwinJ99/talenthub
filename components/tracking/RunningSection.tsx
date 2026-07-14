@@ -9,6 +9,13 @@ type Props = {
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
   handleUpdateRunningContent: (creator: any, mode: "edit" | "view") => void;
+  handleGenerateReport: () => void;
+  readOnly?: boolean;
+  invalidRunningFields?: Record<number, {
+    planningUpload: boolean;
+    actualUpload: boolean;
+    linkContent: boolean;
+  }>;
 };
 
 export default function RunningSection({
@@ -18,15 +25,13 @@ export default function RunningSection({
   handleSort,
   getSortIcon,
   handleUpdateRunningContent,
+  handleGenerateReport,
+  readOnly = false,
+  invalidRunningFields,
 }: Props) {
   const handleExportToPdf = () => {
     console.log("Export to PDF clicked");
     // TODO: Implement PDF export logic here
-  };
-
-  const handleGenerateReport = () => {
-    console.log("Generate Report clicked");
-    // TODO: Implement generate report logic here
   };
 
   return (
@@ -42,11 +47,13 @@ export default function RunningSection({
         creators={creators}
         handleSort={handleSort}
         getSortIcon={getSortIcon}
-        onEdit={(creatorId) => {
+        onEdit={readOnly ? undefined : (creatorId) => {
           const creatorToUpdate = creators.find(c => c.drf_id === creatorId);
           if (creatorToUpdate) handleUpdateRunningContent(creatorToUpdate, 'edit');
         }}
         checkedCreators={checkedCreators}
+        runningMode
+        invalidRunningFields={invalidRunningFields}
       />
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
@@ -58,13 +65,15 @@ export default function RunningSection({
           Download PDF
         </button>
 
-        <button
-          onClick={handleGenerateReport}
-          className="flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
-        >
-          <FileDocumentIcon className="h-4 w-4" />
-          Generate Report
-        </button>
+        {!readOnly && (
+          <button
+            onClick={handleGenerateReport}
+            className="flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
+          >
+            <FileDocumentIcon className="h-4 w-4" />
+            Generate Report
+          </button>
+        )}
       </div>
     </section>
   );

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   confirmDelete,
   confirmGenerateQuotation,
+  confirmGenerateReport,
   confirmStartProject,
   showAlertValidationError,
   showRunningContentModal,
@@ -59,6 +60,11 @@ export default function DraftPage() {
     { sow_id: number; sow_nama: string | null }[]
   >([]);
   const [invalidSowCreatorIds, setInvalidSowCreatorIds] = useState<number[]>([]);
+  const [invalidRunningFields, setInvalidRunningFields] = useState<Record<number, {
+    planningUpload: boolean;
+    actualUpload: boolean;
+    linkContent: boolean;
+  }>>({});
   const [sortField, setSortField] = useState<string>("");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [checkedCreators, setCheckedCreators] = useState<number[]>([]);
@@ -234,6 +240,60 @@ const handleStartProject = async () => {
   router.push(`/tracking/detail?projectId=${projectId}&view=Running`);
 };
 
+const handleGenerateReport = async () => {
+  const missingFields = creators.reduce<Record<number, {
+    planningUpload: boolean;
+    actualUpload: boolean;
+    linkContent: boolean;
+  }>>((result, creator) => {
+    const fields = {
+      planningUpload: !creator.drf_planning_upload,
+      actualUpload: !creator.drf_actual_upload,
+      linkContent: !creator.drf_link_content?.trim(),
+    };
+
+    if (fields.planningUpload || fields.actualUpload || fields.linkContent) {
+      result[creator.drf_id] = fields;
+    }
+
+    return result;
+  }, {});
+
+  if (Object.keys(missingFields).length > 0) {
+    setInvalidRunningFields(missingFields);
+    await showAlertValidationError(
+      "Lengkapi Planning Upload, Actual Upload, dan Link Content seluruh creator sebelum Generate Report."
+    );
+    return;
+  }
+
+  setInvalidRunningFields({});
+  const result = await confirmGenerateReport();
+  if (!result.isConfirmed) return;
+
+  const res = await fetch(`/api/tracking?id=${projectId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prj_status: 4 }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json();
+    if (err.missingRunningFields) {
+      setInvalidRunningFields(err.missingRunningFields);
+    }
+    await showAlertValidationError(
+      err.error ?? "Lengkapi data Running seluruh creator sebelum Generate Report."
+    );
+    console.error(err);
+    return;
+  }
+
+  await loadProject();
+  await showSuccess("Success", "Report has been generated successfully.");
+  router.push(`/tracking/detail?projectId=${projectId}&view=Report`);
+};
+
 const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") => {
   // Helper to format date string to YYYY-MM-DD, handles null/undefined
   const formatDateForInput = (dateStr: string | null | undefined) => {
@@ -283,6 +343,21 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
     setCreators((prevData) =>
       prevData.map((c) => (c.drf_id === updatedCreator.drf_id ? { ...c, ...updatedCreator } : c))
     );
+    setInvalidRunningFields((current) => {
+      const fields = {
+        planningUpload: !result.planning_upload,
+        actualUpload: !result.actual_upload,
+        linkContent: !result.link_content?.trim(),
+      };
+
+      if (!fields.planningUpload && !fields.actualUpload && !fields.linkContent) {
+        const remaining = { ...current };
+        delete remaining[creator.drf_id];
+        return remaining;
+      }
+
+      return { ...current, [creator.drf_id]: fields };
+    });
 
     // Tambahkan id creator ke `checkedCreators` agar ikonnya berubah jadi mata
     if (result.link_content) {
@@ -425,6 +500,9 @@ case "Quotation":
           handleSort={handleSort}
           getSortIcon={getSortIcon}
           handleUpdateRunningContent={handleUpdateRunningContent}
+          handleGenerateReport={handleGenerateReport}
+          readOnly={isHistoricalView}
+          invalidRunningFields={invalidRunningFields}
         />
       );
 
@@ -432,6 +510,9 @@ case "Quotation":
       return (
         <ReportSection
           projectDetail={projectDetail}
+          creators={creators}
+          handleSort={handleSort}
+          getSortIcon={getSortIcon}
         />
       );
 
