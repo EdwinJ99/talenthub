@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { getSession } from "@/lib/session";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/auth";
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const session = await getSession();
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -18,12 +19,7 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const {
-      planning_upload,
-      actual_upload,
-      link_content,
-      status,
-    } = body;
+    const { planning_upload, actual_upload, link_content, status } = body;
 
     const dataToUpdate: {
       drf_planning_upload?: Date;
@@ -33,7 +29,7 @@ export async function PATCH(
       modiby?: string;
       modidate?: Date;
     } = {
-      modiby: session.user.email,
+      modiby: session.user?.email ?? "SYSTEM",
       modidate: new Date(),
     };
 

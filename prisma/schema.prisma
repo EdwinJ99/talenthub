@@ -92,6 +92,7 @@ model mst_sow {
   modidate    DateTime?     @default(now()) @db.Timestamp(6)
   dtl_project dtl_project[]
 }
+
 model dtl_project {
   drf_id              Int          @id @default(autoincrement())
   drf_projectid       Int
@@ -108,9 +109,10 @@ model dtl_project {
   modidate            DateTime?    @default(now()) @db.Timestamp(6)
   drf_creatorid       Int
   mst_creators        mst_creators @relation(fields: [drf_creatorid], references: [id], map: "fk_dtl_project_creator")
-  mst_sow             mst_sow?     @relation(fields: [drf_sow], references: [sow_id], onUpdate: NoAction, map: "fk_dtl_project_to_sow")
+  mst_sow             mst_sow?     @relation(fields: [drf_sow], references: [sow_id], onDelete: Restrict, onUpdate: NoAction, map: "fk_dtl_project_to_sow")
   trs_project         trs_project  @relation(fields: [drf_projectid], references: [prj_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dtl_project_to_trs")
 }
+
 model mst_categories {
   id           Int            @id @default(autoincrement())
   name         String         @db.VarChar(100)
