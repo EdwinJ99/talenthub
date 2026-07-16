@@ -80,6 +80,7 @@ model mst_payment {
   creadate   DateTime? @default(now()) @db.Timestamp(6)
   modiby     String?   @db.VarChar(20)
   modidate   DateTime? @default(now()) @db.Timestamp(6)
+  trs_project trs_project[]
 }
 
 model mst_sow {
@@ -167,8 +168,10 @@ model trs_project {
   modiby          String?       @db.VarChar(20)
   modidate        DateTime?     @default(now()) @db.Timestamp(6)
   prj_kode        String        @unique(map: "uq_project_kode") @db.VarChar(20)
+  prj_paymentid   Int?
   dtl_project     dtl_project[]
   mst_brand       mst_brand     @relation(fields: [prj_brand], references: [brd_id], map: "fk_trs_project_brand")
+  mst_payment     mst_payment?  @relation(fields: [prj_paymentid], references: [pyt_id], onUpdate: NoAction, map: "fk_trs_project_payment")
 }
 
 model mst_creators {

@@ -88,6 +88,7 @@ if (id) {
     },
     include: {
       mst_brand: true,
+      mst_payment: true,
     },
   });
 
@@ -113,6 +114,13 @@ if (id) {
 
     quotationNo: project.prj_quotationno,
     invoiceNo: project.prj_invoiceno,
+    payment: project.mst_payment
+      ? {
+          bank: project.mst_payment.pyt_bank,
+          accountNo: project.mst_payment.pyt_norek,
+          accountName: project.mst_payment.pyt_nama,
+        }
+      : null,
 
     draftStartDate: project.prj_dstartdate,
     draftEndDate: project.prj_denddate,
@@ -447,12 +455,8 @@ export async function PUT(request: Request) {
     }
 
     if (isGeneratingInvoice) {
-      const [project, payment] = await prisma.$transaction([
-        prisma.trs_project.update({
-          where: { prj_id: id },
-          data: updateData,
-        }),
-        prisma.mst_payment.create({
+      const { project, payment } = await prisma.$transaction(async (tx) => {
+        const payment = await tx.mst_payment.create({
           data: {
             pyt_bank: body.pyt_bank.trim(),
             pyt_norek: body.pyt_norek.trim(),
@@ -461,8 +465,15 @@ export async function PUT(request: Request) {
             creaby: session.user.name ?? "admin",
             creadate: new Date(),
           },
-        }),
-      ]);
+        });
+
+        const project = await tx.trs_project.update({
+          where: { prj_id: id },
+          data: { ...updateData, prj_paymentid: payment.pyt_id },
+        });
+
+        return { project, payment };
+      });
 
       return NextResponse.json({
         message: "Invoice dan data payment berhasil dibuat",

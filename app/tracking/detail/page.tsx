@@ -8,6 +8,7 @@ import {
   confirmGenerateQuotation,
   confirmGenerateReport,
   confirmGenerateInvoice,
+  confirmFinishProject,
   confirmStartProject,
   showAlertValidationError,
   showRunningContentModal,
@@ -333,6 +334,27 @@ const handleGenerateInvoice = async () => {
   router.push(`/tracking/detail?projectId=${projectId}&view=Invoice`);
 };
 
+const handleFinishProject = async () => {
+  const result = await confirmFinishProject();
+  if (!result.isConfirmed) return;
+
+  const res = await fetch(`/api/tracking?id=${projectId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prj_status: 6 }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    await showAlertValidationError(errorData.error ?? "Gagal menyelesaikan project.");
+    return;
+  }
+
+  await loadProject();
+  await showSuccess("Success", "Project has been completed successfully.");
+  router.push(`/tracking/detail?projectId=${projectId}&view=Finish`);
+};
+
 
 const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") => {
   // Helper to format date string to YYYY-MM-DD, handles null/undefined
@@ -562,6 +584,23 @@ case "Quotation":
       return (
         <InvoiceSection
           projectDetail={projectDetail}
+          creators={creators}
+          handleSort={handleSort}
+          getSortIcon={getSortIcon}
+          handleFinish={handleFinishProject}
+          readOnly={isHistoricalView || projectDetail?.status === "Finish"}
+        />
+      );
+
+    case "Finish":
+      return (
+        <InvoiceSection
+          projectDetail={projectDetail}
+          creators={creators}
+          handleSort={handleSort}
+          getSortIcon={getSortIcon}
+          handleFinish={handleFinishProject}
+          readOnly
         />
       );
 
