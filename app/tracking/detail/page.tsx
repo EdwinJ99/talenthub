@@ -7,6 +7,7 @@ import {
   confirmDelete,
   confirmGenerateQuotation,
   confirmGenerateReport,
+  confirmGenerateInvoice,
   confirmStartProject,
   showAlertValidationError,
   showRunningContentModal,
@@ -294,6 +295,45 @@ const handleGenerateReport = async () => {
   router.push(`/tracking/detail?projectId=${projectId}&view=Report`);
 };
 
+const handleGenerateInvoice = async () => {
+  const bankDetails: any = await confirmGenerateInvoice();
+
+  // Jika pengguna menutup modal atau tidak mengisi data, hentikan proses
+  if (!bankDetails) {
+    return;
+  }
+
+  const res = await fetch(`/api/tracking?id=${projectId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prj_status: 5, // 5 = Invoice
+      ...bankDetails
+    }),
+  });
+
+  if (!res.ok) {
+    const responseText = await res.text();
+    let message = "Gagal membuat invoice.";
+
+    try {
+      const errorData = JSON.parse(responseText);
+      message = errorData.error ?? message;
+    } catch {
+      message = responseText || message;
+    }
+
+    await showAlertValidationError(message);
+    console.error(`Generate Invoice gagal (${res.status}): ${message}`);
+    return;
+  }
+
+  await loadProject();
+  await showSuccess("Success", "Invoice has been generated successfully.");
+  router.push(`/tracking/detail?projectId=${projectId}&view=Invoice`);
+};
+
+
 const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") => {
   // Helper to format date string to YYYY-MM-DD, handles null/undefined
   const formatDateForInput = (dateStr: string | null | undefined) => {
@@ -513,6 +553,8 @@ case "Quotation":
           creators={creators}
           handleSort={handleSort}
           getSortIcon={getSortIcon}
+          handleGenerateInvoice={handleGenerateInvoice}
+          readOnly={isHistoricalView}
         />
       );
 

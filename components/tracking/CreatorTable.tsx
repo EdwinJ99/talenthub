@@ -5,6 +5,7 @@ import EyeIcon from "@/components/icons/EyeIcon";
 import DeleteIcon from "@/components/icons/DeleteIcon";
 import EditIcon from "@/components/icons/EditIcon";
 import CheckIcon from "@/components/icons/CheckIcon";
+import InvoiceIcon from "@/components/icons/InvoiceIcon";
 
 type Props = {
   creators: any[];
@@ -142,7 +143,7 @@ export default function CreatorTable({
                     <td className="sticky right-0 border-x bg-white px-4 py-3 text-center">
                       {showView ? (
                         <Link href={`/tracking/detail/detail/${creator.drf_creatorid}`} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
-                          <EyeIcon className="h-4 w-4 text-sky-600" /> View
+                          <InvoiceIcon className="h-4 w-4 text-slate-900" /> View
                         </Link>
                       ) : "-"}
                     </td>
@@ -252,19 +253,29 @@ export default function CreatorTable({
                   {runningMode && (
                     <>
                       <td className={`border-x px-4 py-3 text-center ${invalidRunning?.planningUpload ? "bg-red-50 text-red-700" : ""}`}>
-                        {creator.drf_planning_upload
-                          ? new Date(creator.drf_planning_upload).toLocaleDateString("id-ID")
-                          : "Belum diisi"}
+                          {creator.drf_planning_upload ? 
+                          new Date(creator.drf_planning_upload).toLocaleDateString("id-ID", {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          }) : 
+                          "-"
+                        }
                       </td>
                       <td className={`border-x px-4 py-3 text-center ${invalidRunning?.actualUpload ? "bg-red-50 text-red-700" : ""}`}>
-                        {creator.drf_actual_upload
-                          ? new Date(creator.drf_actual_upload).toLocaleDateString("id-ID")
-                          : "Belum diisi"}
+                        {creator.drf_actual_upload ? 
+                          new Date(creator.drf_actual_upload).toLocaleDateString("id-ID", {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          }) : 
+                          "-"
+                        }
                       </td>
                       <td className={`border-x px-4 py-3 text-center ${invalidRunning?.linkContent ? "bg-red-50 text-red-700" : ""}`}>
                         {creator.drf_link_content ? (
                           <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">View content</a>
-                        ) : "Belum diisi"}
+                        ) : "-"}
                       </td>
                     </>
                   )}
@@ -272,9 +283,23 @@ export default function CreatorTable({
                   <td className="sticky right-0 border-x bg-white px-4 py-3">
                     <div className="flex justify-center gap-3">
                       {isChecked && onEdit ? (
-                        <button onClick={() => onEdit(creator)}>
-                          <EyeIcon className="h-5 w-5 text-sky-600" />
-                        </button>
+                        <>
+                          {showView && onView && (
+                            <Link href={`/tracking/detail/detail/${creator.drf_creatorid}`} className="cursor-pointer">
+                              <EyeIcon className="h-5 w-5 text-sky-600" />
+                            </Link>
+                          )}
+                          {onEdit && (
+                            <button onClick={() => onEdit(creator.drf_id)}>
+                              <EditIcon className="h-5 w-5 text-blue-500" />
+                            </button>
+                          )}
+                          {showDelete && (
+                            <button onClick={() => onDelete?.(creator.drf_id)}>
+                              <DeleteIcon className="h-5 w-5 text-red-500" />
+                            </button>
+                          )}
+                        </>
                       ) : (
                         <>
                           {showView && onView && (

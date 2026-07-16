@@ -66,7 +66,13 @@ export const confirmGenerateReport = async () => {
 };
 
 export const confirmGenerateInvoice = async () => {
-  return Swal.fire({
+  return new Promise((resolve) => {
+    Swal.fire({
+    willClose: () => {
+      // Resolve with null if the user closes the modal without submitting
+      // This handles clicking the 'x', pressing Esc, or clicking outside
+      resolve(null);
+    },
     showConfirmButton: false,
     showCloseButton: false,
     width: 700,
@@ -121,8 +127,10 @@ export const confirmGenerateInvoice = async () => {
             Bank Name
           </label>
 
-          <select
+          <input
             id="bankName"
+            type="text"
+            placeholder="Contoh: BCA, BRI, Mandiri, BSI"
             style="
               width:100%;
               height:50px;
@@ -132,13 +140,7 @@ export const confirmGenerateInvoice = async () => {
               font-size:16px;
               box-sizing:border-box;
             "
-          >
-            <option value="">Select Bank</option>
-            <option>BCA</option>
-            <option>Mandiri</option>
-            <option>BNI</option>
-            <option>BRI</option>
-          </select>
+          />
 
           <div
             id="bankNameError"
@@ -264,7 +266,7 @@ export const confirmGenerateInvoice = async () => {
         ?.addEventListener("click", () => {
           const bankName = document.getElementById(
             "bankName"
-          ) as HTMLSelectElement;
+          ) as HTMLInputElement;
 
           const accountNo = document.getElementById(
             "accountNo"
@@ -314,18 +316,18 @@ export const confirmGenerateInvoice = async () => {
 
           if (!isValid) return;
 
-          Swal.close();
-
-          Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: "Invoice has been created successfully.",
-            timer: 1500,
-            showConfirmButton: false,
+          // Resolve the promise with the form data
+          resolve({
+            pyt_bank: bankName.value,
+            pyt_norek: accountNo.value.trim(),
+            pyt_nama: accountName.value.trim(),
           });
+
+          Swal.close();
         });
     },
 
+  });
   });
 };
 

@@ -8,6 +8,8 @@ type Props = {
   creators: any[];
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
+  handleGenerateInvoice: () => void;
+  readOnly?: boolean;
 };
 
 export default function ReportSection({
@@ -15,6 +17,8 @@ export default function ReportSection({
   creators,
   handleSort,
   getSortIcon,
+  handleGenerateInvoice,
+  readOnly = false,
 }: Props) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
@@ -39,6 +43,17 @@ export default function ReportSection({
         showView
         reportMode
       />
+
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+        {!readOnly && (
+          <button
+            onClick={handleGenerateInvoice}
+            className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
+          >
+            Generate Invoice
+          </button>
+        )}
+      </div>
     </section>
   );
 }

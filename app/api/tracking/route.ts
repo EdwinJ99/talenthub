@@ -285,6 +285,37 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
 
+    const isGeneratingInvoice = Number(body.prj_status) === 5;
+    if (isGeneratingInvoice) {
+      const currentProject = await prisma.trs_project.findUnique({
+        where: { prj_id: id },
+        select: { prj_status: true },
+      });
+
+      if (!currentProject) {
+        return NextResponse.json({ error: "Project tidak ditemukan" }, { status: 404 });
+      }
+
+      if ((currentProject.prj_status ?? 0) >= 5) {
+        return NextResponse.json(
+          { error: "Invoice untuk project ini sudah dibuat" },
+          { status: 409 }
+        );
+      }
+
+      const paymentFields = [body.pyt_bank, body.pyt_norek, body.pyt_nama];
+      const isPaymentValid = paymentFields.every(
+        (value) => typeof value === "string" && value.trim().length > 0
+      );
+
+      if (!isPaymentValid) {
+        return NextResponse.json(
+          { error: "Bank, nomor rekening, dan nama pemilik rekening wajib diisi" },
+          { status: 400 }
+        );
+      }
+    }
+
     if (Number(body.prj_status) === 4) {
       const runningDetails = await prisma.dtl_project.findMany({
         where: { drf_projectid: id },
@@ -413,6 +444,31 @@ export async function PUT(request: Request) {
           updateData.prj_ienddate = new Date();
           break;
       }
+    }
+
+    if (isGeneratingInvoice) {
+      const [project, payment] = await prisma.$transaction([
+        prisma.trs_project.update({
+          where: { prj_id: id },
+          data: updateData,
+        }),
+        prisma.mst_payment.create({
+          data: {
+            pyt_bank: body.pyt_bank.trim(),
+            pyt_norek: body.pyt_norek.trim(),
+            pyt_nama: body.pyt_nama.trim(),
+            pyt_status: 1,
+            creaby: session.user.name ?? "admin",
+            creadate: new Date(),
+          },
+        }),
+      ]);
+
+      return NextResponse.json({
+        message: "Invoice dan data payment berhasil dibuat",
+        data: project,
+        payment,
+      });
     }
 
     const project = await prisma.trs_project.update({
