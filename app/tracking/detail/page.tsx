@@ -341,7 +341,7 @@ const handleFinishProject = async () => {
   const res = await fetch(`/api/tracking?id=${projectId}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prj_status: 6 }),
+    body: JSON.stringify({ prj_ienddate: new Date().toISOString() }),
   });
 
   if (!res.ok) {
@@ -502,12 +502,10 @@ const statusIndex: Record<string, number> = {
   Finish: 5,
 };
 
-const currentStep =
-  statusIndex[projectDetail?.status ?? "Draft"] ?? 0;
-
-const isProjectFinished = ["finish", "finished", "done", "completed"].includes(
-  String(projectDetail?.status ?? "").toLowerCase()
-);
+const isProjectFinished = Boolean(projectDetail?.invoiceEndDate);
+const currentStep = isProjectFinished
+  ? statusIndex.Finish
+  : statusIndex[projectDetail?.status ?? "Draft"] ?? 0;
 
 const canViewRequestedStep =
   requestedView !== null &&
@@ -588,7 +586,7 @@ case "Quotation":
           handleSort={handleSort}
           getSortIcon={getSortIcon}
           handleFinish={handleFinishProject}
-          readOnly={isHistoricalView || projectDetail?.status === "Finish"}
+          readOnly={isHistoricalView || isProjectFinished}
         />
       );
 

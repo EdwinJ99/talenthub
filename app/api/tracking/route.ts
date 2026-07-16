@@ -134,6 +134,7 @@ if (id) {
 
     invoiceStartDate: project.prj_istartdate,
     invoiceEndDate: project.prj_ienddate,
+    finishDate: project.prj_ienddate,
     status: getProjectStatus(project.prj_status),
 
     createdBy: project.creaby,
@@ -428,10 +429,15 @@ export async function PUT(request: Request) {
 
     // ================= Status =================
     if (body.prj_status !== undefined) {
-      updateData.prj_status = Number(body.prj_status);
+      const requestedStatus = Number(body.prj_status);
+
+      // Finish hanya menandai akhir invoice; status utama tetap Invoice.
+      if (requestedStatus !== 6) {
+        updateData.prj_status = requestedStatus;
+      }
 
       // otomatis isi tanggal mulai setiap status
-      switch (Number(body.prj_status)) {
+      switch (requestedStatus) {
         case 2:
           updateData.prj_qstartdate = new Date();
           break;

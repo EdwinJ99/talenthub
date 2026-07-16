@@ -1,5 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { showAlertValidationError, showSuccess } from "@/lib/alert";
 
 type Props = {
   projectDetail: any;
@@ -13,15 +16,6 @@ type Props = {
 const formatRupiah = (value: number | null | undefined) =>
   `Rp ${Number(value ?? 0).toLocaleString("id-ID")}`;
 
-const formatDate = (value: string | Date | null | undefined) =>
-  value
-    ? new Date(value).toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      })
-    : "-";
-
 export default function InvoiceSection({
   projectDetail,
   creators,
@@ -30,104 +24,169 @@ export default function InvoiceSection({
   handleFinish,
   readOnly = false,
 }: Props) {
+  const [sending, setSending] = useState(false);
   const payment = projectDetail?.payment;
+  const getFileName = () =>
+    `Invoice_${projectDetail?.code ?? projectDetail?.name ?? "Project"}.pdf`;
+
+  const createInvoicePdf = () => {
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const left = 16;
+    const right = pageWidth - 16;
+    const brown: [number, number, number] = [205, 159, 126];
+    const black: [number, number, number] = [0, 0, 0];
+
+    const drawBorder = () => {
+      doc.setDrawColor(...black);
+      doc.setLineWidth(0.7);
+      doc.rect(10, 6, pageWidth - 20, pageHeight - 12);
+    };
+
+    drawBorder();
+    doc.setTextColor(...black);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("PT DUTA KARYARAYA MANDIRI", left, 16);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("Ruko Permata Regency D/37", left, 22);
+    doc.text("Jakarta Barat - DKI Jakarta", left, 27);
+    doc.text("+62 818 693 309", left, 32);
+
+    doc.setDrawColor(190, 150, 120);
+    doc.circle(160, 23, 14);
+    doc.setFont("times", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(150, 110, 85);
+    doc.text("D'BEST", 160, 22, { align: "center" });
+    doc.setFont("times", "italic");
+    doc.setFontSize(8);
+    doc.text("Influence", 160, 27, { align: "center" });
+
+    doc.setTextColor(...black);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("INVOICE", left, 47);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`Brand : ${String(projectDetail?.brand ?? "-").toUpperCase()}`, left, 54);
+    doc.text(`Project : ${projectDetail?.name ?? "-"}`, left, 60);
+    doc.text(`Project Code : ${projectDetail?.code ?? "-"}`, left, 66);
+
+    autoTable(doc, {
+      startY: 73,
+      head: [["Description", "SOW", "Platform", "Cost"]],
+      body: creators.map((creator) => [
+        creator.name ?? "-",
+        creator.sow ?? "-",
+        creator.platform ?? "-",
+        formatRupiah(creator.total),
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: brown, textColor: black, fontStyle: "bold", halign: "center", lineColor: black, lineWidth: 0.35 },
+      bodyStyles: { textColor: black, fontSize: 9, lineColor: black, lineWidth: 0.35 },
+      columnStyles: { 0: { cellWidth: 44 }, 1: { cellWidth: 57 }, 2: { cellWidth: 28 }, 3: { cellWidth: 41, halign: "right" } },
+      margin: { left, right: left },
+      didDrawPage: drawBorder,
+    });
+
+    let y = (doc as any).lastAutoTable.finalY + 10;
+    if (y > pageHeight - 75) {
+      doc.addPage();
+      drawBorder();
+      y = 22;
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Payment Method", left, y);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`Bank : ${payment?.bank ?? "-"}`, left, y + 7);
+    doc.text(`Account No : ${payment?.accountNo ?? "-"}`, left, y + 13);
+    doc.text(`Account Name : ${payment?.accountName ?? "-"}`, left, y + 19);
+
+    const rows = [
+      ["Subtotal", formatRupiah(projectDetail?.subtotal)],
+      ["DPP", formatRupiah(projectDetail?.dpp)],
+      ["PPN (11%)", formatRupiah(projectDetail?.ppn)],
+      ["Grand Total", formatRupiah(projectDetail?.grandTotal)],
+    ];
+    autoTable(doc, {
+      startY: y,
+      body: rows,
+      theme: "grid",
+      styles: { fontSize: 9, lineColor: black, lineWidth: 0.35 },
+      columnStyles: { 0: { cellWidth: 40, fontStyle: "bold" }, 1: { cellWidth: 50, halign: "right" } },
+      margin: { left: right - 90 },
+    });
+
+    return doc;
+  };
+
+  const handleExportPdf = () => createInvoicePdf().save(getFileName());
+
+  const handleSendPdf = async () => {
+    if (!projectDetail?.id) {
+      await showAlertValidationError("Data project tidak ditemukan.");
+      return;
+    }
+
+    try {
+      setSending(true);
+      const formData = new FormData();
+      formData.append("invoice", createInvoicePdf().output("blob"), getFileName());
+      const response = await fetch(`/api/tracking/${projectDetail.id}/send-invoice`, {
+        method: "POST",
+        body: formData,
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error ?? "Gagal mengirim invoice.");
+      await showSuccess("Email sent", `Invoice berhasil dikirim ke ${result.email}.`);
+    } catch (error) {
+      await showAlertValidationError(error instanceof Error ? error.message : "Gagal mengirim invoice.");
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Invoice</h2>
-          <p className="text-sm text-slate-700">Creator and payment details for this project.</p>
-        </div>
-        <div className="grid gap-2 text-sm sm:text-right">
-          <p><span className="text-slate-500">Invoice No. </span><strong>{projectDetail?.invoiceNo ?? "-"}</strong></p>
-          <p><span className="text-slate-500">Invoice Date </span><strong>{formatDate(projectDetail?.invoiceStartDate)}</strong></p>
-        </div>
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900">Invoice</h2>
+        <p className="text-sm text-slate-700">Creator and payment details for this project.</p>
       </div>
 
       <div className="mt-8 overflow-x-auto rounded-xl border border-slate-200">
         <table className="min-w-[850px] w-full border-collapse text-sm whitespace-nowrap">
-          <thead>
-            <tr className="border-y border-slate-300 bg-gray-100 text-center">
-              {[
-                { label: "No.", field: "no" },
-                { label: "Description", field: "name" },
-                { label: "SOW", field: "sow" },
-                { label: "Platform", field: "platform" },
-                { label: "Cost", field: "total" },
-              ].map((head) => (
-                <th
-                  key={head.field}
-                  onClick={() => handleSort(head.field)}
-                  className="cursor-pointer border-x border-slate-200 px-5 py-4 text-xs font-bold hover:bg-slate-50"
-                >
-                  {head.label}<span className="ml-1 text-slate-400">{getSortIcon(head.field)}</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {creators.map((creator, index) => (
-              <tr key={creator.drf_id} className="border-b border-slate-200">
-                <td className="border-x px-5 py-4 text-center">{index + 1}</td>
-                <td className="border-x px-5 py-4">{creator.name ?? "-"}</td>
-                <td className="border-x px-5 py-4">{creator.sow ?? "-"}</td>
-                <td className="border-x px-5 py-4 text-center">{creator.platform ?? "-"}</td>
-                <td className="border-x px-5 py-4 text-right font-medium">{formatRupiah(creator.total)}</td>
-              </tr>
+          <thead><tr className="border-y border-slate-300 bg-gray-100 text-center">
+            {[{ label: "No.", field: "no" }, { label: "Description", field: "name" }, { label: "SOW", field: "sow" }, { label: "Platform", field: "platform" }, { label: "Cost", field: "total" }].map((head) => (
+              <th key={head.field} onClick={() => handleSort(head.field)} className="cursor-pointer border-x border-slate-200 px-5 py-4 text-xs font-bold hover:bg-slate-50">{head.label}<span className="ml-1 text-slate-400">{getSortIcon(head.field)}</span></th>
             ))}
-          </tbody>
+          </tr></thead>
+          <tbody>{creators.map((creator, index) => (
+            <tr key={creator.drf_id} className="border-b border-slate-200">
+              <td className="border-x px-5 py-4 text-center">{index + 1}</td><td className="border-x px-5 py-4">{creator.name ?? "-"}</td><td className="border-x px-5 py-4">{creator.sow ?? "-"}</td><td className="border-x px-5 py-4 text-center">{creator.platform ?? "-"}</td><td className="border-x px-5 py-4 text-right font-medium">{formatRupiah(creator.total)}</td>
+            </tr>
+          ))}</tbody>
         </table>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-6">
-          <h3 className="text-xl font-bold text-slate-900">Payment Method</h3>
-          {payment ? (
-            <div className="mt-6 space-y-4 text-sm">
-              <PaymentRow label="Bank" value={payment.bank} />
-              <PaymentRow label="Account No" value={payment.accountNo} />
-              <PaymentRow label="Account Name" value={payment.accountName} />
-            </div>
-          ) : (
-            <p className="mt-6 text-sm text-slate-500">Data payment belum tersedia untuk invoice ini.</p>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6">
-          <div className="space-y-3 text-sm">
-            <TotalRow label="Subtotal" value={formatRupiah(projectDetail?.subtotal)} />
-            <TotalRow label="DPP" value={formatRupiah(projectDetail?.dpp)} />
-            <TotalRow label="PPN (11%)" value={formatRupiah(projectDetail?.ppn)} />
-          </div>
-          <div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900">
-            <span>Grand Total</span>
-            <span>{formatRupiah(projectDetail?.grandTotal)}</span>
-          </div>
-        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-6"><h3 className="text-xl font-bold text-slate-900">Payment Method</h3>{payment ? <div className="mt-6 space-y-4 text-sm"><PaymentRow label="Bank" value={payment.bank} /><PaymentRow label="Account No" value={payment.accountNo} /><PaymentRow label="Account Name" value={payment.accountName} /></div> : <p className="mt-6 text-sm text-slate-500">Data payment belum tersedia untuk invoice ini.</p>}</div>
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6"><div className="space-y-3 text-sm"><TotalRow label="Subtotal" value={formatRupiah(projectDetail?.subtotal)} /><TotalRow label="DPP" value={formatRupiah(projectDetail?.dpp)} /><TotalRow label="PPN (11%)" value={formatRupiah(projectDetail?.ppn)} /></div><div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900"><span>Grand Total</span><span>{formatRupiah(projectDetail?.grandTotal)}</span></div></div>
       </div>
 
-      {!readOnly && (
-        <div className="mt-8 flex justify-end">
-          <button onClick={handleFinish} className="flex items-center gap-2 rounded-xl bg-black px-8 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-            <FileDocumentIcon className="h-4 w-4" />
-            Finish
-          </button>
-        </div>
-      )}
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <button onClick={handleExportPdf} className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50"><FileDocumentIcon className="h-4 w-4" />Export PDF</button>
+        <button onClick={handleSendPdf} disabled={sending} className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"><FileDocumentIcon className="h-4 w-4" />{sending ? "Sending..." : "Send PDF"}</button>
+        {!readOnly && <button onClick={handleFinish} className="flex items-center justify-center gap-2 rounded-xl bg-black px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800"><FileDocumentIcon className="h-4 w-4" />Finish</button>}
+      </div>
     </section>
   );
 }
 
-function PaymentRow({ label, value }: { label: string; value?: string | null }) {
-  return (
-    <div className="flex items-start justify-between gap-6">
-      <span className="text-slate-600">{label}</span>
-      <span className="text-right font-semibold text-slate-900">{value ?? "-"}</span>
-    </div>
-  );
-}
-
-function TotalRow({ label, value }: { label: string; value: string }) {
-  return <div className="flex justify-between"><span>{label}</span><span className="font-semibold">{value}</span></div>;
-}
+function PaymentRow({ label, value }: { label: string; value?: string | null }) { return <div className="flex items-start justify-between gap-6"><span className="text-slate-600">{label}</span><span className="text-right font-semibold text-slate-900">{value ?? "-"}</span></div>; }
+function TotalRow({ label, value }: { label: string; value: string }) { return <div className="flex justify-between"><span>{label}</span><span className="font-semibold">{value}</span></div>; }

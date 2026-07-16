@@ -252,30 +252,20 @@ export default function CreatorTable({
 
                   {runningMode && (
                     <>
-                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.planningUpload ? "bg-red-50 text-red-700" : ""}`}>
-                          {creator.drf_planning_upload ? 
-                          new Date(creator.drf_planning_upload).toLocaleDateString("id-ID", {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          }) : 
-                          "-"
-                        }
+                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.planningUpload ? "bg-red-50 font-medium text-red-700" : ""}`}>
+                        {creator.drf_planning_upload
+                          ? new Date(creator.drf_planning_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+                          : <><span>-</span>{invalidRunning?.planningUpload && <p className="mt-1 text-xs font-bold text-red-700">Wajib diisi</p>}</>}
                       </td>
-                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.actualUpload ? "bg-red-50 text-red-700" : ""}`}>
-                        {creator.drf_actual_upload ? 
-                          new Date(creator.drf_actual_upload).toLocaleDateString("id-ID", {
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          }) : 
-                          "-"
-                        }
+                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.actualUpload ? "bg-red-50 font-medium text-red-700" : ""}`}>
+                        {creator.drf_actual_upload
+                          ? new Date(creator.drf_actual_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+                          : <><span>-</span>{invalidRunning?.actualUpload && <p className="mt-1 text-xs font-bold text-red-700">Wajib diisi</p>}</>}
                       </td>
-                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.linkContent ? "bg-red-50 text-red-700" : ""}`}>
+                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.linkContent ? "bg-red-50 font-medium text-red-700" : ""}`}>
                         {creator.drf_link_content ? (
                           <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">View content</a>
-                        ) : "-"}
+                        ) : <><span>-</span>{invalidRunning?.linkContent && <p className="mt-1 text-xs font-bold text-red-700">Wajib diisi</p>}</>}
                       </td>
                     </>
                   )}
