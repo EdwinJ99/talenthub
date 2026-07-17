@@ -7,6 +7,8 @@ import EditIcon from "@/components/icons/EditIcon";
 import CheckIcon from "@/components/icons/CheckIcon";
 import InvoiceIcon from "@/components/icons/InvoiceIcon";
 
+const DEFAULT_KOL_AVATAR = "/image/default-kol-avatar.png";
+
 type Props = {
   creators: any[];
   sowOptions?: { sow_id: number; sow_nama: string | null }[];
@@ -130,7 +132,14 @@ export default function CreatorTable({
                   <tr key={creator.id} className="border-b border-slate-200 bg-white">
                     <td className="border-x px-4 py-3 text-center">{startIndex + index + 1}</td>
                     <td className="border-x px-4 py-3 text-center">
-                      <img src={creator.photo || "/images/avatar.png"} alt={creator.name || "Creator"} className="mx-auto h-11 w-11 rounded-full object-cover" />
+                      <img
+                        src={creator.photo || DEFAULT_KOL_AVATAR}
+                        alt={creator.name || "Creator"}
+                        onError={(event) => {
+                          event.currentTarget.src = DEFAULT_KOL_AVATAR;
+                        }}
+                        className="mx-auto h-11 w-11 rounded-full object-cover"
+                      />
                     </td>
                     <td className="border-x px-4 py-3">{creator.name}</td>
                     <td className="border-x px-4 py-3">{creator.username}</td>
@@ -162,8 +171,11 @@ export default function CreatorTable({
 
                   <td className="border-x px-4 py-3 text-center">
                     <img
-                      src={creator.photo || "/images/avatar.png"}
+                      src={creator.photo || DEFAULT_KOL_AVATAR}
                       alt={creator.name || "Creator"}
+                      onError={(event) => {
+                        event.currentTarget.src = DEFAULT_KOL_AVATAR;
+                      }}
                       className="mx-auto h-11 w-11 rounded-full object-cover"
                     />
                   </td>
