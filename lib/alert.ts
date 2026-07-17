@@ -65,8 +65,27 @@ export const confirmGenerateReport = async () => {
   });
 };
 
-export const confirmGenerateInvoice = async () => {
-  return new Promise((resolve) => {
+type PaymentOption = {
+  pyt_id: number;
+  pyt_bank: string | null;
+  pyt_norek: string | null;
+  pyt_nama: string | null;
+};
+
+export const confirmGenerateInvoice = async (payments: PaymentOption[]) => {
+  const escapeHtml = (value: string | null) =>
+    String(value ?? "-").replace(/[&<>'"]/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;",
+    })[character] ?? character);
+  const paymentOptions = payments
+    .map((payment) => `<option value="${payment.pyt_id}">${escapeHtml(payment.pyt_bank)}</option>`)
+    .join("");
+
+  return new Promise<{ prj_paymentid: number } | null>((resolve) => {
     Swal.fire({
     willClose: () => {
       // Resolve with null if the user closes the modal without submitting
@@ -95,7 +114,7 @@ export const confirmGenerateInvoice = async () => {
             margin-bottom:20px;
           "
         >
-          Choose Method Payment
+          Select Payment Account
 
           <span
             id="closeInvoiceModal"
@@ -127,10 +146,8 @@ export const confirmGenerateInvoice = async () => {
             Bank Name
           </label>
 
-          <input
-            id="bankName"
-            type="text"
-            placeholder="Contoh: BCA, BRI, Mandiri, BSI"
+          <select
+            id="paymentId"
             style="
               width:100%;
               height:50px;
@@ -140,7 +157,10 @@ export const confirmGenerateInvoice = async () => {
               font-size:16px;
               box-sizing:border-box;
             "
-          />
+          >
+            <option value="">Select Bank</option>
+            ${paymentOptions}
+          </select>
 
           <div
             id="bankNameError"
@@ -151,7 +171,7 @@ export const confirmGenerateInvoice = async () => {
               margin-top:5px;
             "
           >
-            Bank is required
+            Select a bank
           </div>
         </div>
 
@@ -170,10 +190,12 @@ export const confirmGenerateInvoice = async () => {
           <input
             id="accountNo"
             placeholder="Account No"
+            readonly
             style="
               width:100%;
               height:50px;
               border:1px solid #d1d5db;
+              background:#f8fafc;
               border-radius:8px;
               padding:0 14px;
               font-size:16px;
@@ -209,10 +231,12 @@ export const confirmGenerateInvoice = async () => {
           <input
             id="accountName"
             placeholder="Account Name"
+            readonly
             style="
               width:100%;
               height:50px;
               border:1px solid #d1d5db;
+              background:#f8fafc;
               border-radius:8px;
               padding:0 14px;
               font-size:16px;
@@ -264,9 +288,9 @@ export const confirmGenerateInvoice = async () => {
       document
         .getElementById("submitInvoice")
         ?.addEventListener("click", () => {
-          const bankName = document.getElementById(
-            "bankName"
-          ) as HTMLInputElement;
+          const paymentId = document.getElementById(
+            "paymentId"
+          ) as HTMLSelectElement;
 
           const accountNo = document.getElementById(
             "accountNo"
@@ -286,7 +310,7 @@ export const confirmGenerateInvoice = async () => {
             document.getElementById("accountNameError");
 
           // Reset style
-          bankName.style.border = "1px solid #d1d5db";
+          paymentId.style.border = "1px solid #d1d5db";
           accountNo.style.border = "1px solid #d1d5db";
           accountName.style.border = "1px solid #d1d5db";
 
@@ -296,35 +320,31 @@ export const confirmGenerateInvoice = async () => {
 
           let isValid = true;
 
-          if (!bankName.value) {
-            bankName.style.border = "2px solid #ef4444";
+          if (!paymentId.value) {
+            paymentId.style.border = "2px solid #ef4444";
             bankNameError!.style.display = "block";
-            isValid = false;
-          }
-
-          if (!accountNo.value.trim()) {
-            accountNo.style.border = "2px solid #ef4444";
-            accountNoError!.style.display = "block";
-            isValid = false;
-          }
-
-          if (!accountName.value.trim()) {
-            accountName.style.border = "2px solid #ef4444";
-            accountNameError!.style.display = "block";
             isValid = false;
           }
 
           if (!isValid) return;
 
-          // Resolve the promise with the form data
           resolve({
-            pyt_bank: bankName.value,
-            pyt_norek: accountNo.value.trim(),
-            pyt_nama: accountName.value.trim(),
+            prj_paymentid: Number(paymentId.value),
           });
 
           Swal.close();
         });
+      const paymentId = document.getElementById("paymentId") as HTMLSelectElement;
+      const accountNo = document.getElementById("accountNo") as HTMLInputElement;
+      const accountName = document.getElementById("accountName") as HTMLInputElement;
+
+      paymentId?.addEventListener("change", () => {
+        const selectedPayment = payments.find(
+          (payment) => payment.pyt_id === Number(paymentId.value)
+        );
+        accountNo.value = selectedPayment?.pyt_norek ?? "";
+        accountName.value = selectedPayment?.pyt_nama ?? "";
+      });
     },
 
   });

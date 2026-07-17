@@ -295,6 +295,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
 
     const isGeneratingInvoice = Number(body.prj_status) === 5;
+    let selectedPaymentId: number | null = null;
     if (isGeneratingInvoice) {
       const currentProject = await prisma.trs_project.findUnique({
         where: { prj_id: id },
@@ -312,17 +313,30 @@ export async function PUT(request: Request) {
         );
       }
 
-      const paymentFields = [body.pyt_bank, body.pyt_norek, body.pyt_nama];
-      const isPaymentValid = paymentFields.every(
-        (value) => typeof value === "string" && value.trim().length > 0
-      );
-
-      if (!isPaymentValid) {
+      const paymentId = Number(body.prj_paymentid);
+      if (!Number.isInteger(paymentId) || paymentId <= 0) {
         return NextResponse.json(
-          { error: "Bank, account number, and account name are required" },
+          { error: "Select a payment account before generating the invoice" },
           { status: 400 }
         );
       }
+
+      const payment = await prisma.mst_payment.findFirst({
+        where: {
+          pyt_id: paymentId,
+          pyt_status: { in: [1, 2] },
+        },
+        select: { pyt_id: true },
+      });
+
+      if (!payment) {
+        return NextResponse.json(
+          { error: "The selected payment account is unavailable" },
+          { status: 400 }
+        );
+      }
+
+      selectedPaymentId = payment.pyt_id;
     }
 
     if (Number(body.prj_status) === 4) {
@@ -389,6 +403,10 @@ export async function PUT(request: Request) {
       modiby: session.user.name ?? "admin",
       modidate: new Date(),
     };
+
+    if (selectedPaymentId) {
+      updateData.prj_paymentid = selectedPaymentId;
+    }
 
     // ================= Data Project =================
     if (body.prj_brand !== undefined)
@@ -460,34 +478,6 @@ export async function PUT(request: Request) {
       }
     }
 
-    if (isGeneratingInvoice) {
-      const { project, payment } = await prisma.$transaction(async (tx) => {
-        const payment = await tx.mst_payment.create({
-          data: {
-            pyt_bank: body.pyt_bank.trim(),
-            pyt_norek: body.pyt_norek.trim(),
-            pyt_nama: body.pyt_nama.trim(),
-            pyt_status: 1,
-            creaby: session.user.name ?? "admin",
-            creadate: new Date(),
-          },
-        });
-
-        const project = await tx.trs_project.update({
-          where: { prj_id: id },
-          data: { ...updateData, prj_paymentid: payment.pyt_id },
-        });
-
-        return { project, payment };
-      });
-
-      return NextResponse.json({
-        message: "Invoice and payment details have been created",
-        data: project,
-        payment,
-      });
-    }
-
     const project = await prisma.trs_project.update({
       where: {
         prj_id: id,
@@ -496,7 +486,7 @@ export async function PUT(request: Request) {
     });
 
     return NextResponse.json({
-      message: "Project has been updated",
+      message: isGeneratingInvoice ? "Invoice has been generated" : "Project has been updated",
       data: project,
     });
   } catch (error) {

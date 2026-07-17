@@ -297,7 +297,25 @@ const handleGenerateReport = async () => {
 };
 
 const handleGenerateInvoice = async () => {
-  const bankDetails: any = await confirmGenerateInvoice();
+  let payments: { pyt_id: number; pyt_bank: string | null; pyt_norek: string | null; pyt_nama: string | null }[] = [];
+
+  try {
+    const paymentResponse = await fetch("/api/payment", { cache: "no-store" });
+    if (!paymentResponse.ok) {
+      throw new Error("Failed to load payment accounts.");
+    }
+    payments = await paymentResponse.json();
+    if (payments.length === 0) {
+      throw new Error("No active payment accounts are available. Add one in Master Data Payment first.");
+    }
+  } catch (error) {
+    await showAlertValidationError(
+      error instanceof Error ? error.message : "Failed to load payment accounts."
+    );
+    return;
+  }
+
+  const bankDetails = await confirmGenerateInvoice(payments);
 
   // Stop when the user closes the modal or leaves a required field empty.
   if (!bankDetails) {
@@ -309,7 +327,7 @@ const handleGenerateInvoice = async () => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       prj_status: 5, // 5 = Invoice
-      ...bankDetails
+      ...bankDetails,
     }),
   });
 
