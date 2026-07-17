@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ChangeEvent, ReactNode, useEffect, useRef, useState } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -25,6 +25,14 @@ export default function InvoiceSection({
   readOnly = false,
 }: Props) {
   const [sending, setSending] = useState(false);
+  const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
   const payment = projectDetail?.payment;
   const getFileName = () =>
     `Invoice_${projectDetail?.code ?? projectDetail?.name ?? "Project"}.pdf`;
@@ -128,7 +136,7 @@ export default function InvoiceSection({
 
   const handleExportPdf = () => createInvoicePdf().save(getFileName());
 
-  const handleSendPdf = async () => {
+  const sendInvoicePdf = async (pdf: Blob, filename: string) => {
     if (!projectDetail?.id) {
       await showAlertValidationError("Project data was not found.");
       return;
@@ -137,7 +145,7 @@ export default function InvoiceSection({
     try {
       setSending(true);
       const formData = new FormData();
-      formData.append("invoice", createInvoicePdf().output("blob"), getFileName());
+      formData.append("invoice", pdf, filename);
       const response = await fetch(`/api/tracking/${projectDetail.id}/send-invoice`, {
         method: "POST",
         body: formData,
@@ -150,6 +158,31 @@ export default function InvoiceSection({
     } finally {
       setSending(false);
     }
+  };
+
+  const handleSendPdf = async () => {
+    if (!uploadedPdf) {
+      await showAlertValidationError("Upload a PDF before sending it to the brand.");
+      return;
+    }
+
+    await sendInvoicePdf(uploadedPdf, uploadedPdf.name);
+  };
+
+  const handleUploadPdf = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      await showAlertValidationError("Please select a PDF file.");
+      return;
+    }
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setUploadedPdf(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setIsPreviewOpen(false);
   };
 
   return (
@@ -179,11 +212,17 @@ export default function InvoiceSection({
         <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6"><div className="space-y-3 text-sm"><TotalRow label="Subtotal" value={formatRupiah(projectDetail?.subtotal)} /><TotalRow label="DPP" value={formatRupiah(projectDetail?.dpp)} /><TotalRow label="PPN (11%)" value={formatRupiah(projectDetail?.ppn)} /></div><div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900"><span>Grand Total</span><span>{formatRupiah(projectDetail?.grandTotal)}</span></div></div>
       </div>
 
+      {uploadedPdf && previewUrl && <div className="mt-6 flex flex-col gap-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700"><FileDocumentIcon className="h-5 w-5" /></div><div className="min-w-0"><p className="text-sm font-bold text-slate-900">PDF Ready to Send</p><p className="truncate text-xs text-slate-600">{uploadedPdf.name}</p></div></div><button type="button" onClick={() => setIsPreviewOpen(true)} className="inline-flex w-full justify-center rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 sm:w-auto">Preview PDF</button></div>}
+
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
         <button onClick={handleExportPdf} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50 sm:w-auto"><FileDocumentIcon className="h-4 w-4" />Export PDF</button>
-        <button onClick={handleSendPdf} disabled={sending} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"><FileDocumentIcon className="h-4 w-4" />{sending ? "Sending..." : "Send PDF"}</button>
+        <input ref={uploadInputRef} type="file" accept="application/pdf,.pdf" className="hidden" onChange={handleUploadPdf} />
+        <button type="button" onClick={() => uploadInputRef.current?.click()} disabled={sending} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"><FileDocumentIcon className="h-4 w-4" />Upload PDF</button>
+        <button onClick={handleSendPdf} disabled={sending || !uploadedPdf} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"><FileDocumentIcon className="h-4 w-4" />{sending ? "Sending..." : "Send PDF"}</button>
         {!readOnly && <button onClick={handleFinish} className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto"><FileDocumentIcon className="h-4 w-4" />Finish</button>}
       </div>
+
+      {isPreviewOpen && previewUrl && <div role="dialog" aria-modal="true" aria-label="Invoice PDF preview" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4" onClick={() => setIsPreviewOpen(false)}><div className="flex h-[72vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between border-b border-slate-200 px-5 py-3"><div className="min-w-0"><p className="text-sm font-bold text-slate-900">Invoice PDF Preview</p><p className="truncate text-xs text-slate-500">{uploadedPdf?.name}</p></div><button type="button" onClick={() => setIsPreviewOpen(false)} className="rounded-lg px-3 py-1.5 text-sm font-semibold text-slate-600 hover:bg-slate-100">Close</button></div><iframe title="Invoice PDF preview" src={previewUrl} className="min-h-0 flex-1 bg-slate-100" /></div></div>}
     </section>
   );
 }
