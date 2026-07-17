@@ -31,10 +31,12 @@ export default function QuotationSection({
 }: Props) {
   const [sending, setSending] = useState(false);
 
-  const getQuotationFileName = () =>
-    projectDetail?.brand
-      ? `Quotation_${projectDetail.brand}.pdf`
-      : "Quotation_Preview.pdf";
+  const getQuotationFileName = () => {
+    const projectCode = String(projectDetail?.code ?? "").trim();
+    const quotationCode = projectCode.replace(/^TRS-/i, "QUO-");
+
+    return `${quotationCode || "QUO-PREVIEW"}.pdf`;
+  };
 
   // FUNGSI UNTUK EKSPOR KE PDF (SESUAI KODE YANG ANDA BERIKAN)
   const createQuotationPdf = () => {
@@ -154,50 +156,51 @@ export default function QuotationSection({
         fillColor: brown,
         textColor: black,
         fontStyle: "bold",
-        fontSize: 10,
+        fontSize: 8.5,
         halign: "center",
         valign: "middle",
         lineColor: black,
         lineWidth: 0.35,
-        cellPadding: 3,
+        cellPadding: { top: 2, right: 2, bottom: 2, left: 2 },
       },
 
       bodyStyles: {
         textColor: black,
-        fontSize: 9,
+        fontSize: 8,
         valign: "middle",
         lineColor: black,
         lineWidth: 0.35,
-        minCellHeight: creators.length === 1 ? 70 : 25,
+        cellPadding: { top: 1.8, right: 2, bottom: 1.8, left: 2 },
+        minCellHeight: 7,
       },
 
       didDrawPage: () => drawPageBorder(), // Gambar HANYA bingkai setiap kali tabel membuat halaman baru
 
       columnStyles: {
         0: {
-          cellWidth: 44,
-          halign: "center",
+          cellWidth: 42,
+          halign: "left",
         },
 
         1: {
-          cellWidth: 57,
-          halign: "center",
+          cellWidth: 64,
+          halign: "left",
         },
 
         2: {
-          cellWidth: 28,
+          cellWidth: 26,
           halign: "center",
         },
 
         3: {
-        cellWidth: 45,
+        cellWidth: 42,
           halign: "right",
         },
       },
 
       margin: {
         left: contentLeft,
-      right: contentLeft,
+        right: contentLeft,
       },
     });
 

@@ -101,12 +101,12 @@ export async function POST(
               <p>Please review the attached document. We are happy to help with any questions or requested adjustments.</p>
               <p style="margin-bottom:0">Best regards,<br><strong>${senderName}</strong><br>D'BEST Influence</p>
             </div>
-            <div style="padding:18px 36px;background:#f9fafb;color:#6b7280;font-size:12px;text-align:center">Email ini dikirim otomatis melalui TalentHub.</div>
+            <div style="padding:18px 36px;background:#f9fafb;color:#6b7280;font-size:12px;text-align:center">This email was sent automatically through TalentHub.</div>
           </div>
         </div>`,
       attachments: [
         {
-          filename: quotation.name || `Quotation_${project.prj_kode}.pdf`,
+          filename: quotation.name || `${project.prj_kode.replace(/^TRS-/i, "QUO-")}.pdf`,
           content: Buffer.from(await quotation.arrayBuffer()),
           contentType: "application/pdf",
         },
