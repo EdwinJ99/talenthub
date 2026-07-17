@@ -197,8 +197,40 @@ model mst_creators {
   dtl_project        dtl_project[]
   mst_categories     mst_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction, map: "fk_creator_category")
   mst_cities         mst_cities?     @relation(fields: [city_id], references: [id], onUpdate: NoAction, map: "fk_creator_city")
+  dtl_creator_posts  dtl_creator_posts[]
 
+  @@unique([username, social_media], map: "uq_creator_username_platform")
   @@index([social_media, tier, gender, city_id, category_id], map: "idx_creators_filter")
+}
+
+model dtl_creator_posts {
+  id              Int           @id @default(autoincrement())
+  creator_id      Int
+  post_url        String?
+  caption         String?
+  likes           Int?          @default(0)
+  comments        Int?          @default(0)
+  views           Int?          @default(0)
+  category_ai     String?       @db.VarChar(100)
+  is_endorse      Boolean       @default(false)
+  posted_at       DateTime?     @db.Timestamp(6)
+  scraped_at      DateTime      @default(now()) @db.Timestamp(6)
+  mst_creators    mst_creators  @relation(fields: [creator_id], references: [id], onDelete: Cascade, map: "fk_post_creator")
+
+  @@unique([creator_id, posted_at, caption], name: "uq_creator_post", map: "uq_creator_post")
+  @@index([creator_id, is_endorse], map: "idx_post_creator_endorse")
+}
+
+model stg_discovered_usernames {
+  id                Int       @id @default(autoincrement())
+  username          String    @db.VarChar(100)
+  social_media      String    @db.VarChar(50)
+  source_creator_id Int?
+  status            String    @default("pending") @db.VarChar(20)
+  discovered_at     DateTime  @default(now()) @db.Timestamp(6)
+  validated_at      DateTime?
+
+  @@unique([username, social_media], map: "uq_discovered_username_platform")
 }
 
 enum Role {

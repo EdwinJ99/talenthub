@@ -21,12 +21,6 @@ export function getDefaultRouteForRole(role: AppRole) {
   switch (role) {
     case "ADMIN":
       return "/"
-    case "ORDERING":
-      return "/"
-    case "DELIVERY":
-      return "/"
-    case "RECEIVING":
-      return "/"
     default:
       return "/"
   }
