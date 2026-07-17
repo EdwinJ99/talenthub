@@ -97,10 +97,10 @@ export default function CreatorTable({
 
   return (
     <div className="mt-6">
-      <div className="-mx-4 w-auto overflow-x-auto rounded-xl border border-slate-200 touch-pan-x sm:mx-0 sm:w-full scrollbar-thin">
-        <table className={`${reportMode ? "min-w-[760px] sm:min-w-[1000px]" : "min-w-[1120px] sm:min-w-[1400px]"} w-full border-collapse text-xs sm:text-sm whitespace-nowrap`}>
+      <div className="-mx-4 w-auto overflow-x-auto rounded-xl border border-slate-300 touch-pan-x sm:mx-0 sm:w-full scrollbar-thin">
+        <table className={`${reportMode ? "min-w-[760px] sm:min-w-[1000px]" : "min-w-[1120px] sm:min-w-[1400px]"} w-full border-collapse text-xs sm:text-sm whitespace-nowrap [&_td]:!border-slate-300 [&_th]:!border-slate-300`}>
           <thead>
-            <tr className="border-y border-slate-300 bg-gray-100 text-left">
+            <tr className="border-y border-slate-400 bg-slate-300 text-left text-slate-900">
               {headers.map((head) => (
                 <th
                   key={head.field}
@@ -115,7 +115,7 @@ export default function CreatorTable({
                 </th>
               ))}
 
-              <th className="sticky right-0 border-x bg-gray-100 px-3 py-3 text-xs font-bold sm:px-4 sm:py-4">
+              <th className="sticky right-0 border-x bg-slate-300 px-3 py-3 text-xs font-bold sm:px-4 sm:py-4">
                 Action Detail
               </th>
             </tr>
