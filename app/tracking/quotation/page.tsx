@@ -81,8 +81,8 @@ const handleStartProject = async () => {
   if (!result.isConfirmed) return;
 
   await showSuccess(
-    "Berhasil",
-    "Project berhasil dipindahkan ke tahap Running."
+    "Success",
+    "Project has moved to the Running stage."
   );
 
   router.push("/tracking/running");

@@ -95,7 +95,7 @@ if (id) {
   if (!project) {
     return NextResponse.json(
       {
-        error: "Project tidak ditemukan",
+        error: "Project was not found",
       },
       {
         status: 404,
@@ -189,7 +189,7 @@ const result = projects.map((item) => ({
 
     return NextResponse.json(
       {
-        error: "Gagal mengambil data",
+        error: "Failed to fetch data",
       },
       {
         status: 500,
@@ -257,14 +257,14 @@ const project = await prisma.trs_project.create({
 });
 
     return NextResponse.json({
-      message: "Project berhasil dibuat",
+      message: "Project has been created",
       data: project,
     });
   } catch (error) {
     console.error("POST TRACKING ERROR:", error);
 
     return NextResponse.json(
-      { error: "Gagal menambah project" },
+      { error: "Failed to create project" },
       { status: 500 }
     );
   }
@@ -287,7 +287,7 @@ export async function PUT(request: Request) {
 
     if (isNaN(id)) {
       return NextResponse.json(
-        { error: "ID tidak valid" },
+        { error: "Invalid ID" },
         { status: 400 }
       );
     }
@@ -302,12 +302,12 @@ export async function PUT(request: Request) {
       });
 
       if (!currentProject) {
-        return NextResponse.json({ error: "Project tidak ditemukan" }, { status: 404 });
+        return NextResponse.json({ error: "Project was not found" }, { status: 404 });
       }
 
       if ((currentProject.prj_status ?? 0) >= 5) {
         return NextResponse.json(
-          { error: "Invoice untuk project ini sudah dibuat" },
+          { error: "An invoice has already been created for this project" },
           { status: 409 }
         );
       }
@@ -319,7 +319,7 @@ export async function PUT(request: Request) {
 
       if (!isPaymentValid) {
         return NextResponse.json(
-          { error: "Bank, nomor rekening, dan nama pemilik rekening wajib diisi" },
+          { error: "Bank, account number, and account name are required" },
           { status: 400 }
         );
       }
@@ -357,7 +357,7 @@ export async function PUT(request: Request) {
       if (Object.keys(missingRunningFields).length > 0) {
         return NextResponse.json(
           {
-            error: "Lengkapi data Running seluruh creator sebelum generate report",
+            error: "Complete all Running data before generating the report",
             missingRunningFields,
           },
           { status: 400 }
@@ -377,7 +377,7 @@ export async function PUT(request: Request) {
       if (detailsWithoutSow.length > 0) {
         return NextResponse.json(
           {
-            error: "Lengkapi SOW seluruh creator sebelum generate quotation",
+            error: "Complete the SOW for every creator before generating the quotation",
             missingSowCreatorIds: detailsWithoutSow.map((detail) => detail.drf_id),
           },
           { status: 400 }
@@ -482,7 +482,7 @@ export async function PUT(request: Request) {
       });
 
       return NextResponse.json({
-        message: "Invoice dan data payment berhasil dibuat",
+        message: "Invoice and payment details have been created",
         data: project,
         payment,
       });
@@ -496,7 +496,7 @@ export async function PUT(request: Request) {
     });
 
     return NextResponse.json({
-      message: "Project berhasil diperbarui",
+      message: "Project has been updated",
       data: project,
     });
   } catch (error) {
@@ -504,7 +504,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(
       {
-        error: "Gagal update project",
+        error: "Failed to update project",
       },
       {
         status: 500,
@@ -530,7 +530,7 @@ export async function DELETE(request: Request) {
 
     if (isNaN(id)) {
       return NextResponse.json(
-        { error: "ID tidak valid" },
+        { error: "Invalid ID" },
         { status: 400 }
       );
     }
@@ -542,14 +542,14 @@ export async function DELETE(request: Request) {
   });
 
   return NextResponse.json({
-    message: "Project berhasil dihapus",
+    message: "Project has been deleted",
     data: project,
   });
   } catch (error) {
     console.error("DELETE TRACKING ERROR:", error);
 
     return NextResponse.json(
-      { error: "Gagal menghapus project" },
+      { error: "Failed to delete project" },
       { status: 500 }
     );
   }

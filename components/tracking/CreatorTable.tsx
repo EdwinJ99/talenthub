@@ -215,14 +215,14 @@ export default function CreatorTable({
                             event.target.value === "" ? null : Number(event.target.value)
                           )
                         }
-                        aria-label={`SOW untuk ${creator.name ?? "creator"}`}
+                        aria-label={`SOW for ${creator.name ?? "creator"}`}
                         className={`min-w-40 rounded-md border px-2 py-1.5 text-sm outline-none disabled:cursor-not-allowed disabled:bg-slate-100 ${
                           hasInvalidSow
                             ? "border-red-500 bg-red-50 text-red-700 focus:border-red-500"
                             : "border-slate-300 bg-white text-slate-700 focus:border-sky-500"
                         }`}
                       >
-                        <option value="">Pilih SOW</option>
+                        <option value="">Select SOW</option>
                         {sowOptions.map((sow) => (
                           <option key={sow.sow_id} value={sow.sow_id}>
                             {sow.sow_nama ?? `SOW #${sow.sow_id}`}
@@ -255,17 +255,17 @@ export default function CreatorTable({
                       <td className={`border-x px-4 py-3 text-center ${invalidRunning?.planningUpload ? "bg-red-50 font-medium text-red-700" : ""}`}>
                         {creator.drf_planning_upload
                           ? new Date(creator.drf_planning_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
-                          : <><span>-</span>{invalidRunning?.planningUpload && <p className="mt-1 text-xs font-bold text-red-700">Wajib diisi</p>}</>}
+                          : <><span>-</span>{invalidRunning?.planningUpload && <p className="mt-1 text-xs font-bold text-red-700">Required</p>}</>}
                       </td>
                       <td className={`border-x px-4 py-3 text-center ${invalidRunning?.actualUpload ? "bg-red-50 font-medium text-red-700" : ""}`}>
                         {creator.drf_actual_upload
                           ? new Date(creator.drf_actual_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
-                          : <><span>-</span>{invalidRunning?.actualUpload && <p className="mt-1 text-xs font-bold text-red-700">Wajib diisi</p>}</>}
+                          : <><span>-</span>{invalidRunning?.actualUpload && <p className="mt-1 text-xs font-bold text-red-700">Required</p>}</>}
                       </td>
                       <td className={`border-x px-4 py-3 text-center ${invalidRunning?.linkContent ? "bg-red-50 font-medium text-red-700" : ""}`}>
                         {creator.drf_link_content ? (
                           <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">View content</a>
-                        ) : <><span>-</span>{invalidRunning?.linkContent && <p className="mt-1 text-xs font-bold text-red-700">Wajib diisi</p>}</>}
+                        ) : <><span>-</span>{invalidRunning?.linkContent && <p className="mt-1 text-xs font-bold text-red-700">Required</p>}</>}
                       </td>
                     </>
                   )}

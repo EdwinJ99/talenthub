@@ -130,7 +130,7 @@ export default function InvoiceSection({
 
   const handleSendPdf = async () => {
     if (!projectDetail?.id) {
-      await showAlertValidationError("Data project tidak ditemukan.");
+      await showAlertValidationError("Project data was not found.");
       return;
     }
 
@@ -143,10 +143,10 @@ export default function InvoiceSection({
         body: formData,
       });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error ?? "Gagal mengirim invoice.");
-      await showSuccess("Email sent", `Invoice berhasil dikirim ke ${result.email}.`);
+      if (!response.ok) throw new Error(result.error ?? "Failed to send invoice.");
+      await showSuccess("Email sent", `Invoice has been sent to ${result.email}.`);
     } catch (error) {
-      await showAlertValidationError(error instanceof Error ? error.message : "Gagal mengirim invoice.");
+      await showAlertValidationError(error instanceof Error ? error.message : "Failed to send invoice.");
     } finally {
       setSending(false);
     }
@@ -175,7 +175,7 @@ export default function InvoiceSection({
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-6"><h3 className="text-xl font-bold text-slate-900">Payment Method</h3>{payment ? <div className="mt-6 space-y-4 text-sm"><PaymentRow label="Bank" value={payment.bank} /><PaymentRow label="Account No" value={payment.accountNo} /><PaymentRow label="Account Name" value={payment.accountName} /></div> : <p className="mt-6 text-sm text-slate-500">Data payment belum tersedia untuk invoice ini.</p>}</div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-6"><h3 className="text-xl font-bold text-slate-900">Payment Method</h3>{payment ? <div className="mt-6 space-y-4 text-sm"><PaymentRow label="Bank" value={payment.bank} /><PaymentRow label="Account No" value={payment.accountNo} /><PaymentRow label="Account Name" value={payment.accountName} /></div> : <p className="mt-6 text-sm text-slate-500">Payment details are not available for this invoice.</p>}</div>
         <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6"><div className="space-y-3 text-sm"><TotalRow label="Subtotal" value={formatRupiah(projectDetail?.subtotal)} /><TotalRow label="DPP" value={formatRupiah(projectDetail?.dpp)} /><TotalRow label="PPN (11%)" value={formatRupiah(projectDetail?.ppn)} /></div><div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900"><span>Grand Total</span><span>{formatRupiah(projectDetail?.grandTotal)}</span></div></div>
       </div>
 

@@ -58,7 +58,7 @@ const loadData = async () => {
     const res = await fetch("/api/tracking");
 
     if (!res.ok) {
-      throw new Error("Gagal mengambil data");
+      throw new Error("Failed to fetch data");
     }
 
     const data = await res.json();
@@ -116,7 +116,7 @@ const endMatch =
     };
 
 const handleDelete = async (projectId: number) => {
-  const result = await confirmDelete("Hapus Project?");
+  const result = await confirmDelete("Delete Project?");
 
   if (!result.isConfirmed) return;
 
@@ -125,8 +125,8 @@ const handleDelete = async (projectId: number) => {
   });
 
   await showSuccess(
-    "Berhasil",
-    "Project berhasil dihapus."
+    "Success",
+    "Project has been deleted."
   );
 
   loadData();
@@ -466,8 +466,8 @@ const stepStyles = {
                 className={stepClassName}
                 title={
                   active
-                    ? `Buka tahap ${step.label}`
-                    : `Lihat riwayat ${step.label}`
+                    ? `Open ${step.label} stage`
+                    : `View ${step.label} history`
                 }
               >
                 {stepContent}
@@ -482,8 +482,8 @@ const stepStyles = {
               aria-disabled="true"
               title={
                 completed
-                  ? "Tahap ini sudah selesai"
-                  : "Tahap ini belum tersedia"
+                  ? "This stage is complete"
+                  : "This stage is not available yet"
               }
             >
               {stepContent}

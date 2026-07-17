@@ -28,14 +28,14 @@ export async function POST(
   const { id: idParam } = await params;
   const projectId = Number(idParam);
   if (!Number.isInteger(projectId)) {
-    return NextResponse.json({ error: "ID project tidak valid" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid project ID" }, { status: 400 });
   }
 
   const smtpUser = process.env.SMTP_USER;
   const smtpPassword = process.env.SMTP_PASSWORD;
   if (!smtpUser || !smtpPassword) {
     return NextResponse.json(
-      { error: "Konfigurasi SMTP belum tersedia di server" },
+      { error: "SMTP configuration is not available on the server" },
       { status: 500 }
     );
   }
@@ -47,19 +47,19 @@ export async function POST(
     });
 
     if (!project) {
-      return NextResponse.json({ error: "Project tidak ditemukan" }, { status: 404 });
+      return NextResponse.json({ error: "Project was not found" }, { status: 404 });
     }
 
     const recipientEmail = project.mst_brand?.brd_email?.trim();
     if (!recipientEmail) {
-      return NextResponse.json({ error: "Email brand belum diisi" }, { status: 400 });
+      return NextResponse.json({ error: "The brand email address is missing" }, { status: 400 });
     }
 
     const formData = await request.formData();
     const spreadsheet = formData.get("spreadsheet");
     if (!(spreadsheet instanceof File) || spreadsheet.size === 0) {
       return NextResponse.json(
-        { error: "File spreadsheet wajib disertakan" },
+        { error: "The spreadsheet file is required" },
         { status: 400 }
       );
     }
@@ -80,7 +80,7 @@ export async function POST(
       from: `D'BEST Influence <${smtpUser}>`,
       to: recipientEmail,
       subject: `Creator Spreadsheet ${project.prj_kode} – ${project.prj_nama}`,
-      text: `Yth. Tim ${project.mst_brand?.brd_nama ?? "Brand"},\n\nTerlampir spreadsheet creator untuk project ${project.prj_nama} (${project.prj_kode}).\n\nSalam,\nD'BEST Influence`,
+      text: `Dear ${project.mst_brand?.brd_nama ?? "Brand"} Team,\n\nPlease find the creator spreadsheet attached for project ${project.prj_nama} (${project.prj_kode}).\n\nBest regards,\nD'BEST Influence`,
       html: `
         <div style="margin:0;padding:32px 16px;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#1f2937">
           <div style="max-width:620px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 4px 18px rgba(15,23,42,.08)">
@@ -89,14 +89,14 @@ export async function POST(
               <div style="margin-top:10px;font-size:25px;font-weight:700">Creator Spreadsheet</div>
             </div>
             <div style="padding:32px 36px;font-size:15px;line-height:1.65">
-              <p style="margin-top:0">Yth. Tim <strong>${brandName}</strong>,</p>
-              <p>Bersama email ini kami lampirkan spreadsheet daftar creator untuk kebutuhan project Anda.</p>
+              <p style="margin-top:0">Dear <strong>${brandName}</strong> Team,</p>
+              <p>Please find the creator spreadsheet for your project attached to this email.</p>
               <table style="width:100%;border-collapse:collapse;margin:24px 0;background:#f9fafb">
                 <tr><td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;color:#6b7280">Project</td><td style="padding:12px 16px;border-bottom:1px solid #e5e7eb;font-weight:700">${projectName}</td></tr>
                 <tr><td style="padding:12px 16px;color:#6b7280">Project Code</td><td style="padding:12px 16px;font-weight:700">${projectCode}</td></tr>
               </table>
-              <p>Dokumen terlampir mencakup informasi creator dan detail SOW. Silakan hubungi kami bila ada pertanyaan atau perubahan yang diperlukan.</p>
-              <p style="margin-bottom:0">Hormat kami,<br><strong>${senderName}</strong><br>D'BEST Influence</p>
+              <p>The attached document includes creator information and SOW details. Please contact us with any questions or required changes.</p>
+              <p style="margin-bottom:0">Best regards,<br><strong>${senderName}</strong><br>D'BEST Influence</p>
             </div>
             <div style="padding:18px 36px;background:#f9fafb;color:#6b7280;font-size:12px;text-align:center">Email ini dikirim otomatis melalui TalentHub.</div>
           </div>
@@ -113,6 +113,6 @@ export async function POST(
     return NextResponse.json({ success: true, email: recipientEmail });
   } catch (error) {
     console.error("SEND SPREADSHEET EMAIL ERROR:", error);
-    return NextResponse.json({ error: "Gagal mengirim email spreadsheet" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to send spreadsheet email" }, { status: 500 });
   }
 }

@@ -106,8 +106,8 @@ export default function InvoicePage() {
   if (!result.isConfirmed) return;
 
   await showSuccess(
-    "Berhasil",
-    "Project berhasil diselesaikan."
+    "Success",
+    "Project has been completed."
   );
 
   setIsFinished(true);

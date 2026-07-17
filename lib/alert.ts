@@ -14,7 +14,7 @@ export const confirmDelete = async (title = "Delete Data?") => {
 };
 
 export const showSuccess = async (
-  title = "Berhasil",
+  title = "Success",
   text = "Data has been processed successfully."
 ) => {
   return Swal.fire({

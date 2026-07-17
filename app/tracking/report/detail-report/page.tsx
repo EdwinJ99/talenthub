@@ -167,7 +167,7 @@ export default function DetailReportPage() {
     onClick={() => router.push("/tracking/report")}
     className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
   >
-    Kembali ke Report
+    Back to Report
   </button>
 </div>
 

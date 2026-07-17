@@ -405,7 +405,7 @@ export default function QuotationSection({
 
   const handleSendPdf = async () => {
     if (!projectDetail?.id) {
-      await showAlertValidationError("Data project tidak ditemukan.");
+      await showAlertValidationError("Project data was not found.");
       return;
     }
 
@@ -422,13 +422,13 @@ export default function QuotationSection({
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error ?? "Gagal mengirim quotation.");
+        throw new Error(result.error ?? "Failed to send quotation.");
       }
 
-      await showSuccess("Email sent", `Quotation berhasil dikirim ke ${result.email}.`);
+      await showSuccess("Email sent", `Quotation has been sent to ${result.email}.`);
     } catch (error) {
       await showAlertValidationError(
-        error instanceof Error ? error.message : "Gagal mengirim quotation."
+        error instanceof Error ? error.message : "Failed to send quotation."
       );
     } finally {
       setSending(false);

@@ -46,7 +46,7 @@ export default function TrackingPageClient({
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">Tracking</p>
             <h1 className="mt-2 text-2xl font-bold text-slate-900">Order Tracking Monitor</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              Pantau semua order pada filter terpilih dengan progress submitted, confirmed, sampai checked dari Sunter Plant 1 ke Sunter Plant 2.
+              Monitor all orders in the selected filter with submitted, confirmed, and checked progress from Sunter Plant 1 to Sunter Plant 2.
             </p>
           </div>
 
@@ -69,9 +69,9 @@ export default function TrackingPageClient({
 
       {rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white/80 px-6 py-14 text-center shadow-sm">
-          <p className="text-lg font-semibold text-slate-900">Belum ada order pada filter ini</p>
+          <p className="text-lg font-semibold text-slate-900">No orders found for this filter</p>
           <p className="mt-2 text-sm text-slate-600">
-            Coba ganti tanggal, shift, atau day/night untuk melihat order lain.
+            Try changing the date, shift, or day/night setting to view other orders.
           </p>
         </div>
       ) : (

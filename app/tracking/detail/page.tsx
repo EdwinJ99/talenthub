@@ -171,7 +171,7 @@ const handleGenerateQuotation = async () => {
   if (creatorsWithoutSow.length > 0) {
     setInvalidSowCreatorIds(creatorsWithoutSow.map((creator) => creator.drf_id));
     await showAlertValidationError(
-      "Lengkapi SOW untuk semua creator sebelum Generate Quotation."
+      "Complete the SOW for every creator before generating the quotation."
     );
     return;
   }
@@ -195,7 +195,7 @@ const handleGenerateQuotation = async () => {
     const err = await res.json();
     setInvalidSowCreatorIds(err.missingSowCreatorIds ?? []);
     await showAlertValidationError(
-      err.error ?? "Lengkapi SOW seluruh creator sebelum generate quotation."
+      err.error ?? "Complete the SOW for every creator before generating the quotation."
     );
     return;
   }
@@ -264,7 +264,7 @@ const handleGenerateReport = async () => {
   if (Object.keys(missingFields).length > 0) {
     setInvalidRunningFields(missingFields);
     await showAlertValidationError(
-      "Lengkapi Planning Upload, Actual Upload, dan Link Content seluruh creator sebelum Generate Report."
+      "Complete Planning Upload, Actual Upload, and Link Content for every creator before generating the report."
     );
     return;
   }
@@ -285,7 +285,7 @@ const handleGenerateReport = async () => {
       setInvalidRunningFields(err.missingRunningFields);
     }
     await showAlertValidationError(
-      err.error ?? "Lengkapi data Running seluruh creator sebelum Generate Report."
+      err.error ?? "Complete all Running data before generating the report."
     );
     console.error(err);
     return;
@@ -299,7 +299,7 @@ const handleGenerateReport = async () => {
 const handleGenerateInvoice = async () => {
   const bankDetails: any = await confirmGenerateInvoice();
 
-  // Jika pengguna menutup modal atau tidak mengisi data, hentikan proses
+  // Stop when the user closes the modal or leaves a required field empty.
   if (!bankDetails) {
     return;
   }
@@ -315,7 +315,7 @@ const handleGenerateInvoice = async () => {
 
   if (!res.ok) {
     const responseText = await res.text();
-    let message = "Gagal membuat invoice.";
+    let message = "Failed to generate invoice.";
 
     try {
       const errorData = JSON.parse(responseText);
@@ -325,7 +325,7 @@ const handleGenerateInvoice = async () => {
     }
 
     await showAlertValidationError(message);
-    console.error(`Generate Invoice gagal (${res.status}): ${message}`);
+    console.error(`Generate Invoice failed (${res.status}): ${message}`);
     return;
   }
 
@@ -346,7 +346,7 @@ const handleFinishProject = async () => {
 
   if (!res.ok) {
     const errorData = await res.json();
-    await showAlertValidationError(errorData.error ?? "Gagal menyelesaikan project.");
+    await showAlertValidationError(errorData.error ?? "Failed to complete the project.");
     return;
   }
 

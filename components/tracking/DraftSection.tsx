@@ -50,7 +50,7 @@ export default function DraftSection({
 
   const handleSendSpreadsheet = async () => {
     if (!projectDetail?.id) {
-      await showAlertValidationError("Data project tidak ditemukan.");
+      await showAlertValidationError("Project data was not found.");
       return;
     }
 
@@ -70,16 +70,16 @@ export default function DraftSection({
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error ?? "Gagal mengirim spreadsheet.");
+        throw new Error(result.error ?? "Failed to send spreadsheet.");
       }
 
       await showSuccess(
         "Email sent",
-        `Spreadsheet berhasil dikirim ke ${result.email}.`
+        `Spreadsheet has been sent to ${result.email}.`
       );
     } catch (error) {
       await showAlertValidationError(
-        error instanceof Error ? error.message : "Gagal mengirim spreadsheet."
+        error instanceof Error ? error.message : "Failed to send spreadsheet."
       );
     } finally {
       setSending(false);

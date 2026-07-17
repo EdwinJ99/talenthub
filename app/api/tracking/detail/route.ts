@@ -130,7 +130,7 @@ export async function PATCH(req: Request) {
       const sowId = Number(body.drf_sow);
 
       if (!Number.isInteger(sowId)) {
-        return NextResponse.json({ error: "SOW tidak valid" }, { status: 400 });
+        return NextResponse.json({ error: "Invalid SOW" }, { status: 400 });
       }
 
       const sow = await prisma.mst_sow.findUnique({
@@ -138,7 +138,7 @@ export async function PATCH(req: Request) {
       });
 
       if (!sow) {
-        return NextResponse.json({ error: "SOW tidak ditemukan" }, { status: 404 });
+        return NextResponse.json({ error: "SOW was not found" }, { status: 404 });
       }
     }
 
