@@ -155,20 +155,20 @@ export default function InvoiceSection({
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900">Invoice</h2>
+        <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Invoice</h2>
         <p className="text-sm text-slate-700">Creator and payment details for this project.</p>
       </div>
 
-      <div className="mt-8 overflow-x-auto rounded-xl border border-slate-200">
-        <table className="min-w-[850px] w-full border-collapse text-sm whitespace-nowrap">
+      <div className="-mx-4 mt-8 w-auto overflow-x-auto rounded-xl border border-slate-200 touch-pan-x sm:mx-0 sm:w-full">
+        <table className="min-w-[720px] w-full border-collapse text-xs sm:min-w-[850px] sm:text-sm whitespace-nowrap">
           <thead><tr className="border-y border-slate-300 bg-gray-100 text-center">
             {[{ label: "No.", field: "no" }, { label: "Description", field: "name" }, { label: "SOW", field: "sow" }, { label: "Platform", field: "platform" }, { label: "Cost", field: "total" }].map((head) => (
-              <th key={head.field} onClick={() => handleSort(head.field)} className="cursor-pointer border-x border-slate-200 px-5 py-4 text-xs font-bold hover:bg-slate-50">{head.label}<span className="ml-1 text-slate-400">{getSortIcon(head.field)}</span></th>
+              <th key={head.field} onClick={() => handleSort(head.field)} className="cursor-pointer border-x border-slate-200 px-3 py-3 text-xs font-bold hover:bg-slate-50 sm:px-5 sm:py-4">{head.label}<span className="ml-1 text-slate-400">{getSortIcon(head.field)}</span></th>
             ))}
           </tr></thead>
           <tbody>{creators.map((creator, index) => (
             <tr key={creator.drf_id} className="border-b border-slate-200">
-              <td className="border-x px-5 py-4 text-center">{index + 1}</td><td className="border-x px-5 py-4">{creator.name ?? "-"}</td><td className="border-x px-5 py-4">{creator.sow ?? "-"}</td><td className="border-x px-5 py-4 text-center">{creator.platform ?? "-"}</td><td className="border-x px-5 py-4 text-right font-medium">{formatRupiah(creator.total)}</td>
+              <td className="border-x px-3 py-3 text-center sm:px-5 sm:py-4">{index + 1}</td><td className="border-x px-3 py-3 sm:px-5 sm:py-4">{creator.name ?? "-"}</td><td className="border-x px-3 py-3 sm:px-5 sm:py-4">{creator.sow ?? "-"}</td><td className="border-x px-3 py-3 text-center sm:px-5 sm:py-4">{creator.platform ?? "-"}</td><td className="border-x px-3 py-3 text-right font-medium sm:px-5 sm:py-4">{formatRupiah(creator.total)}</td>
             </tr>
           ))}</tbody>
         </table>
@@ -180,9 +180,9 @@ export default function InvoiceSection({
       </div>
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-        <button onClick={handleExportPdf} className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50"><FileDocumentIcon className="h-4 w-4" />Export PDF</button>
-        <button onClick={handleSendPdf} disabled={sending} className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"><FileDocumentIcon className="h-4 w-4" />{sending ? "Sending..." : "Send PDF"}</button>
-        {!readOnly && <button onClick={handleFinish} className="flex items-center justify-center gap-2 rounded-xl bg-black px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800"><FileDocumentIcon className="h-4 w-4" />Finish</button>}
+        <button onClick={handleExportPdf} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50 sm:w-auto"><FileDocumentIcon className="h-4 w-4" />Export PDF</button>
+        <button onClick={handleSendPdf} disabled={sending} className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"><FileDocumentIcon className="h-4 w-4" />{sending ? "Sending..." : "Send PDF"}</button>
+        {!readOnly && <button onClick={handleFinish} className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-8 py-3 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto"><FileDocumentIcon className="h-4 w-4" />Finish</button>}
       </div>
     </section>
   );

@@ -22,14 +22,14 @@ export default function ReportSection({
 }: Props) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-      <h2 className="text-2xl font-bold text-slate-900">List Result Report</h2>
+      <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">List Result Report</h2>
       <p className="text-sm text-slate-700">Data from Creator</p>
 
-      <div className="mt-8 flex items-center justify-between">
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-slate-500">10 entries per page</p>
         <Link
           href={`/tracking/report/detail-report?projectId=${projectDetail?.id ?? ""}`}
-          className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
         >
           <ReportIcon className="h-5 w-5" />
           View Report
@@ -48,7 +48,7 @@ export default function ReportSection({
         {!readOnly && (
           <button
             onClick={handleGenerateInvoice}
-            className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
+            className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white sm:w-auto"
           >
             Generate Invoice
           </button>

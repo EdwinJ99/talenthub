@@ -135,14 +135,14 @@ const handleDelete = async (projectId: number) => {
   return (
     <DefaultLayout>
       <div className="space-y-5">
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <p className="text-xs font-bold tracking-[0.35em] text-sky-600">
             TRACKING
           </p>
 
           <div className="mt-3 grid gap-6 lg:grid-cols-[1.2fr_3fr]">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">
+              <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
                 Progress Project
               </h1>
               <p className="mt-4 max-w-xs text-sm text-slate-500">
@@ -422,7 +422,7 @@ const stepStyles = {
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-5 gap-1 sm:gap-2">
           {steps.map((step, index) => {
           const active = index === stepIndex;
             const completed = index < stepIndex;

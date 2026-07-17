@@ -85,15 +85,15 @@ const handleGenerateInvoice = async () => {
   return (
     <DefaultLayout>
       <div className="space-y-6">
-        <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">Detail Project</h1>
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
+          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Detail Project</h1>
 
           <span className="mt-3 inline-flex rounded-full border border-emerald-400 bg-emerald-50 px-5 py-1 text-xs font-bold text-emerald-700">
             Report
           </span>
 
-          <div className="mt-12 overflow-x-auto">
-            <div className="relative min-w-[1000px] px-8">
+          <div className="-mx-4 mt-8 overflow-x-auto px-4 touch-pan-x sm:mx-0 sm:mt-12 sm:px-0">
+            <div className="relative min-w-[720px] px-4 sm:min-w-[1000px] sm:px-8">
 
               <div className="absolute left-14 right-14 top-3 h-1 rounded-full bg-slate-300" />
 
@@ -163,11 +163,11 @@ const handleGenerateInvoice = async () => {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-900">List Result Report</h2>
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">List Result Report</h2>
           <p className="text-sm text-slate-700">Data From Creator</p>
 
-          <div className="mt-8 flex items-center justify-between">
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-2 text-xs">
               <span>Show</span>
               <input defaultValue="10" className="h-10 w-16 border border-slate-300 px-3" />
@@ -178,7 +178,7 @@ const handleGenerateInvoice = async () => {
               onClick={() =>
                 router.push("/tracking/report/detail-report")
               }
-              className="flex items-center gap-3 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold text-slate-700"
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold text-slate-700 sm:w-auto"
             >
               <ReportIcon className="h-5 w-5" />
               View Report
@@ -261,7 +261,7 @@ const handleGenerateInvoice = async () => {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
           <button
             onClick={handleGenerateInvoice}
-            className="rounded-xl bg-black px-8 py-3 text-sm font-semibold text-white"
+            className="w-full rounded-xl bg-black px-8 py-3 text-sm font-semibold text-white sm:w-auto"
           >
             Generate Invoice
           </button>

@@ -440,7 +440,7 @@ export default function QuotationSection({
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-      <h2 className="text-2xl font-bold text-slate-900">Creator List</h2>
+      <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Creator List</h2>
       <p className="text-sm text-slate-700">
         Creators included in this quotation.
       </p>
@@ -459,7 +459,7 @@ export default function QuotationSection({
 />
 
 <div className="mt-8 flex justify-end">
-  <div className="w-[430px] rounded-xl border bg-yellow-50 p-6">
+  <div className="w-full max-w-[430px] rounded-xl border bg-yellow-50 p-4 sm:p-6">
 
     <Row
       label="Subtotal"
@@ -495,7 +495,7 @@ export default function QuotationSection({
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
         <button
           onClick={handleExportToPdf}
-          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 sm:w-auto"
         >
           <FileDocumentIcon className="h-4 w-4" />
           Download PDF
@@ -504,7 +504,7 @@ export default function QuotationSection({
         <button
           onClick={handleSendPdf}
           disabled={sending}
-          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
           <FileDocumentIcon className="h-4 w-4" />
           {sending ? "Sending..." : "Send PDF"}
@@ -513,7 +513,7 @@ export default function QuotationSection({
         {!readOnly && (
           <button
             onClick={handleStartProject}
-            className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
+            className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white sm:w-auto"
           >
             Start Project
           </button>

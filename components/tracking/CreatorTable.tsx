@@ -95,15 +95,15 @@ export default function CreatorTable({
 
   return (
     <div className="mt-6">
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-200 scrollbar-thin">
-        <table className={`${reportMode ? "min-w-[1000px]" : "min-w-[1400px]"} w-full border-collapse text-sm whitespace-nowrap`}>
+      <div className="-mx-4 w-auto overflow-x-auto rounded-xl border border-slate-200 touch-pan-x sm:mx-0 sm:w-full scrollbar-thin">
+        <table className={`${reportMode ? "min-w-[760px] sm:min-w-[1000px]" : "min-w-[1120px] sm:min-w-[1400px]"} w-full border-collapse text-xs sm:text-sm whitespace-nowrap`}>
           <thead>
             <tr className="border-y border-slate-300 bg-gray-100 text-left">
               {headers.map((head) => (
                 <th
                   key={head.field}
                   onClick={() => handleSort(head.field)}
-                  className="cursor-pointer border-x border-slate-200 px-4 py-4 text-xs font-bold hover:bg-slate-50"
+                  className="cursor-pointer border-x border-slate-200 px-3 py-3 text-xs font-bold hover:bg-slate-50 sm:px-4 sm:py-4"
                 >
                   {head.label}
 
@@ -113,7 +113,7 @@ export default function CreatorTable({
                 </th>
               ))}
 
-              <th className="sticky right-0 border-x bg-gray-100 px-4 py-4 text-xs font-bold">
+              <th className="sticky right-0 border-x bg-gray-100 px-3 py-3 text-xs font-bold sm:px-4 sm:py-4">
                 Action Detail
               </th>
             </tr>
@@ -324,7 +324,7 @@ export default function CreatorTable({
           {Math.min(startIndex + pageSize, creators.length)} of {creators.length} entries
         </span>
 
-        <div className="flex overflow-hidden rounded-md border border-gray-200">
+        <div className="flex max-w-full overflow-x-auto rounded-md border border-gray-200">
             <button
               type="button"
               disabled={safeCurrentPage === 1}

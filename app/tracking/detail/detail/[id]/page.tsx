@@ -129,13 +129,13 @@ export default function DetailCreatorPage() {
       <div className="space-y-6">
 
         {/* HEADER */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-8">
-          <div className="flex flex-wrap items-center justify-between gap-8">
-            <div className="flex items-center gap-4">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-8">
+          <div className="flex flex-col gap-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-8">
+            <div className="flex items-center gap-3 sm:gap-4">
               <img
                   src="https://picsum.photos/200"
                   alt=""
-                  className="h-24 w-24 rounded-full object-cover"
+                  className="h-16 w-16 rounded-full object-cover sm:h-24 sm:w-24"
                 />
 
               <div>
@@ -182,7 +182,7 @@ export default function DetailCreatorPage() {
         </section>
 
         {/* USER PERFORMANCE */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-8">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-8">
           <h2 className="mb-6 text-2xl font-bold">
             User Performance
           </h2>
@@ -195,7 +195,7 @@ export default function DetailCreatorPage() {
         </section>
 
         {/* ENGAGEMENT */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-8">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-8">
           <h2 className="mb-6 text-2xl font-bold">
             Engagement
           </h2>
@@ -219,7 +219,7 @@ export default function DetailCreatorPage() {
         </section>
 
         {/* AUDIENCE */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-8">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-8">
           <h2 className="mb-6 text-2xl font-bold">
             Audience Breakdown
           </h2>
@@ -247,7 +247,7 @@ export default function DetailCreatorPage() {
         </section>
 
         {/* CONTENT */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-8">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-8">
           <h2 className="mb-6 text-2xl font-bold">
             Content
           </h2>

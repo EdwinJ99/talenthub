@@ -42,9 +42,9 @@ export default function DetailReportPage() {
       <div className="space-y-6">
 
         {/* COPY DARI REPORT PAGE */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-          <div className="mt-8 overflow-x-auto">
-            <div className="relative min-w-[1000px] px-8">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
+          <div className="-mx-4 mt-8 overflow-x-auto px-4 touch-pan-x sm:mx-0 sm:px-0">
+            <div className="relative min-w-[720px] px-4 sm:min-w-[1000px] sm:px-8">
 
               <div className="absolute left-14 right-14 top-3 h-1 rounded-full bg-slate-300" />
 
@@ -111,8 +111,8 @@ export default function DetailReportPage() {
         </section>
 
         {/* DETAIL REPORT */}
-        <section className="rounded-2xl border border-slate-200 bg-white p-8">
-        <h1 className="text-3xl font-bold">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-8">
+        <h1 className="text-2xl font-bold sm:text-3xl">
             Detail Report
         </h1>
 
@@ -120,7 +120,7 @@ export default function DetailReportPage() {
             Post Performance Analytic
         </p>
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[260px_1fr]">
+        <div className="mt-8 grid gap-5 sm:gap-8 lg:grid-cols-[260px_1fr]">
 
             <div>
             <img
@@ -165,7 +165,7 @@ export default function DetailReportPage() {
 <div className="flex justify-end">
   <button
     onClick={() => router.push("/tracking/report")}
-    className="rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+    className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800 sm:w-auto"
   >
     Back to Report
   </button>

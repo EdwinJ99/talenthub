@@ -91,15 +91,15 @@ const handleStartProject = async () => {
   return (
     <DefaultLayout>
       <div className="space-y-6">
-        <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-          <h1 className="text-2xl font-bold text-slate-900">Detail Project</h1>
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
+          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Detail Project</h1>
 
         <span className="mt-4 inline-flex rounded-full border border-emerald-300 bg-emerald-50 px-6 py-2 text-sm font-semibold text-emerald-600">
           Quotation
         </span>
 
-          <div className="mt-12 overflow-x-auto">
-            <div className="relative min-w-[1000px] px-8">
+          <div className="-mx-4 mt-8 overflow-x-auto px-4 touch-pan-x sm:mx-0 sm:mt-12 sm:px-0">
+            <div className="relative min-w-[720px] px-4 sm:min-w-[1000px] sm:px-8">
 
               {/* Base Line */}
               <div className="absolute left-14 right-14 top-3 h-1 rounded-full bg-slate-300" />
@@ -152,7 +152,7 @@ const handleStartProject = async () => {
             </div>
           </div>
 
-          <div className="mt-16 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:mt-16 sm:grid-cols-2 xl:grid-cols-4">
           <FieldBox
             label="Brand Name"
             value={projectDetail.brand}

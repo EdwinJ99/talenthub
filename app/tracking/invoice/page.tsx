@@ -116,24 +116,24 @@ export default function InvoicePage() {
   return (
     <DefaultLayout>
       <div className="space-y-6">
-        <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-          <div className="flex items-start justify-between">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Detail Project</h1>
+              <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Detail Project</h1>
               <span className="mt-3 inline-flex rounded-full border border-emerald-400 bg-emerald-50 px-5 py-1 text-xs font-bold text-emerald-700">
                {isFinished ? "Finish" : "Invoice"}
               </span>
             </div>
 
             {!isFinished && (
-              <button className="rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
+              <button className="w-full rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold sm:w-auto">
                 ✎ Edit Header
               </button>
             )}
           </div>
 
-          <div className="mt-12 overflow-x-auto">
-            <div className="relative min-w-[1000px] px-8">
+          <div className="-mx-4 mt-8 overflow-x-auto px-4 touch-pan-x sm:mx-0 sm:mt-12 sm:px-0">
+            <div className="relative min-w-[720px] px-4 sm:min-w-[1000px] sm:px-8">
 
               <div className="absolute left-14 right-14 top-3 h-1 rounded-full bg-slate-300" />
 
@@ -208,8 +208,8 @@ export default function InvoicePage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-7 shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-900">List Items</h2>
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-7">
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">List Items</h2>
           <p className="text-sm text-slate-700">Creator Found</p>
 
           <div className="mt-8 flex items-center gap-2 text-xs">
@@ -301,13 +301,13 @@ export default function InvoicePage() {
             </div>
           </div>
 
-          <div className="mt-10 flex justify-end gap-5">
-          <button className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold sm:w-auto">
             <FileDocumentIcon className="h-4 w-4 text-black" />
             Export PDF
           </button>
 
-          <button className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold">
+          <button className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-8 py-3 text-sm font-semibold sm:w-auto">
             <FileDocumentIcon className="h-4 w-4 text-black" />
             Send PDF
           </button>
@@ -315,7 +315,7 @@ export default function InvoicePage() {
           {!isFinished && (
             <button
               onClick={handleFinish}
-              className="rounded-xl bg-black px-10 py-3 text-sm font-semibold text-white"
+              className="w-full rounded-xl bg-black px-10 py-3 text-sm font-semibold text-white sm:w-auto"
             >
               Finish
             </button>

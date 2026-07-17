@@ -36,7 +36,7 @@ export default function RunningSection({
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-      <h2 className="text-2xl font-bold text-slate-900">Campaign Running</h2>
+      <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Campaign Running</h2>
       <p className="text-sm text-slate-700">
         Data From Creator
       </p>
@@ -59,7 +59,7 @@ export default function RunningSection({
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
         <button
           onClick={handleExportToPdf}
-          className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 sm:w-auto"
         >
           <FileDocumentIcon className="h-4 w-4" />
           Download PDF
@@ -68,7 +68,7 @@ export default function RunningSection({
         {!readOnly && (
           <button
             onClick={handleGenerateReport}
-            className="flex items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white sm:w-auto"
           >
             <FileDocumentIcon className="h-4 w-4" />
             Generate Report

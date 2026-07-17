@@ -87,7 +87,7 @@ export default function DraftSection({
   };
   return (
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
-          <h2 className="text-2xl font-bold text-slate-900">Creator List</h2>
+          <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">Creator List</h2>
           <p className="text-sm text-slate-700">Data from Creator</p>
 
           <div className="mt-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

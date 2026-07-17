@@ -614,8 +614,8 @@ console.log(creators);
   return (
     <DefaultLayout>
       <div className="space-y-5">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-          <h1 className="text-2xl font-bold text-slate-900">Project Details</h1>
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 md:p-7">
+          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">Project Details</h1>
 
           <span
             className={`mt-4 inline-flex rounded-full border px-6 py-2 text-sm font-semibold ${
@@ -626,8 +626,8 @@ console.log(creators);
           >
             {projectDetail?.status}
           </span>
-          <div className="mt-10 overflow-x-auto">
-            <div className="relative min-w-[1000px] px-10">
+          <div className="-mx-4 mt-8 overflow-x-auto px-4 touch-pan-x sm:mx-0 sm:mt-10 sm:px-0">
+            <div className="relative min-w-[720px] px-4 sm:min-w-[1000px] sm:px-10">
               <div
                 className={`absolute left-0 top-3 h-1 w-[60px] rounded-full ${
                   currentStep > 0 || isProjectFinished
@@ -650,7 +650,7 @@ console.log(creators);
                   return (
                     <div key={step.label} className="contents">
                       <div
-                        className="relative flex w-20 shrink-0 flex-col items-center"
+                        className="relative flex w-[76px] shrink-0 flex-col items-center sm:w-20"
                       >
                         <div
                           className={`relative z-10 h-7 w-7 rounded-full border-4 ${
@@ -662,7 +662,7 @@ console.log(creators);
                           }`}
                         />
 
-                        <p className="mt-3 text-sm font-semibold text-slate-900">
+                        <p className="mt-3 text-center text-xs font-semibold text-slate-900 sm:text-sm">
                           {step.label}
                         </p>
 
@@ -693,7 +693,7 @@ console.log(creators);
             </div>
           </div>
 
-          <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-2 xl:grid-cols-4">
             <FieldBox label="Brand Name" value={projectDetail?.brand} />
             <FieldBox label="Project Name" value={projectDetail?.name} />
             <FieldBox label="PIC" value={projectDetail?.createdBy} />
