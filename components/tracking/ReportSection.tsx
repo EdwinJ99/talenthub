@@ -2,10 +2,13 @@ import { ReactNode, useState } from "react";
 import Link from "next/link";
 import CreatorTable from "./CreatorTable";
 import ReportIcon from "@/components/icons/ReportIcon";
+import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
+import { exportDetailReportPdf, type DetailReportPayload } from "@/lib/detail-report-pdf";
+import { showAlertValidationError } from "@/lib/alert";
 
 type Props = {
-  projectDetail: any;
-  creators: any[];
+  projectDetail: ({ id?: number } & Record<string, unknown>) | null;
+  creators: Record<string, unknown>[];
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
   handleGenerateInvoice: () => void;
@@ -21,7 +24,30 @@ export default function ReportSection({
   readOnly = false,
 }: Props) {
   const [selectedReportIds, setSelectedReportIds] = useState<number[]>([]);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const selectedQuery = selectedReportIds.map((id) => `detailIds=${id}`).join("&");
+
+  const handleExportPdf = async () => {
+    if (!projectDetail?.id) {
+      await showAlertValidationError("Project data was not found.");
+      return;
+    }
+
+    try {
+      setExportingPdf(true);
+      const response = await fetch(`/api/tracking/detail-report?projectId=${projectDetail.id}`, { cache: "no-store" });
+      const payload = await response.json() as DetailReportPayload & { error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Failed to load detail report data.");
+      if (!payload.items.some((item) => item.report)) {
+        throw new Error("No analytic data is available yet. Open Detail Report to fetch creator metadata first.");
+      }
+      await exportDetailReportPdf(payload);
+    } catch (error) {
+      await showAlertValidationError(error instanceof Error ? error.message : "Failed to export PDF.");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
 
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-7">
@@ -52,6 +78,15 @@ export default function ReportSection({
       />
 
       <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+        <button
+          type="button"
+          onClick={handleExportPdf}
+          disabled={exportingPdf}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        >
+          <FileDocumentIcon className="h-4 w-4" />
+          {exportingPdf ? "Preparing PDF..." : "Export PDF"}
+        </button>
         {!readOnly && (
           <button
             onClick={handleGenerateInvoice}

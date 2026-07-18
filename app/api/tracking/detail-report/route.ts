@@ -31,6 +31,7 @@ function serialize(row: Awaited<ReturnType<typeof getRows>>[number]) {
     creatorName: row.mst_creators.name,
     username: row.mst_creators.username,
     platform: row.mst_creators.social_media,
+    followers: row.mst_creators.followers ?? 0,
     photo: row.mst_creators.photo_url,
     sow: row.mst_sow?.sow_nama ?? null,
     contentUrl: row.drf_link_content,
@@ -58,7 +59,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     project: {
-      id: project.prj_id, brand: project.mst_brand.brd_nama,
+      id: project.prj_id, code: project.prj_kode, brand: project.mst_brand.brd_nama,
       name: project.prj_nama, pic: project.creaby, date: project.prj_renddate,
     },
     items: rows.map(serialize),
