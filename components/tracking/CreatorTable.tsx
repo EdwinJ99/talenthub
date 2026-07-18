@@ -32,6 +32,8 @@ type Props = {
   onView?: (creator: any) => void;
   onCheck?: (id: number) => void;
   checkedCreators?: number[];
+  selectedReportIds?: number[];
+  onReportSelectionChange?: (ids: number[]) => void;
   handleSort: (field: string) => void;
 };
 
@@ -53,6 +55,8 @@ export default function CreatorTable({
   onView,
   onCheck,
   checkedCreators = [],
+  selectedReportIds = [],
+  onReportSelectionChange,
 }: Props) {
   const pageSize = 10;
   const [currentPage, setCurrentPage] = useState(1);
@@ -101,6 +105,22 @@ export default function CreatorTable({
         <table className={`${reportMode ? "min-w-[760px] sm:min-w-[1000px]" : "min-w-[1120px] sm:min-w-[1400px]"} w-full border-collapse text-xs sm:text-sm whitespace-nowrap [&_td]:!border-slate-300 [&_th]:!border-slate-300`}>
           <thead>
             <tr className="border-y border-slate-400 bg-slate-300 text-left text-slate-900">
+              {reportMode && (
+                <th className="border-x px-3 py-3 text-center">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all creators on this page"
+                    checked={visibleCreators.length > 0 && visibleCreators.every((creator) => selectedReportIds.includes(creator.drf_id))}
+                    onChange={(event) => {
+                      const pageIds = visibleCreators.map((creator) => creator.drf_id);
+                      onReportSelectionChange?.(event.target.checked
+                        ? [...new Set([...selectedReportIds, ...pageIds])]
+                        : selectedReportIds.filter((id) => !pageIds.includes(id)));
+                    }}
+                    className="h-4 w-4 accent-sky-500"
+                  />
+                </th>
+              )}
               {headers.map((head) => (
                 <th
                   key={head.field}
@@ -130,6 +150,14 @@ export default function CreatorTable({
               if (reportMode) {
                 return (
                   <tr key={creator.id} className="border-b border-slate-200 bg-white">
+                    <td className="border-x px-4 py-3 text-center">
+                      <input type="checkbox" aria-label={`Select ${creator.name}`}
+                        checked={selectedReportIds.includes(creator.drf_id)}
+                        onChange={(event) => onReportSelectionChange?.(event.target.checked
+                          ? [...selectedReportIds, creator.drf_id]
+                          : selectedReportIds.filter((id) => id !== creator.drf_id))}
+                        className="h-4 w-4 accent-sky-500" />
+                    </td>
                     <td className="border-x px-4 py-3 text-center">{startIndex + index + 1}</td>
                     <td className="border-x px-4 py-3 text-center">
                       <img
@@ -151,7 +179,7 @@ export default function CreatorTable({
                     <td className="border-x px-4 py-3">{creator.sow ?? "-"}</td>
                     <td className="sticky right-0 border-x bg-white px-4 py-3 text-center">
                       {showView ? (
-                        <Link href={`/tracking/detail/detail/${creator.drf_creatorid}`} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                        <Link href={`/tracking/report/detail-report?projectId=${creator.drf_projectid}&detailIds=${creator.drf_id}`} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
                           <InvoiceIcon className="h-4 w-4 text-slate-900" /> View
                         </Link>
                       ) : "-"}
