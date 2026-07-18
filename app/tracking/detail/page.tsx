@@ -25,6 +25,7 @@ import InvoiceSection from "@/components/tracking/InvoiceSection";
 
 
 export default function DraftPage() {
+  const [isClientReady, setIsClientReady] = useState(false);
   const [projectDetail, setProjectDetail] = useState<any>(null);
   const searchParams = useSearchParams();
   const projectId = searchParams.get("projectId");
@@ -71,6 +72,10 @@ export default function DraftPage() {
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [checkedCreators, setCheckedCreators] = useState<number[]>([]);
   const router = useRouter();
+
+  useEffect(() => {
+    setIsClientReady(true);
+  }, []);
 
   const loadProject = async () => {
   const res = await fetch(`/api/tracking?id=${projectId}`);
@@ -628,6 +633,17 @@ case "Quotation":
 console.log(projectDetail);
 console.log(projectDetail?.status);
 console.log(creators);
+
+  if (!isClientReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-semibold text-slate-600 shadow-sm">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-sky-600" />
+          Loading project workspace...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <DefaultLayout>

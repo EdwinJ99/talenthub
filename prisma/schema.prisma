@@ -194,6 +194,9 @@ model trs_project {
   modidate        DateTime?     @default(now()) @db.Timestamp(6)
   prj_kode        String        @unique(map: "uq_project_kode") @db.VarChar(20)
   prj_paymentid   Int?
+  prj_sheetid     String?       @unique @db.VarChar(150)
+  prj_sheeturl    String?
+  prj_sheet_sync  DateTime?     @db.Timestamp(6)
   dtl_project     dtl_project[]
   mst_brand       mst_brand     @relation(fields: [prj_brand], references: [brd_id], map: "fk_trs_project_brand")
   mst_payment     mst_payment?  @relation(fields: [prj_paymentid], references: [pyt_id], onUpdate: NoAction, map: "fk_trs_project_payment")

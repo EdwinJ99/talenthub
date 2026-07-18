@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import CreatorTable from "./CreatorTable";
-import { createExcelBlob, exportToExcel } from "@/lib/excelExport";
+import { exportToExcel } from "@/lib/excelExport";
 import { showAlertValidationError, showSuccess } from "@/lib/alert";
 
 type DraftSectionProps = {
@@ -38,9 +38,7 @@ export default function DraftSection({
   readOnly = false,
 }: DraftSectionProps) {
   const [sending, setSending] = useState(false);
-
-  const getSpreadsheetFileName = () =>
-    `${projectDetail?.code ?? projectDetail?.prj_kode ?? "Project_Draft"}.xlsx`;
+  const [spreadsheetUrl, setSpreadsheetUrl] = useState<string | null>(projectDetail?.spreadsheetUrl ?? null);
 
   const handleDownload = () => {
     // Use project code for filename, fallback to a static name
@@ -56,16 +54,9 @@ export default function DraftSection({
 
     try {
       setSending(true);
-      const formData = new FormData();
-      formData.append(
-        "spreadsheet",
-        createExcelBlob(creators, projectDetail),
-        getSpreadsheetFileName()
-      );
-
       const response = await fetch(
         `/api/tracking/${projectDetail.id}/send-spreadsheet`,
-        { method: "POST", body: formData }
+        { method: "POST" }
       );
       const result = await response.json();
 
@@ -73,9 +64,11 @@ export default function DraftSection({
         throw new Error(result.error ?? "Failed to send spreadsheet.");
       }
 
+      setSpreadsheetUrl(result.spreadsheetUrl ?? null);
+
       await showSuccess(
         "Email sent",
-        `Spreadsheet has been sent to ${result.email}.`
+        `Google Spreadsheet has been shared and sent to ${result.email}.`
       );
     } catch (error) {
       await showAlertValidationError(
@@ -130,13 +123,24 @@ export default function DraftSection({
             <FileDocumentIcon className="h-4 w-4" />
             Download Spreadsheet
           </button>
+          {spreadsheetUrl && (
+            <a
+              href={spreadsheetUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-6 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 md:w-auto"
+            >
+              <FileDocumentIcon className="h-4 w-4" />
+              Open Google Sheet
+            </a>
+          )}
           <button
             onClick={handleSendSpreadsheet}
             disabled={sending}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
           >
             <FileDocumentIcon className="h-4 w-4" />
-            {sending ? "Sending..." : "Send Spreadsheet"}
+            {sending ? "Creating & Sending..." : "Send Google Spreadsheet"}
           </button>
           {!readOnly && (
             <button
