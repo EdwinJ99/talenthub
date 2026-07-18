@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
       no: c.id, // tetap dipertahankan karena dipakai untuk selectedRows di FE
       name: c.name || "Unknown",
       username: c.username || "-",
+      photo_url: c.photo_url || null,
       post: totalPost.toLocaleString(),
       er: `${c.engagement_rate ?? 0}%`,
       followers:

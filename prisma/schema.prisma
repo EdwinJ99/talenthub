@@ -71,15 +71,15 @@ model mst_brand {
 }
 
 model mst_payment {
-  pyt_id     Int       @id @default(autoincrement())
-  pyt_bank   String?   @db.VarChar(100)
-  pyt_norek  String?   @db.VarChar(100)
-  pyt_nama   String?   @db.VarChar(100)
-  pyt_status Int?      @default(1)
-  creaby     String?   @db.VarChar(20)
-  creadate   DateTime? @default(now()) @db.Timestamp(6)
-  modiby     String?   @db.VarChar(20)
-  modidate   DateTime? @default(now()) @db.Timestamp(6)
+  pyt_id      Int           @id @default(autoincrement())
+  pyt_bank    String?       @db.VarChar(100)
+  pyt_norek   String?       @db.VarChar(100)
+  pyt_nama    String?       @db.VarChar(100)
+  pyt_status  Int?          @default(1)
+  creaby      String?       @db.VarChar(20)
+  creadate    DateTime?     @default(now()) @db.Timestamp(6)
+  modiby      String?       @db.VarChar(20)
+  modidate    DateTime?     @default(now()) @db.Timestamp(6)
   trs_project trs_project[]
 }
 
@@ -175,47 +175,49 @@ model trs_project {
 }
 
 model mst_creators {
-  id                 Int             @id @default(autoincrement())
-  name               String          @db.VarChar(150)
-  username           String          @db.VarChar(100)
+  id                 Int                 @id @default(autoincrement())
+  name               String              @db.VarChar(150)
+  username           String              @db.VarChar(100)
   photo_url          String?
-  followers          Int?            @default(0)
-  total_post         Int?            @default(0)
-  engagement_rate    Decimal?        @default(0.00) @db.Decimal(5, 2)
-  average_view       Int?            @default(0)
-  average_view_brand Int?            @default(0)
-  cpv_all            Decimal?        @default(0.00) @db.Decimal(12, 2)
-  cpv_branded        Decimal?        @default(0.00) @db.Decimal(12, 2)
-  social_media       String          @db.VarChar(50)
-  tier               String          @db.VarChar(50)
-  gender             String          @db.VarChar(10)
+  followers          Int?                @default(0)
+  total_post         Int?                @default(0)
+  engagement_rate    Decimal?            @default(0.00) @db.Decimal(5, 2)
+  average_view       Int?                @default(0)
+  average_view_brand Int?                @default(0)
+  cpv_all            Decimal?            @default(0.00) @db.Decimal(12, 2)
+  cpv_branded        Decimal?            @default(0.00) @db.Decimal(12, 2)
+  social_media       String              @db.VarChar(50)
+  tier               String              @db.VarChar(50)
+  gender             String              @db.VarChar(10)
   city_id            Int?
   category_id        Int?
-  last_scraped_at    DateTime?       @default(now()) @db.Timestamp(6)
-  created_at         DateTime?       @default(now()) @db.Timestamp(6)
-  updated_at         DateTime?       @default(now()) @db.Timestamp(6)
-  dtl_project        dtl_project[]
-  mst_categories     mst_categories? @relation(fields: [category_id], references: [id], onUpdate: NoAction, map: "fk_creator_category")
-  mst_cities         mst_cities?     @relation(fields: [city_id], references: [id], onUpdate: NoAction, map: "fk_creator_city")
+  last_scraped_at    DateTime?           @default(now()) @db.Timestamp(6)
+  created_at         DateTime?           @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?           @default(now()) @db.Timestamp(6)
+  following          Int?                @default(0)
   dtl_creator_posts  dtl_creator_posts[]
+  dtl_project        dtl_project[]
+  mst_categories     mst_categories?     @relation(fields: [category_id], references: [id], onUpdate: NoAction, map: "fk_creator_category")
+  mst_cities         mst_cities?         @relation(fields: [city_id], references: [id], onUpdate: NoAction, map: "fk_creator_city")
 
   @@unique([username, social_media], map: "uq_creator_username_platform")
   @@index([social_media, tier, gender, city_id, category_id], map: "idx_creators_filter")
 }
 
 model dtl_creator_posts {
-  id              Int           @id @default(autoincrement())
-  creator_id      Int
-  post_url        String?
-  caption         String?
-  likes           Int?          @default(0)
-  comments        Int?          @default(0)
-  views           Int?          @default(0)
-  category_ai     String?       @db.VarChar(100)
-  is_endorse      Boolean       @default(false)
-  posted_at       DateTime?     @db.Timestamp(6)
-  scraped_at      DateTime      @default(now()) @db.Timestamp(6)
-  mst_creators    mst_creators  @relation(fields: [creator_id], references: [id], onDelete: Cascade, map: "fk_post_creator")
+  id            Int          @id @default(autoincrement())
+  creator_id    Int
+  post_url      String?
+  caption       String?
+  likes         Int?         @default(0)
+  comments      Int?         @default(0)
+  views         Int?         @default(0)
+  category_ai   String?      @db.VarChar(100)
+  is_endorse    Boolean      @default(false)
+  posted_at     DateTime?    @db.Timestamp(6)
+  scraped_at    DateTime     @default(now()) @db.Timestamp(6)
+  thumbnail_url String?
+  mst_creators  mst_creators @relation(fields: [creator_id], references: [id], onDelete: Cascade, map: "fk_post_creator")
 
   @@unique([creator_id, posted_at, caption], name: "uq_creator_post", map: "uq_creator_post")
   @@index([creator_id, is_endorse], map: "idx_post_creator_endorse")

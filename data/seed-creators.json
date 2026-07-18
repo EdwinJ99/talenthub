@@ -1,4 +1,10 @@
 [
+  { "username": "tasyafarasya", "platform": "tiktok", "category": "Beauty & Fashion" },
+  { "username": "anakjajan", "platform": "tiktok", "category": "Food & Beverage" },
+  { "username": "WindahBasudara", "platform": "tiktok", "category": "Gaming" },
+  { "username": "fadiljaidi", "platform": "tiktok", "category": "Entertainment & Comedy" },
+  { "username": "gadgetins", "platform": "tiktok", "category": "Tech & Gadgets" },
+
   { "username": "tasyafarasya", "platform": "instagram", "category": "Beauty & Fashion" },
   { "username": "anakjajan", "platform": "instagram", "category": "Food & Beverage" },
   { "username": "WindahBasudara", "platform": "instagram", "category": "Gaming" },

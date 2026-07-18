@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { showAlertValidationError, showAlertSuccess } from "@/lib/alert";
+import Link from "next/link";
 
 const SortIcon = () => <span className="text-gray-400 text-xs ml-1">⇅</span>;
 
@@ -11,6 +12,7 @@ type Creator = {
   no: number;
   name: string;
   username: string;
+  photo_url: string | null;
   followers: string;
   post: string;
   er: string;
@@ -18,7 +20,6 @@ type Creator = {
   avrBrand: string;
   cpvAll: string;
   cpvBranded: string;
-
   social_media: string;
   tier: string;
   gender: string;
@@ -47,7 +48,9 @@ export default function CreatorDiscoveryPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
 
-const [brandsOptions, setBrandsOptions] = useState<{ id: string; name: string }[]>([]);
+  const [brandsOptions, setBrandsOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
 
   const [isFiltered, setIsFiltered] = useState(true);
 
@@ -403,7 +406,7 @@ const [brandsOptions, setBrandsOptions] = useState<{ id: string; name: string }[
       setSelectedRows([]);
 
       // TODO: sesuaikan path ini dengan route halaman draft/tracking kamu
-     router.push(`/tracking/detail?projectId=${projectId}&view=Draft`);
+      router.push(`/tracking/detail?projectId=${projectId}&view=Draft`);
     } catch (error) {
       console.error("Connection error while updating project:", error);
       showAlertValidationError(
@@ -679,8 +682,25 @@ const [brandsOptions, setBrandsOptions] = useState<{ id: string; name: string }[
                       {startIndex + i + 1}
                     </td>
                     <td className="p-3 border-r border-gray-200 text-center">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-500 mx-auto">
-                        🖼️
+                      <div className="w-16 h-16 rounded-lg overflow-hidden bg-blue-100 flex items-center justify-center mx-auto">
+                        {row.photo_url ? (
+                          <img
+                            src={`/api/image-proxy?url=${encodeURIComponent(
+                              row.photo_url
+                            )}`}
+                            alt={row.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display =
+                                "none";
+                              (
+                                e.target as HTMLImageElement
+                              ).parentElement!.innerHTML = "🖼️";
+                            }}
+                          />
+                        ) : (
+                          <span className="text-blue-500">🖼️</span>
+                        )}
                       </div>
                     </td>
                     <td className="p-3 border-r border-gray-200 font-medium whitespace-nowrap">
@@ -701,29 +721,32 @@ const [brandsOptions, setBrandsOptions] = useState<{ id: string; name: string }[
                     <td className="p-3 border-r border-gray-200 whitespace-nowrap">
                       {row.avrView}
                     </td>
-                    <td className="p-3 text-center whitespace-nowrap">
-                      <button className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors inline-flex items-center justify-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                          className="w-5 h-5"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                        </svg>
-                      </button>
-                    </td>
+                   <td className="p-3 text-center whitespace-nowrap">
+  <button
+    onClick={() => router.push(`/tracking/detail/detail/${row.no}`)}
+    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors inline-flex items-center justify-center"
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      strokeWidth={2}
+      stroke="currentColor"
+      className="w-5 h-5"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  </button>
+</td>
                   </tr>
                 ))}
                 {currentData.length === 0 && (

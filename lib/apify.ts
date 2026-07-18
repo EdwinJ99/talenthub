@@ -8,12 +8,15 @@ export interface RawPost {
   comments: number;
   views?: number;
   postedAt: string;
+  postUrl: string;
+  thumbnailUrl?: string;
 }
 
 export interface RawProfile {
   username: string;
   socialMedia: 'instagram' | 'tiktok';
   followers: number;
+  following: number;
   totalPost: number;
   photoUrl?: string;
   bio?: string;
@@ -34,6 +37,7 @@ export async function scrapeInstagramProfiles(usernames: string[]): Promise<RawP
     username: item.username,
     socialMedia: 'instagram' as const,
     followers: item.followersCount ?? 0,
+    following: item.followsCount ?? 0,
     totalPost: item.postsCount ?? 0,
     photoUrl: item.profilePicUrl,
     bio: item.biography,
@@ -43,6 +47,8 @@ export async function scrapeInstagramProfiles(usernames: string[]): Promise<RawP
       comments: p.commentsCount ?? 0,
       views: p.videoViewCount,
       postedAt: p.timestamp,
+      postUrl: p.url,
+      thumbnailUrl: p.displayUrl,
     })),
     isValid: !item.error,
   }));
@@ -71,6 +77,7 @@ export async function scrapeTiktokProfiles(usernames: string[]): Promise<RawProf
       username,
       socialMedia: 'tiktok' as const,
       followers: author.fans ?? 0,
+      following: author.following ?? 0,
       totalPost: author.video ?? 0,
       photoUrl: author.avatar,
       bio: author.signature,
@@ -80,13 +87,14 @@ export async function scrapeTiktokProfiles(usernames: string[]): Promise<RawProf
         comments: p.commentCount ?? 0,
         views: p.playCount,
         postedAt: p.createTimeISO,
+        postUrl: p.webVideoUrl,
+        thumbnailUrl: p.videoMeta?.coverUrl ?? p.videoMeta?.originalCoverUrl,
       })),
       isValid: true,
     };
   });
 }
 
-// Validasi apakah username ada/valid, dipakai sebelum insert username baru temuan Gemini
 export async function validateUsernames(
   usernames: string[],
   platform: 'instagram' | 'tiktok'

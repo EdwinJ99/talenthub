@@ -15,6 +15,13 @@ function average(nums: number[]): number {
   return nums.reduce((a, b) => a + b, 0) / nums.length;
 }
 
+function calculateTier(followers: number): string {
+  if (followers >= 1_000_000) return 'Mega';
+  if (followers >= 100_000) return 'Macro';
+  if (followers >= 10_000) return 'Micro';
+  return 'Nano';
+}
+
 export async function processCreator(entry: SeedEntry) {
   console.log(`\n--- ${entry.username} (${entry.platform}) ---`);
 
@@ -70,6 +77,8 @@ export async function processCreator(entry: SeedEntry) {
     .filter((v: number) => v > 0);
   const avgViewBrand = average(brandedViews);
 
+  const tier = calculateTier(profile.followers);
+
   // 6. Insert/update ke mst_creators
   const creator = await prisma.mst_creators.upsert({
     where: {
@@ -77,8 +86,10 @@ export async function processCreator(entry: SeedEntry) {
     },
     update: {
       followers: profile.followers,
+      following: profile.following,
       total_post: profile.totalPost,
       photo_url: profile.photoUrl,
+      tier,
       engagement_rate: avgEngagement.toFixed(2),
       average_view: Math.round(avgView),
       average_view_brand: Math.round(avgViewBrand),
@@ -91,10 +102,11 @@ export async function processCreator(entry: SeedEntry) {
       username: profile.username,
       name: profile.username,
       followers: profile.followers,
+      following: profile.following,
       total_post: profile.totalPost,
       photo_url: profile.photoUrl,
       social_media: profile.socialMedia,
-      tier: profile.followers > 100000 ? 'macro' : 'micro',
+      tier,
       gender: 'unknown',
       category_id: category.id,
       city_id: cityId,
@@ -104,7 +116,7 @@ export async function processCreator(entry: SeedEntry) {
     },
   });
 
-  console.log(`  [OK] creator id ${creator.id}, engagement ${avgEngagement.toFixed(2)}%`);
+  console.log(`  [OK] creator id ${creator.id}, tier ${tier}, engagement ${avgEngagement.toFixed(2)}%`);
 
   // 7. Insert/update tiap post
   let savedPosts = 0;
@@ -123,6 +135,8 @@ export async function processCreator(entry: SeedEntry) {
           likes: p.likes,
           comments: p.comments,
           views: p.views,
+          post_url: p.postUrl,
+          thumbnail_url: p.thumbnailUrl,
           is_endorse: endorseResults.find(e => e.index === i)?.isEndorse ?? false,
         },
         create: {
@@ -131,6 +145,8 @@ export async function processCreator(entry: SeedEntry) {
           likes: p.likes,
           comments: p.comments,
           views: p.views,
+          post_url: p.postUrl,
+          thumbnail_url: p.thumbnailUrl,
           is_endorse: endorseResults.find(e => e.index === i)?.isEndorse ?? false,
           posted_at: new Date(p.postedAt),
         },
