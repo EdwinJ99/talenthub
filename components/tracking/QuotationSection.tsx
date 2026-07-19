@@ -146,7 +146,7 @@ export default function QuotationSection({
     autoTable(doc, {
       startY: 74,
 
-      head: [["Description", "SOW", "Platform", "Cost"]],
+      head: [["Description", "SOW", "Platform", "Qty", "Rate Card", "Total"]],
 
       body: creators.map((creator) => [
         creator.name || "N/A",
@@ -154,7 +154,8 @@ export default function QuotationSection({
         creator.sow ?? "-",
 
         creator.platform || "Instagram & Tiktok",
-
+        creator.drf_qty ?? "-",
+        `Rp ${formatRupiah(creator.markupPrice)}`,
         `Rp ${formatRupiah(creator.total)}`,
       ]),
 
@@ -186,22 +187,30 @@ export default function QuotationSection({
 
       columnStyles: {
         0: {
-          cellWidth: 42,
+          cellWidth: 35,
           halign: "left",
         },
 
         1: {
-          cellWidth: 64,
+          cellWidth: 50,
           halign: "left",
         },
 
         2: {
-          cellWidth: 26,
+          cellWidth: 23,
           halign: "center",
         },
 
         3: {
-        cellWidth: 42,
+          cellWidth: 14,
+          halign: "center",
+        },
+        4: {
+          cellWidth: 28,
+          halign: "right",
+        },
+        5: {
+          cellWidth: 28,
           halign: "right",
         },
       },

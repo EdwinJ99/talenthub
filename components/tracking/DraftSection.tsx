@@ -20,6 +20,9 @@ type DraftSectionProps = {
   sowOptions: { sow_id: number; sow_nama: string | null }[];
   onSowChange: (creatorId: number, sowId: number | null) => void;
   invalidSowCreatorIds?: number[];
+  onDraftPriceChange: (creatorId: number, field: "rateCard" | "markupPrice" | "qty", value: number | null) => void;
+  invalidPricingFields?: Record<number, { rateCard: boolean; markupPrice: boolean; qty: boolean }>;
+  onAddSow: (creatorId: number) => void;
 };
 
 export default function DraftSection({
@@ -35,6 +38,9 @@ export default function DraftSection({
   sowOptions,
   onSowChange,
   invalidSowCreatorIds,
+  onDraftPriceChange,
+  invalidPricingFields,
+  onAddSow,
   readOnly = false,
 }: DraftSectionProps) {
   const [sending, setSending] = useState(false);
@@ -108,6 +114,11 @@ export default function DraftSection({
             onSowChange={onSowChange}
             sowReadOnly={readOnly}
             invalidSowCreatorIds={invalidSowCreatorIds}
+            draftPricingMode
+            draftPricingEditable={!readOnly}
+            onDraftPriceChange={onDraftPriceChange}
+            invalidPricingFields={invalidPricingFields}
+            onAddSow={onAddSow}
           />
 
           <div className="mt-6 h-2 rounded-full bg-slate-300">

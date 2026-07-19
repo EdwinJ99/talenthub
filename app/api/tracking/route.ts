@@ -389,19 +389,40 @@ export async function PUT(request: Request) {
     }
 
     if (Number(body.prj_status) === 2) {
-      const detailsWithoutSow = await prisma.dtl_project.findMany({
+      const draftDetails = await prisma.dtl_project.findMany({
         where: {
           drf_projectid: id,
-          drf_sow: null,
         },
-        select: { drf_id: true },
+        select: {
+          drf_id: true,
+          drf_sow: true,
+          drf_rate: true,
+          drf_markup_price: true,
+          drf_qty: true,
+        },
       });
 
-      if (detailsWithoutSow.length > 0) {
+      const detailsWithoutSow = draftDetails.filter((detail) => !detail.drf_sow);
+      const missingPricingFields = draftDetails.reduce<Record<number, {
+        rateCard: boolean;
+        markupPrice: boolean;
+        qty: boolean;
+      }>>((result, detail) => {
+        const fields = {
+          rateCard: Number(detail.drf_rate ?? 0) <= 0,
+          markupPrice: Number(detail.drf_markup_price ?? 0) <= 0,
+          qty: detail.drf_qty === null || !Number.isInteger(detail.drf_qty) || detail.drf_qty <= 0,
+        };
+        if (fields.rateCard || fields.markupPrice || fields.qty) result[detail.drf_id] = fields;
+        return result;
+      }, {});
+
+      if (detailsWithoutSow.length > 0 || Object.keys(missingPricingFields).length > 0) {
         return NextResponse.json(
           {
-            error: "Complete the SOW for every creator before generating the quotation",
+            error: "Complete the SOW, Rate Card, Mark Price, and Qty for every creator before generating the quotation",
             missingSowCreatorIds: detailsWithoutSow.map((detail) => detail.drf_id),
+            missingPricingFields,
           },
           { status: 400 }
         );

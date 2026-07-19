@@ -44,18 +44,6 @@ export async function POST(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // 2. Ambil SOW default (baris pertama di tabel mst_sow)
-    const defaultSow = await prisma.mst_sow.findFirst({
-      orderBy: { sow_id: "asc" },
-    });
-
-    if (!defaultSow) {
-      return NextResponse.json(
-        { error: "Tidak ada data SOW di database. Tambahkan minimal 1 SOW terlebih dahulu." },
-        { status: 400 }
-      );
-    }
-
     const usernameLogin = session.user.name || session.user.email || "SYSTEM";
 
     // 3. Cegah duplikat: ambil creator yang SUDAH ada di project ini
@@ -92,9 +80,10 @@ export async function POST(
       return {
         drf_projectid: projectId,
         drf_creatorid: parseInt(creatorDatabaseId),
-        drf_sow: defaultSow.sow_id,
-        drf_qty: 1,
-        drf_rate: 0,
+        drf_sow: null,
+        drf_qty: null,
+        drf_rate: null,
+        drf_markup_price: null,
         drf_status: 0,
         creaby: usernameLogin,
         creadate: new Date(),
@@ -102,7 +91,7 @@ export async function POST(
     });
 
     // 6. Insert creator baru
-    await prisma.dtl_project.createMany({ data: detailData });
+    await prisma.dtl_project.createMany({   : detailData });
 
     // 7. Update jejak modifikasi di project induk
     await prisma.trs_project.update({

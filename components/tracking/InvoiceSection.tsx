@@ -85,17 +85,19 @@ export default function InvoiceSection({
 
     autoTable(doc, {
       startY: 73,
-      head: [["Description", "SOW", "Platform", "Cost"]],
+      head: [["Description", "SOW", "Platform", "Qty", "Rate Card", "Total"]],
       body: creators.map((creator) => [
         creator.name ?? "-",
         creator.sow ?? "-",
         creator.platform ?? "-",
+        creator.drf_qty ?? "-",
+        formatRupiah(creator.markupPrice),
         formatRupiah(creator.total),
       ]),
       theme: "grid",
       headStyles: { fillColor: brown, textColor: black, fontStyle: "bold", halign: "center", lineColor: black, lineWidth: 0.35 },
       bodyStyles: { textColor: black, fontSize: 9, lineColor: black, lineWidth: 0.35 },
-      columnStyles: { 0: { cellWidth: 44 }, 1: { cellWidth: 57 }, 2: { cellWidth: 28 }, 3: { cellWidth: 41, halign: "right" } },
+      columnStyles: { 0: { cellWidth: 34 }, 1: { cellWidth: 46 }, 2: { cellWidth: 22 }, 3: { cellWidth: 13, halign: "center" }, 4: { cellWidth: 28, halign: "right" }, 5: { cellWidth: 27, halign: "right" } },
       margin: { left, right: left },
       didDrawPage: drawBorder,
     });
@@ -195,13 +197,13 @@ export default function InvoiceSection({
       <div className="-mx-4 mt-8 w-auto overflow-x-auto rounded-xl border border-slate-200 touch-pan-x sm:mx-0 sm:w-full">
         <table className="min-w-[720px] w-full border-collapse text-xs sm:min-w-[850px] sm:text-sm whitespace-nowrap">
           <thead><tr className="border-y border-slate-300 bg-gray-100 text-center">
-            {[{ label: "No.", field: "no" }, { label: "Description", field: "name" }, { label: "SOW", field: "sow" }, { label: "Platform", field: "platform" }, { label: "Cost", field: "total" }].map((head) => (
+            {[{ label: "No.", field: "no" }, { label: "Description", field: "name" }, { label: "SOW", field: "sow" }, { label: "Platform", field: "platform" }, { label: "Qty", field: "drf_qty" }, { label: "Rate Card", field: "rateCard" }, { label: "Mark Price", field: "markupPrice" }, { label: "Total", field: "total" }].map((head) => (
               <th key={head.field} onClick={() => handleSort(head.field)} className="cursor-pointer border-x border-slate-200 px-3 py-3 text-xs font-bold hover:bg-slate-50 sm:px-5 sm:py-4">{head.label}<span className="ml-1 text-slate-400">{getSortIcon(head.field)}</span></th>
             ))}
           </tr></thead>
           <tbody>{creators.map((creator, index) => (
             <tr key={creator.drf_id} className="border-b border-slate-200">
-              <td className="border-x px-3 py-3 text-center sm:px-5 sm:py-4">{index + 1}</td><td className="border-x px-3 py-3 sm:px-5 sm:py-4">{creator.name ?? "-"}</td><td className="border-x px-3 py-3 sm:px-5 sm:py-4">{creator.sow ?? "-"}</td><td className="border-x px-3 py-3 text-center sm:px-5 sm:py-4">{creator.platform ?? "-"}</td><td className="border-x px-3 py-3 text-right font-medium sm:px-5 sm:py-4">{formatRupiah(creator.total)}</td>
+              <td className="border-x px-3 py-3 text-center sm:px-5 sm:py-4">{index + 1}</td><td className="border-x px-3 py-3 sm:px-5 sm:py-4">{creator.name ?? "-"}</td><td className="border-x px-3 py-3 sm:px-5 sm:py-4">{creator.sow ?? "-"}</td><td className="border-x px-3 py-3 text-center sm:px-5 sm:py-4">{creator.platform ?? "-"}</td><td className="border-x px-3 py-3 text-center sm:px-5 sm:py-4">{creator.drf_qty ?? "-"}</td><td className="border-x px-3 py-3 text-right sm:px-5 sm:py-4">{formatRupiah(creator.rateCard)}</td><td className="border-x px-3 py-3 text-right sm:px-5 sm:py-4">{formatRupiah(creator.markupPrice)}</td><td className="border-x px-3 py-3 text-right font-medium sm:px-5 sm:py-4">{formatRupiah(creator.total)}</td>
             </tr>
           ))}</tbody>
         </table>

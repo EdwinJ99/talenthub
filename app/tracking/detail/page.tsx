@@ -63,6 +63,11 @@ export default function DraftPage() {
     { sow_id: number; sow_nama: string | null }[]
   >([]);
   const [invalidSowCreatorIds, setInvalidSowCreatorIds] = useState<number[]>([]);
+  const [invalidPricingFields, setInvalidPricingFields] = useState<Record<number, {
+    rateCard: boolean;
+    markupPrice: boolean;
+    qty: boolean;
+  }>>({});
   const [invalidRunningFields, setInvalidRunningFields] = useState<Record<number, {
     planningUpload: boolean;
     actualUpload: boolean;
@@ -166,22 +171,119 @@ const handleSowChange = async (creatorId: number, sowId: number | null) => {
   }
 };
 
+const handleDraftPriceChange = async (
+  creatorId: number,
+  field: "rateCard" | "markupPrice" | "qty",
+  value: number | null
+) => {
+  const isInvalid = value === null || !Number.isFinite(value) || value <= 0;
+  setInvalidPricingFields((current) => ({
+    ...current,
+    [creatorId]: {
+      rateCard: field === "rateCard" ? isInvalid : current[creatorId]?.rateCard ?? false,
+      markupPrice: field === "markupPrice" ? isInvalid : current[creatorId]?.markupPrice ?? false,
+      qty: field === "qty" ? isInvalid : current[creatorId]?.qty ?? false,
+    },
+  }));
+
+  if (isInvalid) {
+    setCreators((current) => current.map((creator) => {
+      if (creator.drf_id !== creatorId) return creator;
+      const updated = { ...creator, [field]: null };
+      if (field === "markupPrice") {
+        updated.rate = 0;
+        updated.total = 0;
+      } else if (field === "qty") {
+        updated.drf_qty = 0;
+        updated.qty = 0;
+        updated.total = 0;
+      }
+      return updated;
+    }));
+  }
+
+  try {
+    const databaseField = field === "rateCard"
+      ? "drf_rate"
+      : field === "markupPrice" ? "drf_markup_price" : "drf_qty";
+    const response = await fetch(`/api/tracking/detail?id=${creatorId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [databaseField]: value }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error ?? "Failed to save pricing");
+
+    setCreators((current) => current.map((creator) => {
+      if (creator.drf_id !== creatorId) return creator;
+      const updated = { ...creator, [field]: value };
+      if (field === "markupPrice") {
+        updated.rate = value ?? 0;
+        updated.total = Number(value ?? 0) * Number(creator.drf_qty ?? creator.qty ?? 1);
+      } else if (field === "qty") {
+        updated.drf_qty = value ?? 0;
+        updated.qty = value ?? 0;
+        updated.total = Number(value ?? 0) * Number(creator.markupPrice ?? 0);
+      }
+      return updated;
+    }));
+  } catch (error) {
+    await showAlertValidationError(
+      error instanceof Error ? error.message : "Failed to save pricing."
+    );
+    await loadCreators();
+  }
+};
+
+const handleAddSow = async (creatorId: number) => {
+  try {
+    const response = await fetch("/api/tracking/detail", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sourceDetailId: creatorId }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error ?? "Failed to add SOW row");
+    await loadCreators();
+  } catch (error) {
+    await showAlertValidationError(
+      error instanceof Error ? error.message : "Failed to add SOW row."
+    );
+  }
+};
+
   const handleEditDraft = () => {
   router.push(`/discovery?projectId=${projectId}&mode=edit`);
 };
 
 const handleGenerateQuotation = async () => {
   const creatorsWithoutSow = creators.filter((creator) => !creator.sowId);
+  const pricingValidation = creators.reduce<Record<number, {
+    rateCard: boolean;
+    markupPrice: boolean;
+    qty: boolean;
+  }>>((result, creator) => {
+    const fields = {
+      rateCard: !Number.isFinite(Number(creator.rateCard)) || Number(creator.rateCard) <= 0,
+      markupPrice: !Number.isFinite(Number(creator.markupPrice)) || Number(creator.markupPrice) <= 0,
+      qty: !Number.isInteger(Number(creator.drf_qty)) || Number(creator.drf_qty) <= 0,
+    };
+    if (fields.rateCard || fields.markupPrice || fields.qty) result[creator.drf_id] = fields;
+    return result;
+  }, {});
 
-  if (creatorsWithoutSow.length > 0) {
+  setInvalidPricingFields(pricingValidation);
+
+  if (creatorsWithoutSow.length > 0 || Object.keys(pricingValidation).length > 0) {
     setInvalidSowCreatorIds(creatorsWithoutSow.map((creator) => creator.drf_id));
     await showAlertValidationError(
-      "Complete the SOW for every creator before generating the quotation."
+      "Complete the SOW, Rate Card, Mark Price, and Qty for every creator before generating the quotation."
     );
     return;
   }
 
   setInvalidSowCreatorIds([]);
+  setInvalidPricingFields({});
   const result = await confirmGenerateQuotation();
 
   if (!result.isConfirmed) return;
@@ -199,6 +301,7 @@ const handleGenerateQuotation = async () => {
   if (!res.ok) {
     const err = await res.json();
     setInvalidSowCreatorIds(err.missingSowCreatorIds ?? []);
+    setInvalidPricingFields(err.missingPricingFields ?? {});
     await showAlertValidationError(
       err.error ?? "Complete the SOW for every creator before generating the quotation."
     );
@@ -556,6 +659,9 @@ const renderTrackingSection = () => {
           sowOptions={sowOptions}
           onSowChange={handleSowChange}
           invalidSowCreatorIds={invalidSowCreatorIds}
+          onDraftPriceChange={handleDraftPriceChange}
+          invalidPricingFields={invalidPricingFields}
+          onAddSow={handleAddSow}
           readOnly={isHistoricalView}
         />
       );

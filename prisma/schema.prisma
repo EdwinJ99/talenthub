@@ -99,7 +99,8 @@ model dtl_project {
   drf_projectid       Int
   drf_sow             Int?
   drf_rate            Decimal?       @db.Decimal(12, 2)
-  drf_qty             Int            @default(1)
+  drf_markup_price    Decimal?       @db.Decimal(12, 2)
+  drf_qty             Int?
   drf_planning_upload DateTime?      @db.Date
   drf_actual_upload   DateTime?      @db.Date
   drf_link_content    String?
