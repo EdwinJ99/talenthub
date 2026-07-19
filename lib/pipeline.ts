@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { scrapeInstagramProfiles, scrapeTiktokProfiles, RawPost } from './apify';
 import { detectEndorsePosts, suggestNewUsernames, checkIndonesianLocation } from './gemini';
+import { computeInsightsFromPosts } from './insights';
 
 const prisma = new PrismaClient();
 
@@ -79,6 +80,15 @@ export async function processCreator(entry: SeedEntry) {
 
   const tier = calculateTier(profile.followers);
 
+  // 5b. Insight tambahan: avg likes/comments + top hashtags/mentions.
+  // Reuses the same pure helper as the "New Discovery" live-search page,
+  // so both places compute these numbers the same way.
+  const insights = computeInsightsFromPosts(
+    profile.posts,
+    profile.followers,
+    profile.totalPost
+  );
+
   // 6. Insert/update ke mst_creators
   const creator = await prisma.mst_creators.upsert({
     where: {
@@ -93,6 +103,10 @@ export async function processCreator(entry: SeedEntry) {
       engagement_rate: avgEngagement.toFixed(2),
       average_view: Math.round(avgView),
       average_view_brand: Math.round(avgViewBrand),
+      avg_likes: insights.avgLikes,
+      avg_comments: insights.avgComments,
+      top_hashtags: insights.topHashtags as unknown as Prisma.InputJsonValue,
+      top_mentions: insights.topMentions as unknown as Prisma.InputJsonValue,
       category_id: category.id,
       city_id: cityId,
       last_scraped_at: new Date(),
@@ -113,6 +127,10 @@ export async function processCreator(entry: SeedEntry) {
       engagement_rate: avgEngagement.toFixed(2),
       average_view: Math.round(avgView),
       average_view_brand: Math.round(avgViewBrand),
+      avg_likes: insights.avgLikes,
+      avg_comments: insights.avgComments,
+      top_hashtags: insights.topHashtags as unknown as Prisma.InputJsonValue,
+      top_mentions: insights.topMentions as unknown as Prisma.InputJsonValue,
     },
   });
 

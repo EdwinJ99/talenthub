@@ -269,14 +269,24 @@ export default function CreatorTable({
               {creator.drf_planning_upload ? (
                 new Date(creator.drf_planning_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
               ) : (
-                <span>-</span>
+                <>
+                  <span>-</span>
+                  {invalidRunning && invalidRunning.planningUpload ? (
+                    <p className="mt-1 text-xs font-bold text-red-700">Required</p>
+                  ) : null}
+                </>
               )}
             </td>
             <td className={invalidRunning && invalidRunning.actualUpload ? "p-3 border-r border-gray-200 text-center whitespace-nowrap bg-red-50 font-medium text-red-700" : "p-3 border-r border-gray-200 text-center whitespace-nowrap"}>
               {creator.drf_actual_upload ? (
                 new Date(creator.drf_actual_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
               ) : (
-                <span>-</span>
+                <>
+                  <span>-</span>
+                  {invalidRunning && invalidRunning.actualUpload ? (
+                    <p className="mt-1 text-xs font-bold text-red-700">Required</p>
+                  ) : null}
+                </>
               )}
             </td>
             <td className={invalidRunning && invalidRunning.linkContent ? "p-3 border-r border-gray-200 text-center whitespace-nowrap bg-red-50 font-medium text-red-700" : "p-3 border-r border-gray-200 text-center whitespace-nowrap"}>
@@ -285,7 +295,12 @@ export default function CreatorTable({
                   View content
                 </a>
               ) : (
-                <span>-</span>
+                <>
+                  <span>-</span>
+                  {invalidRunning && invalidRunning.linkContent ? (
+                    <p className="mt-1 text-xs font-bold text-red-700">Required</p>
+                  ) : null}
+                </>
               )}
             </td>
           </>
@@ -360,214 +375,6 @@ export default function CreatorTable({
             {visibleCreators.map((creator, index) =>
               reportMode ? renderReportRow(creator, index) : renderNormalRow(creator, index)
             )}
-
-              if (reportMode) {
-                return (
-                  <tr key={creator.id} className="border-b border-slate-200 bg-white">
-                    <td className="border-x px-4 py-3 text-center">
-                      <input type="checkbox" aria-label={`Select ${creator.name}`}
-                        checked={selectedReportIds.includes(creator.drf_id)}
-                        onChange={(event) => onReportSelectionChange?.(event.target.checked
-                          ? [...selectedReportIds, creator.drf_id]
-                          : selectedReportIds.filter((id) => id !== creator.drf_id))}
-                        className="h-4 w-4 accent-sky-500" />
-                    </td>
-                    <td className="border-x px-4 py-3 text-center">{startIndex + index + 1}</td>
-                    <td className="border-x px-4 py-3 text-center">
-                      <img
-                        src={creator.photo || DEFAULT_KOL_AVATAR}
-                        alt={creator.name || "Creator"}
-                        onError={(event) => {
-                          event.currentTarget.src = DEFAULT_KOL_AVATAR;
-                        }}
-                        className="mx-auto h-11 w-11 rounded-full object-cover"
-                      />
-                    </td>
-                    <td className="border-x px-4 py-3">{creator.name}</td>
-                    <td className="border-x px-4 py-3">{creator.username}</td>
-                    <td className="border-x px-4 py-3 text-center">
-                      {creator.drf_link_content ? (
-                        <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">View content</a>
-                      ) : "-"}
-                    </td>
-                    <td className="border-x px-4 py-3">{creator.sow ?? "-"}</td>
-                    <td className="sticky right-0 border-x bg-white px-4 py-3 text-center">
-                      {showView ? (
-                        <Link href={`/tracking/report/detail-report?projectId=${creator.drf_projectid}&detailIds=${creator.drf_id}`} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
-                          <InvoiceIcon className="h-4 w-4 text-slate-900" /> View
-                        </Link>
-                      ) : "-"}
-                    </td>
-                  </tr>
-                );
-              }
-
-              return (
-                <tr
-                  key={creator.id}
-                  className="border-b border-slate-200 bg-white"
-                >
-                  <td className="border-x px-4 py-3 text-center">
-                    {startIndex + index + 1}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    <img
-                      src={creator.photo || DEFAULT_KOL_AVATAR}
-                      alt={creator.name || "Creator"}
-                      onError={(event) => {
-                        event.currentTarget.src = DEFAULT_KOL_AVATAR;
-                      }}
-                      className="mx-auto h-11 w-11 rounded-full object-cover"
-                    />
-                  </td>
-
-                  <td className="border-x px-4 py-3">
-                    {creator.name}
-                  </td>
-
-                  <td className="border-x px-4 py-3">
-                    {creator.username}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.followers?.toLocaleString() ?? 'N/A'}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.totalPost?.toLocaleString() ?? 'N/A'}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.engagementRate?.toFixed(2)}%
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.averageView?.toLocaleString() ?? 'N/A'}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.averageViewBrand?.toLocaleString() ?? 'N/A'}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.cpvAll?.toLocaleString() ?? 'N/A'}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.cpvBranded?.toLocaleString() ?? 'N/A'}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {sowOptions ? (
-                      <select
-                        value={creator.sowId ?? ""}
-                        disabled={sowReadOnly}
-                        onChange={(event) =>
-                          onSowChange?.(
-                            creator.drf_id,
-                            event.target.value === "" ? null : Number(event.target.value)
-                          )
-                        }
-                        aria-label={`SOW for ${creator.name ?? "creator"}`}
-                        className={`min-w-40 rounded-md border px-2 py-1.5 text-sm outline-none disabled:cursor-not-allowed disabled:bg-slate-100 ${
-                          hasInvalidSow
-                            ? "border-red-500 bg-red-50 text-red-700 focus:border-red-500"
-                            : "border-slate-300 bg-white text-slate-700 focus:border-sky-500"
-                        }`}
-                      >
-                        <option value="">Select SOW</option>
-                        {sowOptions.map((sow) => (
-                          <option key={sow.sow_id} value={sow.sow_id}>
-                            {sow.sow_nama ?? `SOW #${sow.sow_id}`}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      creator.sow ?? "N/A"
-                    )}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.platform ?? 'N/A'}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.drf_qty}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.rate?.toLocaleString() ?? 'N/A'}
-                  </td>
-
-                  <td className="border-x px-4 py-3 text-center">
-                    {creator.total?.toLocaleString()}
-                  </td>
-
-                  {runningMode && (
-                    <>
-                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.planningUpload ? "bg-red-50 font-medium text-red-700" : ""}`}>
-                        {creator.drf_planning_upload
-                          ? new Date(creator.drf_planning_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
-                          : <><span>-</span>{invalidRunning?.planningUpload && <p className="mt-1 text-xs font-bold text-red-700">Required</p>}</>}
-                      </td>
-                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.actualUpload ? "bg-red-50 font-medium text-red-700" : ""}`}>
-                        {creator.drf_actual_upload
-                          ? new Date(creator.drf_actual_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
-                          : <><span>-</span>{invalidRunning?.actualUpload && <p className="mt-1 text-xs font-bold text-red-700">Required</p>}</>}
-                      </td>
-                      <td className={`border-x px-4 py-3 text-center ${invalidRunning?.linkContent ? "bg-red-50 font-medium text-red-700" : ""}`}>
-                        {creator.drf_link_content ? (
-                          <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">View content</a>
-                        ) : <><span>-</span>{invalidRunning?.linkContent && <p className="mt-1 text-xs font-bold text-red-700">Required</p>}</>}
-                      </td>
-                    </>
-                  )}
-
-                  <td className="sticky right-0 border-x bg-white px-4 py-3">
-                    <div className="flex justify-center gap-3">
-                      {isChecked && onEdit ? (
-                        <>
-                          {showView && onView && (
-                            <Link href={`/tracking/detail/detail/${creator.drf_creatorid}`} className="cursor-pointer">
-                              <EyeIcon className="h-5 w-5 text-sky-600" />
-                            </Link>
-                          )}
-                          {onEdit && (
-                            <button onClick={() => onEdit(creator.drf_id)}>
-                              <EditIcon className="h-5 w-5 text-blue-500" />
-                            </button>
-                          )}
-                          {showDelete && (
-                            <button onClick={() => onDelete?.(creator.drf_id)}>
-                              <DeleteIcon className="h-5 w-5 text-red-500" />
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          {showView && onView && (
-                            <Link href={`/tracking/detail/detail/${creator.drf_creatorid}`} className="cursor-pointer">
-                              <EyeIcon className="h-5 w-5 text-sky-600" />
-                            </Link>
-                          )}
-                          {onEdit && (
-                            <button onClick={() => onEdit(creator.drf_id)}>
-                              <EditIcon className="h-5 w-5 text-blue-500" />
-                            </button>
-                          )}
-                          {showDelete && (
-                            <button onClick={() => onDelete?.(creator.drf_id)}>
-                              <DeleteIcon className="h-5 w-5 text-red-500" />
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
           </tbody>
         </table>
       </div>
