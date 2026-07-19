@@ -8,8 +8,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 });
   }
 
-  // Validasi biar cuma domain Instagram/FB CDN yang boleh diproxy
-  const allowedHosts = ["cdninstagram.com", "fbcdn.net"];
+  // Validasi domain: Instagram/FB CDN + TikTok CDN
+  const allowedHosts = [
+    "cdninstagram.com",
+    "fbcdn.net",
+    "tiktokcdn.com",
+    "tiktokcdn-us.com",
+    "ibyteimg.com",
+  ];
   const isAllowed = allowedHosts.some((host) => imageUrl.includes(host));
   if (!isAllowed) {
     return NextResponse.json({ error: "Host not allowed" }, { status: 400 });
@@ -18,9 +24,11 @@ export async function GET(request: NextRequest) {
   try {
     const res = await fetch(imageUrl, {
       headers: {
-        // pura-pura jadi browser biasa, tanpa Referer
         "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Referer: imageUrl.includes("tiktok")
+          ? "https://www.tiktok.com/"
+          : "https://www.instagram.com/",
       },
     });
 
@@ -37,7 +45,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": contentType,
-        "Cache-Control": "public, max-age=86400", // cache 1 hari
+        "Cache-Control": "public, max-age=86400",
       },
     });
   } catch (error) {
