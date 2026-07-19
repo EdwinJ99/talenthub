@@ -7,6 +7,15 @@ import {
   filterPostsByRange,
   type RawPostLike,
 } from "@/lib/insights";
+import {
+  Users,
+  Heart,
+  MessageCircle,
+  Eye,
+  TrendingUp,
+  Target,
+  ImageOff,
+} from "lucide-react";
 
 type Profile = {
   name: string;
@@ -39,22 +48,29 @@ function formatNumber(num: number): string {
 function formatDate(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleDateString("id-ID", { day: "numeric", month: "numeric", year: "numeric" });
+  return d.toLocaleDateString("en-US", { day: "numeric", month: "numeric", year: "numeric" });
 }
 
 function proxied(url?: string | null): string {
   return url ? "/api/image-proxy?url=" + encodeURIComponent(url) : "";
 }
 
+// Outline-icon-in-a-box style, matching the step-indicator look
+// (rounded square, border, icon centered, light tint background).
 function MetricCard(props: {
   icon: React.ReactNode;
   label: string;
   value: string;
-  iconBg: string;
+  tint: string; // e.g. "text-rose-500"
 }) {
   return (
     <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5">
-      <div className={"flex h-11 w-11 items-center justify-center rounded-lg " + props.iconBg}>
+      <div
+        className={
+          "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 " +
+          props.tint
+        }
+      >
         {props.icon}
       </div>
       <div>
@@ -64,6 +80,81 @@ function MetricCard(props: {
         <p className="mt-1 text-xl font-bold text-slate-800">{props.value}</p>
       </div>
     </div>
+  );
+}
+
+// Card shell filled with real hashtag/mention pills when data is available.
+function TagListCard({
+  title,
+  items,
+  variant,
+  height = "h-40",
+}: {
+  title: string;
+  items: string[];
+  variant: "hashtag" | "mention";
+  height?: string;
+}) {
+  const prefix = variant === "hashtag" ? "#" : "@";
+  const pillClass =
+    variant === "hashtag"
+      ? "bg-indigo-50 text-indigo-600"
+      : "bg-sky-50 text-sky-600";
+
+  return (
+    <div className={"flex flex-col rounded-xl border border-slate-200 p-4 " + height}>
+      <p className="text-sm font-semibold text-slate-600">{title}</p>
+      <div className="mt-3 flex flex-1 flex-wrap items-start gap-2 overflow-y-auto">
+        {items.length > 0 ? (
+          items.map((item) => (
+            <span
+              key={item}
+              className={"rounded-full px-3 py-1 text-xs font-medium " + pillClass}
+            >
+              {prefix}
+              {item}
+            </span>
+          ))
+        ) : (
+          <span className="text-sm italic text-slate-400">No data yet</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Bigger card for the content grid: large square thumbnail on top,
+// likes/comments as caption underneath.
+function PostCard({ post }: { post: Post }) {
+  return (
+    <a
+      href={post.postUrl || "#"}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 transition hover:shadow-md"
+    >
+      <div className="aspect-square w-full overflow-hidden bg-slate-100">
+        {post.thumbnailUrl ? (
+          <img
+            src={proxied(post.thumbnailUrl)}
+            alt=""
+            className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-slate-300">
+            <ImageOff className="h-8 w-8" />
+          </div>
+        )}
+      </div>
+      <div className="space-y-1.5 p-3">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+          <Heart className="h-4 w-4 text-rose-500" /> {formatNumber(post.likes)}
+        </p>
+        <p className="flex items-center gap-1.5 text-sm text-slate-500">
+          <MessageCircle className="h-4 w-4 text-emerald-500" /> {formatNumber(post.comments)}
+        </p>
+      </div>
+    </a>
   );
 }
 
@@ -81,7 +172,7 @@ export default function CreatorDetailClient(props: { profile: Profile; posts: Po
     return computeInsightsFromPosts(filtered, profile.followers, profile.totalPost);
   }, [posts, range, profile.followers, profile.totalPost]);
 
-  const lastPosts = useMemo(() => {
+  const topPosts = useMemo(() => {
     return [...posts]
       .sort((a, b) => new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime())
       .slice(0, 5);
@@ -145,135 +236,84 @@ export default function CreatorDetailClient(props: { profile: Profile; posts: Po
           </div>
 
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <MetricCard
-              label="Total Posts"
-              value={insights.totalPosts.toLocaleString()}
-              iconBg="bg-indigo-50"
-              icon={<span className="text-indigo-500">👥</span>}
-            />
-            <MetricCard
-              label="Avg Likes"
-              value={formatNumber(insights.avgLikes)}
-              iconBg="bg-rose-50"
-              icon={<span className="text-rose-500">❤</span>}
-            />
-            <MetricCard
-              label="Avg Comments"
-              value={formatNumber(insights.avgComments)}
-              iconBg="bg-emerald-50"
-              icon={<span className="text-emerald-500">💬</span>}
-            />
-            <MetricCard
-              label="Avg Views"
-              value={formatNumber(insights.avgViews)}
-              iconBg="bg-sky-50"
-              icon={<span className="text-sky-500">👁</span>}
-            />
-            <MetricCard
-              label="Engagement Rate"
-              value={insights.engagementRate.toFixed(2) + "%"}
-              iconBg="bg-teal-50"
-              icon={<span className="text-teal-500">📈</span>}
-            />
-            <MetricCard
-              label="Days Tracked"
-              value={String(range)}
-              iconBg="bg-orange-50"
-              icon={<span className="text-orange-500">🎯</span>}
-            />
-          </div>
+              <MetricCard
+                label="Total Posts"
+                value={insights.totalPosts.toLocaleString()}
+                tint="text-indigo-500"
+                icon={<Users className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Avg Likes"
+                value={formatNumber(insights.avgLikes)}
+                tint="text-rose-500"
+                icon={<Heart className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Avg Comments"
+                value={formatNumber(insights.avgComments)}
+                tint="text-emerald-500"
+                icon={<MessageCircle className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Avg Views"
+                value={formatNumber(insights.avgViews)}
+                tint="text-sky-500"
+                icon={<Eye className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Engagement Rate"
+                value={insights.engagementRate.toFixed(2) + "%"}
+                tint="text-teal-500"
+                icon={<TrendingUp className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Days Tracked"
+                value={String(range)}
+                tint="text-orange-500"
+                icon={<Target className="h-5 w-5" />}
+              />
+            </div>
         </section>
 
-        {/* Analytics Insights + Last Posts Insight */}
-        <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-            <h2 className="flex items-center gap-2 text-lg font-bold text-slate-800">
-              📊 Analytics Insights
-            </h2>
+        {/* Content — hashtags & mentions moved in here, full width so thumbnails can be bigger */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-8">
+          <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold">
+            📊 Content
+          </h2>
 
-            <p className="mt-4 text-xs font-semibold tracking-wide text-slate-400">
-              TOP HASHTAGS
+          <div className="grid gap-6 xl:grid-cols-2">
+            <TagListCard
+              title={`Top ${insights.topHashtags.length} Hashtags`}
+              items={insights.topHashtags.map((h) => h.tag)}
+              variant="hashtag"
+            />
+            <TagListCard
+              title={`Top ${insights.topMentions.length} Mentions`}
+              items={insights.topMentions.map((m) => m.mention)}
+              variant="mention"
+            />
+          </div>
+
+          {profile.lastScrapedAt ? (
+            <p className="mt-4 flex items-center gap-1 text-xs text-emerald-500">
+              ✓ Last Updated: {formatDate(profile.lastScrapedAt)}
             </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {insights.topHashtags.length > 0 ? (
-                insights.topHashtags.map((h) => (
-                  <span
-                    key={h.tag}
-                    className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-600"
-                  >
-                    #{h.tag}
-                  </span>
-                ))
-              ) : (
-                <span className="text-sm italic text-slate-400">Belum ada data</span>
-              )}
-            </div>
+          ) : null}
 
-            <p className="mt-5 text-xs font-semibold tracking-wide text-slate-400">
-              TOP MENTIONS
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {insights.topMentions.length > 0 ? (
-                insights.topMentions.map((m) => (
-                  <span
-                    key={m.mention}
-                    className="rounded-full bg-sky-50 px-3 py-1 text-xs font-medium text-sky-600"
-                  >
-                    @{m.mention}
-                  </span>
-                ))
-              ) : (
-                <span className="text-sm italic text-slate-400">Belum ada data</span>
-              )}
-            </div>
-
-            {profile.lastScrapedAt ? (
-              <p className="mt-6 flex items-center gap-1 text-xs text-emerald-500">
-                ✓ Last Updated: {formatDate(profile.lastScrapedAt)}
-              </p>
-            ) : null}
-          </section>
-
-          <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
-            <h2 className="text-lg font-bold text-slate-800">Last Posts Insight</h2>
-
-            <div className="mt-4 space-y-4">
-              {lastPosts.length > 0 ? (
-                lastPosts.map((post) => (
-                  <a
-                    key={post.id}
-                    href={post.postUrl || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 rounded-lg p-1 hover:bg-slate-50"
-                  >
-                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                      {post.thumbnailUrl ? (
-                        <img
-                          src={proxied(post.thumbnailUrl)}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : null}
-                    </div>
-                    <div className="text-sm">
-                      <p className="flex items-center gap-1 font-semibold text-slate-700">
-                        ❤ {formatNumber(post.likes)} Likes
-                      </p>
-                      <p className="flex items-center gap-1 text-slate-500">
-                        💬 {formatNumber(post.comments)} Comments
-                      </p>
-                    </div>
-                  </a>
-                ))
-              ) : (
-                <p className="py-6 text-center text-sm italic text-slate-400">
-                  Belum ada data postingan.
+          <div className="mt-10">
+            <h3 className="mb-5 text-xl font-bold">Top 5 Contents</h3>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              {topPosts.map((post) => (
+                <PostCard key={post.id} post={post} />
+              ))}
+              {topPosts.length === 0 ? (
+                <p className="col-span-full py-8 text-center italic text-slate-400">
+                  No posts available for this creator yet.
                 </p>
-              )}
+              ) : null}
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
       </div>
     </DefaultLayout>
   );

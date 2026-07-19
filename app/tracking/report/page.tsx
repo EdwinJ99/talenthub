@@ -77,9 +77,19 @@ export default function ReportPage() {
   };
 
 const handleGenerateInvoice = async () => {
-  await confirmGenerateInvoice();
+  try {
+    const response = await fetch("/api/payment");
+    if (!response.ok) throw new Error("Failed to fetch payment options");
+    const payments = await response.json();
 
-  router.push("/tracking/invoice");
+    const result = await confirmGenerateInvoice(payments);
+    if (!result) return; // user tutup modal tanpa submit
+
+
+    router.push("/tracking/invoice");
+  } catch (error) {
+    console.error(error);
+  }
 };
 
   return (
