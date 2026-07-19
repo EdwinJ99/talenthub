@@ -1,14 +1,38 @@
 import { ReactNode } from "react";
 import FileDocumentIcon from "@/components/icons/FileDocumentIcon"; // Import FileDocumentIcon
 import CreatorTable from "./CreatorTable";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+
+type RunningCreator = {
+  drf_id: number;
+  drf_creatorid: number;
+  name?: string | null;
+  username?: string | null;
+  sow?: string | null;
+  platform?: string | null;
+  drf_planning_upload?: string | Date | null;
+  drf_actual_upload?: string | Date | null;
+  drf_link_content?: string | null;
+  [key: string]: unknown;
+};
+
+type RunningProject = {
+  brand?: string | null;
+  name?: string | null;
+  code?: string | null;
+  createdBy?: string | null;
+  runningStartDate?: string | Date | null;
+  runningEndDate?: string | Date | null;
+};
 
 type Props = {
-  creators: any[];
-  projectDetail: any;
+  creators: RunningCreator[];
+  projectDetail: RunningProject | null;
   checkedCreators: number[];
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
-  handleUpdateRunningContent: (creator: any, mode: "edit" | "view") => void;
+  handleUpdateRunningContent: (creator: RunningCreator, mode: "edit" | "view") => void;
   handleGenerateReport: () => void;
   readOnly?: boolean;
   invalidRunningFields?: Record<number, {
@@ -30,8 +54,118 @@ export default function RunningSection({
   invalidRunningFields,
 }: Props) {
   const handleExportToPdf = () => {
-    console.log("Export to PDF clicked");
-    // TODO: Implement PDF export logic here
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const left = 16;
+    const brown: [number, number, number] = [205, 159, 126];
+    const black: [number, number, number] = [0, 0, 0];
+
+    const drawBorder = () => {
+      doc.setDrawColor(...black);
+      doc.setLineWidth(0.7);
+      doc.rect(10, 6, pageWidth - 20, pageHeight - 12);
+    };
+
+    const formatDate = (value: string | Date | null | undefined) => value
+      ? new Date(value).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+      : "-";
+
+    drawBorder();
+    doc.setTextColor(...black);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("PT DUTA KARYARAYA MANDIRI", left, 16);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text("Ruko Permata Regency D/37", left, 22);
+    doc.text("Jl Haji Kelik RT 001 RW 006", left, 27);
+    doc.text("Jakarta Barat - DKI Jakarta", left, 32);
+    doc.text("+62 818 693 309", left, 37);
+
+    doc.setDrawColor(190, 150, 120);
+    doc.circle(pageWidth - 39, 23, 14);
+    doc.setFont("times", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(150, 110, 85);
+    doc.text("D'BEST", pageWidth - 39, 22, { align: "center" });
+    doc.setFont("times", "italic");
+    doc.setFontSize(8);
+    doc.text("Influence", pageWidth - 39, 27, { align: "center" });
+
+    doc.setTextColor(...black);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(15);
+    doc.text("CAMPAIGN RUNNING REPORT", left, 51);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(`Brand : ${String(projectDetail?.brand ?? "-").toUpperCase()}`, left, 59);
+    doc.text(`Project : ${projectDetail?.name ?? "-"}`, left, 65);
+    doc.text(`Project Code : ${projectDetail?.code ?? "-"}`, left, 71);
+    doc.text(`PIC : ${projectDetail?.createdBy ?? "-"}`, 157, 59);
+    doc.text(`Status : Running`, 157, 65);
+    doc.text(`Running Period : ${formatDate(projectDetail?.runningStartDate)} - ${formatDate(projectDetail?.runningEndDate)}`, 157, 71);
+
+    autoTable(doc, {
+      startY: 79,
+      head: [["No.", "Influencer", "Username", "SOW", "Platform", "Planning Upload", "Actual Upload", "Content", "Progress"]],
+      body: creators.map((creator, index) => {
+        const completed = creator.drf_actual_upload && creator.drf_link_content;
+        return [
+          index + 1,
+          creator.name ?? "-",
+          creator.username ?? "-",
+          creator.sow ?? "-",
+          creator.platform ?? "-",
+          formatDate(creator.drf_planning_upload),
+          formatDate(creator.drf_actual_upload),
+          creator.drf_link_content ? "Available" : "-",
+          completed ? "Completed" : "In Progress",
+        ];
+      }),
+      theme: "grid",
+      margin: { left, right: left },
+      headStyles: {
+        fillColor: brown,
+        textColor: black,
+        fontStyle: "bold",
+        halign: "center",
+        valign: "middle",
+        fontSize: 8,
+        lineColor: black,
+        lineWidth: 0.3,
+      },
+      bodyStyles: {
+        textColor: black,
+        fontSize: 8,
+        valign: "middle",
+        lineColor: black,
+        lineWidth: 0.25,
+      },
+      columnStyles: {
+        0: { cellWidth: 10, halign: "center" },
+        1: { cellWidth: 36 },
+        2: { cellWidth: 31 },
+        3: { cellWidth: 34 },
+        4: { cellWidth: 20, halign: "center" },
+        5: { cellWidth: 30, halign: "center" },
+        6: { cellWidth: 30, halign: "center" },
+        7: { cellWidth: 22, halign: "center" },
+        8: { cellWidth: 28, halign: "center" },
+      },
+      didDrawPage: drawBorder,
+    });
+
+    const completedCount = creators.filter((creator) => creator.drf_actual_upload && creator.drf_link_content).length;
+    const tableDocument = doc as jsPDF & { lastAutoTable: { finalY: number } };
+    const summaryY = Math.min(tableDocument.lastAutoTable.finalY + 10, pageHeight - 23);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(`Campaign Progress: ${completedCount} of ${creators.length} creator deliverables completed`, left, summaryY);
+
+    const filename = `Running_${projectDetail?.code ?? projectDetail?.name ?? "Project"}`
+      .replace(/[^a-z0-9_-]+/gi, "_");
+    doc.save(`${filename}.pdf`);
   };
 
   return (
@@ -51,6 +185,8 @@ export default function RunningSection({
           const creatorToUpdate = creators.find(c => c.drf_id === creatorId);
           if (creatorToUpdate) handleUpdateRunningContent(creatorToUpdate, 'edit');
         }}
+        showView
+        onView={(creator) => handleUpdateRunningContent(creator, "view")}
         checkedCreators={checkedCreators}
         runningMode
         invalidRunningFields={invalidRunningFields}
@@ -76,18 +212,5 @@ export default function RunningSection({
         )}
       </div>
     </section>
-  );
-}
-
-function Field({ label, value }: { label: string; value: any }) {
-  return (
-    <div>
-      <label className="text-sm font-semibold text-slate-400">{label}</label>
-      <input
-        readOnly
-        value={value ?? ""}
-        className="mt-2 h-11 w-full rounded-lg border bg-slate-50 px-4"
-      />
-    </div>
   );
 }
