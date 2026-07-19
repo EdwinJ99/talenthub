@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import Link from "next/link";
 
 import EyeIcon from "@/components/icons/EyeIcon";
@@ -7,10 +7,36 @@ import EditIcon from "@/components/icons/EditIcon";
 import CheckIcon from "@/components/icons/CheckIcon";
 import InvoiceIcon from "@/components/icons/InvoiceIcon";
 
+const DEFAULT_CREATOR_PHOTO = "/image/default-kol-avatar.png";
+
 function getPhotoSrc(creator: any): string | null {
-  const rawUrl = creator.photo || creator.photo_url;
+  const rawUrl = creator.photo || creator.photo_url || creator.photoUrl;
   if (!rawUrl) return null;
-  return "/api/image-proxy?url=" + encodeURIComponent(rawUrl);
+
+  const normalizedUrl = String(rawUrl).trim();
+  if (!normalizedUrl) return null;
+
+  // Local/public images do not need to pass through the remote image proxy.
+  if (normalizedUrl.startsWith("/") || normalizedUrl.startsWith("data:")) {
+    return normalizedUrl;
+  }
+
+  try {
+    const hostname = new URL(normalizedUrl).hostname.toLowerCase();
+    const requiresProxy = [
+      "cdninstagram.com",
+      "fbcdn.net",
+      "tiktokcdn.com",
+      "tiktokcdn-us.com",
+      "ibyteimg.com",
+    ].some((host) => hostname === host || hostname.endsWith(`.${host}`));
+
+    return requiresProxy
+      ? "/api/image-proxy?url=" + encodeURIComponent(normalizedUrl)
+      : normalizedUrl;
+  } catch {
+    return null;
+  }
 }
 
 function PhotoCell(props: { creator: any }) {
@@ -19,19 +45,51 @@ function PhotoCell(props: { creator: any }) {
 
   return (
     <div className="w-16 h-16 rounded-lg overflow-hidden bg-blue-100 flex items-center justify-center mx-auto">
-      {photoSrc ? (
-        <img
-          src={photoSrc}
-          alt={creator.name || "Creator"}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-            (e.target as HTMLImageElement).parentElement!.innerHTML = "photo";
-          }}
-        />
-      ) : (
-        <span className="text-blue-500">photo</span>
-      )}
+      <img
+        src={photoSrc || DEFAULT_CREATOR_PHOTO}
+        alt={creator.name || "Creator"}
+        className="w-full h-full object-cover"
+        onError={(event) => {
+          if (!event.currentTarget.src.endsWith(DEFAULT_CREATOR_PHOTO)) {
+            event.currentTarget.src = DEFAULT_CREATOR_PHOTO;
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+function DraftPriceInput({ value, label, invalid, onCommit }: {
+  value: number | null | undefined;
+  label: string;
+  invalid: boolean;
+  onCommit: (value: number | null) => void;
+}) {
+  const [inputValue, setInputValue] = useState(value && value > 0 ? String(value) : "");
+
+  useEffect(() => {
+    setInputValue(value && value > 0 ? String(value) : "");
+  }, [value]);
+
+  return (
+    <div className="min-w-36">
+      <input
+        type="text"
+        inputMode="numeric"
+        required
+        aria-label={label}
+        value={inputValue}
+        placeholder="Required"
+        onChange={(event) => setInputValue(event.target.value.replace(/\D/g, ""))}
+        onBlur={() => onCommit(inputValue ? Number(inputValue) : null)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") event.currentTarget.blur();
+        }}
+        className={`w-full rounded-md border px-3 py-2 text-right outline-none ${invalid
+          ? "border-red-500 bg-red-50 text-red-700"
+          : "border-slate-300 bg-white focus:border-sky-500"}`}
+      />
+      {invalid && <p className="mt-1 text-xs font-semibold text-red-600">Required, numbers only</p>}
     </div>
   );
 }
@@ -44,6 +102,11 @@ type Props = {
   invalidSowCreatorIds?: number[];
   reportMode?: boolean;
   runningMode?: boolean;
+  draftPricingMode?: boolean;
+  draftPricingEditable?: boolean;
+  invalidPricingFields?: Record<number, { rateCard: boolean; markupPrice: boolean; qty: boolean }>;
+  onDraftPriceChange?: (creatorId: number, field: "rateCard" | "markupPrice" | "qty", value: number | null) => void;
+  onAddSow?: (creatorId: number) => void;
   invalidRunningFields?: Record<number, {
     planningUpload: boolean;
     actualUpload: boolean;
@@ -70,6 +133,11 @@ export default function CreatorTable({
   invalidSowCreatorIds = [],
   reportMode = false,
   runningMode = false,
+  draftPricingMode = false,
+  draftPricingEditable = false,
+  invalidPricingFields = {},
+  onDraftPriceChange,
+  onAddSow,
   invalidRunningFields = {},
   handleSort,
   getSortIcon,
@@ -115,7 +183,15 @@ export default function CreatorTable({
         { label: "SOW", field: "sow" },
         { label: "Platform", field: "platform" },
         { label: "Qty", field: "qty" },
-        { label: "Rate", field: "rate" },
+        ...(draftPricingMode
+          ? [
+              { label: "Rate Card", field: "rateCard" },
+              { label: "Mark Price", field: "markupPrice" },
+            ]
+          : [
+              { label: "Rate Card", field: "rateCard" },
+              { label: "Mark Price", field: "markupPrice" },
+            ]),
         { label: "Total", field: "total" },
         ...(runningMode
           ? [
@@ -127,10 +203,25 @@ export default function CreatorTable({
       ];
 
   function renderReportRow(creator: any, index: number) {
-    const detailHref = "/tracking/detail/detail/" + creator.drf_creatorid;
+    const detailHref = `/tracking/report/detail-report?projectId=${creator.drf_projectid}&detailIds=${creator.drf_id}`;
 
     return (
       <tr key={creator.id} className="border-b border-gray-200 hover:bg-gray-50 text-gray-800">
+        <td className="border-x px-4 py-3 text-center">
+          <input
+            type="checkbox"
+            aria-label={`Select ${creator.name || "creator"}`}
+            checked={selectedReportIds.includes(creator.drf_id)}
+            onChange={(event) => {
+              onReportSelectionChange?.(
+                event.target.checked
+                  ? [...new Set([...selectedReportIds, creator.drf_id])]
+                  : selectedReportIds.filter((id) => id !== creator.drf_id)
+              );
+            }}
+            className="h-4 w-4 accent-sky-500"
+          />
+        </td>
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
           {startIndex + index + 1}
         </td>
@@ -173,6 +264,12 @@ export default function CreatorTable({
     const detailHref = "/tracking/detail/detail/" + creator.drf_creatorid;
     const hasInvalidSow = invalidSowCreatorIds.includes(creator.drf_id);
     const invalidRunning = invalidRunningFields[creator.drf_id];
+    const usedSowIds = new Set(
+      creators
+        .filter((item) => item.drf_creatorid === creator.drf_creatorid && item.drf_id !== creator.drf_id)
+        .map((item) => item.sowId)
+        .filter(Boolean)
+    );
 
     return (
       <tr key={creator.id} className="border-b border-gray-200 hover:bg-gray-50 text-gray-800">
@@ -237,7 +334,7 @@ export default function CreatorTable({
             >
               <option value="">Select SOW</option>
               {sowOptions.map((sow) => (
-                <option key={sow.sow_id} value={sow.sow_id}>
+                <option key={sow.sow_id} value={sow.sow_id} disabled={usedSowIds.has(sow.sow_id)}>
                   {sow.sow_nama ? sow.sow_nama : "SOW #" + sow.sow_id}
                 </option>
               ))}
@@ -252,12 +349,49 @@ export default function CreatorTable({
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.drf_qty}
+          {draftPricingMode && draftPricingEditable ? (
+            <DraftPriceInput
+              value={creator.drf_qty}
+              label={`Qty for ${creator.name || "creator"}`}
+              invalid={Boolean(invalidPricingFields[creator.drf_id]?.qty)}
+              onCommit={(value) => onDraftPriceChange?.(creator.drf_id, "qty", value)}
+            />
+          ) : creator.drf_qty ?? "-"}
         </td>
 
-        <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.rate ? creator.rate.toLocaleString() : "N/A"}
-        </td>
+        {draftPricingMode ? (
+          <>
+            <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
+              {draftPricingEditable ? (
+                <DraftPriceInput
+                  value={creator.rateCard}
+                  label={`Rate Card for ${creator.name || "creator"}`}
+                  invalid={Boolean(invalidPricingFields[creator.drf_id]?.rateCard)}
+                  onCommit={(value) => onDraftPriceChange?.(creator.drf_id, "rateCard", value)}
+                />
+              ) : creator.rateCard ? creator.rateCard.toLocaleString() : "N/A"}
+            </td>
+            <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
+              {draftPricingEditable ? (
+                <DraftPriceInput
+                  value={creator.markupPrice}
+                  label={`Mark Price for ${creator.name || "creator"}`}
+                  invalid={Boolean(invalidPricingFields[creator.drf_id]?.markupPrice)}
+                  onCommit={(value) => onDraftPriceChange?.(creator.drf_id, "markupPrice", value)}
+                />
+              ) : creator.markupPrice ? creator.markupPrice.toLocaleString() : "N/A"}
+            </td>
+          </>
+        ) : (
+          <>
+            <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
+              {creator.rateCard ? creator.rateCard.toLocaleString() : "N/A"}
+            </td>
+            <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
+              {creator.markupPrice ? creator.markupPrice.toLocaleString() : "N/A"}
+            </td>
+          </>
+        )}
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
           {creator.total ? creator.total.toLocaleString() : ""}
@@ -308,6 +442,15 @@ export default function CreatorTable({
 
         <td className="p-3 text-center whitespace-nowrap sticky right-0 bg-white">
           <div className="flex justify-center gap-3">
+            {draftPricingMode && draftPricingEditable && onAddSow ? (
+              <button
+                type="button"
+                onClick={() => onAddSow(creator.drf_id)}
+                className="rounded-md border border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-100"
+              >
+                + Add SOW
+              </button>
+            ) : null}
             {showView && onView ? (
               <Link href={detailHref} className="cursor-pointer">
                 <EyeIcon className="h-5 w-5 text-sky-600" />
@@ -332,7 +475,7 @@ export default function CreatorTable({
   return (
     <div className="mt-6">
       <div className="overflow-x-auto border border-gray-200 rounded-lg w-full max-h-[500px] overflow-y-auto">
-        <table className={reportMode ? "min-w-[900px] w-full text-sm border-collapse" : "min-w-[1300px] w-full text-sm border-collapse"}>
+        <table className={reportMode ? "min-w-[900px] w-full text-sm border-collapse" : "min-w-[1500px] w-full text-sm border-collapse"}>
           <thead>
 
             <tr className="border-y border-slate-400 bg-slate-300 text-left text-slate-900">

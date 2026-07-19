@@ -49,7 +49,7 @@ export async function GET(request: Request) {
     });
 
     const subtotal = details.reduce(
-      (sum, item) => sum + Number(item.drf_rate) * Number(item.drf_qty),
+      (sum, item) => sum + Number(item.drf_markup_price ?? 0) * Number(item.drf_qty),
       0
     );
 
@@ -86,9 +86,11 @@ export async function GET(request: Request) {
         sow: item.mst_sow?.sow_nama,
 
         qty: item.drf_qty,
-        rate: Number(item.drf_rate),
+        rateCard: item.drf_rate === null ? null : Number(item.drf_rate),
+        markupPrice: item.drf_markup_price === null ? null : Number(item.drf_markup_price),
+        rate: Number(item.drf_markup_price ?? 0),
 
-        total: Number(item.drf_rate) * Number(item.drf_qty),
+        total: Number(item.drf_markup_price ?? 0) * Number(item.drf_qty),
       })),
 
       subtotal,
@@ -147,6 +149,9 @@ export async function PATCH(req: Request) {
       drf_planning_upload?: Date | null;
       drf_actual_upload?: Date | null;
       drf_link_content?: string | null;
+      drf_rate?: number | null;
+      drf_markup_price?: number | null;
+      drf_qty?: number | null;
       modiby: string;
       modidate: Date;
     } = {
@@ -176,6 +181,51 @@ export async function PATCH(req: Request) {
       dataToUpdate.drf_link_content = body.drf_link_content;
     }
 
+    if (body.drf_rate !== undefined) {
+      if (body.drf_rate === null || body.drf_rate === "") {
+        dataToUpdate.drf_rate = null;
+      } else {
+        const rateCard = Number(body.drf_rate);
+        if (!Number.isFinite(rateCard) || rateCard <= 0) {
+          return NextResponse.json(
+            { error: "Rate Card is required and must be greater than 0" },
+            { status: 400 }
+          );
+        }
+        dataToUpdate.drf_rate = rateCard;
+      }
+    }
+
+    if (body.drf_markup_price !== undefined) {
+      if (body.drf_markup_price === null || body.drf_markup_price === "") {
+        dataToUpdate.drf_markup_price = null;
+      } else {
+        const markupPrice = Number(body.drf_markup_price);
+        if (!Number.isFinite(markupPrice) || markupPrice <= 0) {
+          return NextResponse.json(
+            { error: "Mark Price is required and must be greater than 0" },
+            { status: 400 }
+          );
+        }
+        dataToUpdate.drf_markup_price = markupPrice;
+      }
+    }
+
+    if (body.drf_qty !== undefined) {
+      if (body.drf_qty === null || body.drf_qty === "") {
+        dataToUpdate.drf_qty = null;
+      } else {
+        const quantity = Number(body.drf_qty);
+        if (!Number.isInteger(quantity) || quantity <= 0) {
+          return NextResponse.json(
+            { error: "Qty must be a whole number greater than 0" },
+            { status: 400 }
+          );
+        }
+        dataToUpdate.drf_qty = quantity;
+      }
+    }
+
     const updatedCreator = await prisma.dtl_project.update({
       where: { drf_id: id },
       data: dataToUpdate,
@@ -185,6 +235,52 @@ export async function PATCH(req: Request) {
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to update" }, { status: 500 });
+  }
+}
+
+// ================= POST duplicate creator row for another SOW =================
+export async function POST(req: Request) {
+  const session = await authorize();
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  try {
+    const body = await req.json();
+    const sourceDetailId = Number(body.sourceDetailId);
+    if (!Number.isInteger(sourceDetailId) || sourceDetailId <= 0) {
+      return NextResponse.json({ error: "Invalid creator detail" }, { status: 400 });
+    }
+
+    const source = await prisma.dtl_project.findUnique({ where: { drf_id: sourceDetailId } });
+    if (!source) return NextResponse.json({ error: "Creator detail was not found" }, { status: 404 });
+
+    const project = await prisma.trs_project.findUnique({
+      where: { prj_id: source.drf_projectid },
+      select: { prj_status: true },
+    });
+    if (project?.prj_status !== 1) {
+      return NextResponse.json({ error: "SOW rows can only be added while the project is Draft" }, { status: 409 });
+    }
+
+    const created = await prisma.dtl_project.create({
+      data: {
+        drf_projectid: source.drf_projectid,
+        drf_creatorid: source.drf_creatorid,
+        drf_sow: null,
+        drf_qty: null,
+        drf_rate: source.drf_rate,
+        drf_markup_price: source.drf_markup_price,
+        drf_status: 0,
+        creaby: session.user.name ?? "admin",
+        creadate: new Date(),
+        modiby: session.user.name ?? "admin",
+        modidate: new Date(),
+      },
+    });
+
+    return NextResponse.json(created, { status: 201 });
+  } catch (error) {
+    console.error("ADD SOW ROW ERROR:", error);
+    return NextResponse.json({ error: "Failed to add SOW row" }, { status: 500 });
   }
 }
 

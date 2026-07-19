@@ -199,7 +199,7 @@ const handleStartProject = async () => {
                   { label: "Avr View", index: 6, field: "avrView" },
                   { label: "Avr Brand", index: 7, field: "avrBrand" },
                   { label: "View", index: 8, field: "view" },
-                  { label: "Rate", index: 9, field: "rate" },
+                  { label: "Rate Card", index: 9, field: "rate" },
                 ].map((head) => (
                   <th
                     key={head.label}

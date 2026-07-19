@@ -30,18 +30,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Ambil SOW default secara dinamis dari database (hindari hardcode ID yang mungkin tidak ada)
-    const defaultSow = await prisma.mst_sow.findFirst({
-      orderBy: { sow_id: "asc" },
-    });
-
-    if (!defaultSow) {
-      return NextResponse.json(
-        { error: "Tidak ada data SOW di database. Tambahkan minimal 1 SOW terlebih dahulu." },
-        { status: 400 }
-      );
-    }
-
     // 4. Jalankan Prisma Transaction
     const result = await prisma.$transaction(async (tx) => {
       // Langkah A: Insert ke tabel trs_project
@@ -77,9 +65,10 @@ export async function POST(request: Request) {
         return {
           drf_projectid: newProject.prj_id,
           drf_creatorid: parseInt(creatorDatabaseId),
-          drf_sow: defaultSow.sow_id,
-          drf_qty: 1,
-          drf_rate: 0,
+          drf_sow: null,
+          drf_qty: null,
+          drf_rate: null,
+          drf_markup_price: null,
           drf_status: 0,
           creaby: usernameLogin,
           creadate: new Date(),

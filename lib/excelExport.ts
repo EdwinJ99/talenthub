@@ -19,7 +19,7 @@ export const createExcelWorkbook = (
     "SOW",
     "Platform",
     "Qty",
-    "Rate",
+    "Rate Card",
     "Total",
   ];
 
@@ -38,7 +38,7 @@ export const createExcelWorkbook = (
     SOW: creator.sow ?? "N/A",
     Platform: creator.platform ?? "N/A",
     Qty: creator.drf_qty,
-    Rate: creator.rate,
+    "Rate Card": creator.markupPrice,
     Total: creator.total,
   }));
 
@@ -138,7 +138,7 @@ export const createExcelWorkbook = (
     { wch: 30 },  // SOW
     { wch: 15 },  // Platform
     { wch: 5 },   // Qty
-    { wch: 15 },  // Rate
+    { wch: 15 },  // Rate Card
     { wch: 15 },  // Total
   ];
 

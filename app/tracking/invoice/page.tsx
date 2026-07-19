@@ -227,7 +227,7 @@ export default function InvoicePage() {
                     { label: "Description", field: "description" },
                     { label: "SOW", field: "sow" },
                     { label: "Platforms", field: "platform" },
-                    { label: "Cost", field: "cost" },
+                    { label: "Rate Card", field: "cost" },
                   ].map((head, index) => (
                     <th
                       key={head.label}

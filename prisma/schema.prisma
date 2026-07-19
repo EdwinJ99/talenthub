@@ -98,10 +98,13 @@ model dtl_project {
   drf_id              Int          @id @default(autoincrement())
   drf_projectid       Int
   drf_sow             Int?
-  drf_rate            Decimal?     @db.Decimal(12, 2)
-  drf_qty             Int          @default(1)
-  drf_planning_upload DateTime?    @db.Date
-  drf_actual_upload   DateTime?    @db.Date
+
+  drf_rate            Decimal?       @db.Decimal(12, 2)
+  drf_markup_price    Decimal?       @db.Decimal(12, 2)
+  drf_qty             Int?
+  drf_planning_upload DateTime?      @db.Date
+  drf_actual_upload   DateTime?      @db.Date
+
   drf_link_content    String?
   drf_status          Int?         @default(0)
   creaby              String?      @db.VarChar(20)
