@@ -2,6 +2,7 @@ import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { isGoogleSheetsConfigured, syncProjectSpreadsheet } from "@/lib/google-sheets";
 
 async function authorize() {
   const session = await getServerSession(authOptions);
@@ -142,6 +143,8 @@ if (id) {
 
     modifiedBy: project.modiby,
     modifiedAt: project.modidate,
+    spreadsheetUrl: project.prj_sheeturl,
+    spreadsheetSyncedAt: project.prj_sheet_sync,
   });
 }
 
@@ -255,6 +258,12 @@ const project = await prisma.trs_project.create({
     modidate: new Date(),
   },
 });
+
+if (isGoogleSheetsConfigured()) {
+  await syncProjectSpreadsheet(project.prj_id).catch((error) =>
+    console.error("AUTO CREATE GOOGLE SHEET ERROR:", error)
+  );
+}
 
     return NextResponse.json({
       message: "Project has been created",

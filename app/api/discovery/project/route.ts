@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/auth";
+import { isGoogleSheetsConfigured, syncProjectSpreadsheet } from "@/lib/google-sheets";
 
 const prisma = new PrismaClient();
 
@@ -92,6 +93,12 @@ export async function POST(request: Request) {
 
       return newProject;
     });
+
+    if (isGoogleSheetsConfigured()) {
+      await syncProjectSpreadsheet(result.prj_id).catch((error) =>
+        console.error("AUTO CREATE GOOGLE SHEET ERROR:", error)
+      );
+    }
 
     return NextResponse.json({ success: true, project: result });
   } catch (error) {
