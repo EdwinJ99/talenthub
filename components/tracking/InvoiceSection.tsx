@@ -15,6 +15,8 @@ type Props = {
 
 const formatRupiah = (value: number | null | undefined) =>
   `Rp ${Number(value ?? 0).toLocaleString("en-US")}`;
+const formatAmount = (value: number | null | undefined) =>
+  Number(value ?? 0).toLocaleString("en-US");
 
 export default function InvoiceSection({
   projectDetail,
@@ -60,31 +62,54 @@ export default function InvoiceSection({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text("Ruko Permata Regency D/37", left, 22);
-    doc.text("Jakarta Barat - DKI Jakarta", left, 27);
-    doc.text("+62 818 693 309", left, 32);
+    doc.text("Jl Haji Kelik RT 001 RW 006", left, 27);
+    doc.text("Jakarta Barat - DKI Jakarta", left, 32);
+    doc.text("+62 818 693 309", left, 37);
 
     doc.setDrawColor(190, 150, 120);
+    doc.setLineWidth(0.7);
     doc.circle(160, 23, 14);
     doc.setFont("times", "bold");
-    doc.setFontSize(14);
+    doc.setFontSize(15);
     doc.setTextColor(150, 110, 85);
     doc.text("D'BEST", 160, 22, { align: "center" });
-    doc.setFont("times", "italic");
+    doc.setFont("times", "bolditalic");
     doc.setFontSize(8);
     doc.text("Influence", 160, 27, { align: "center" });
 
     doc.setTextColor(...black);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
-    doc.text("INVOICE", left, 47);
+    doc.setFontSize(12);
+    doc.text("Invoice For", left, 50);
+
+    const invoiceDate = projectDetail?.invoiceStartDate
+      ? new Date(projectDetail.invoiceStartDate)
+      : new Date();
+    const formattedDate = invoiceDate.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.text(`Brand : ${String(projectDetail?.brand ?? "-").toUpperCase()}`, left, 54);
-    doc.text(`Project : ${projectDetail?.name ?? "-"}`, left, 60);
-    doc.text(`Project Code : ${projectDetail?.code ?? "-"}`, left, 66);
+    doc.text("Brand", left, 57);
+    doc.text("Project", left, 63);
+    doc.text(`: ${String(projectDetail?.brand ?? "-").toUpperCase()}`, 44, 57);
+    doc.text(`: ${String(projectDetail?.name ?? "-")}`, 44, 63);
+
+    const rightLabelX = 120;
+    const rightColonX = 140;
+    const rightValueX = 144;
+    doc.text("Date", rightLabelX, 57);
+    doc.text("Invoice No", rightLabelX, 63);
+    doc.text(":", rightColonX, 57);
+    doc.text(":", rightColonX, 63);
+    doc.text(formattedDate, rightValueX, 57);
+    doc.text(String(projectDetail?.code ?? "-"), rightValueX, 63);
 
     autoTable(doc, {
-      startY: 73,
+      startY: 74,
       head: [["Description", "SOW", "Platform", "Qty", "Rate Card", "Total"]],
       body: creators.map((creator) => [
         creator.name ?? "-",
@@ -97,7 +122,14 @@ export default function InvoiceSection({
       theme: "grid",
       headStyles: { fillColor: brown, textColor: black, fontStyle: "bold", halign: "center", lineColor: black, lineWidth: 0.35 },
       bodyStyles: { textColor: black, fontSize: 9, lineColor: black, lineWidth: 0.35 },
-      columnStyles: { 0: { cellWidth: 34 }, 1: { cellWidth: 46 }, 2: { cellWidth: 22 }, 3: { cellWidth: 13, halign: "center" }, 4: { cellWidth: 28, halign: "right" }, 5: { cellWidth: 27, halign: "right" } },
+      columnStyles: {
+        0: { cellWidth: 36 },
+        1: { cellWidth: 48 },
+        2: { cellWidth: 24 },
+        3: { cellWidth: 14, halign: "center" },
+        4: { cellWidth: 28, halign: "right" },
+        5: { cellWidth: 28, halign: "right" },
+      },
       margin: { left, right: left },
       didDrawPage: drawBorder,
     });
@@ -119,21 +151,35 @@ export default function InvoiceSection({
     doc.text(`Account Name : ${payment?.accountName ?? "-"}`, left, y + 19);
 
     const rows = [
-      ["Subtotal", formatRupiah(projectDetail?.subtotal)],
-      ["DPP", formatRupiah(projectDetail?.dpp)],
-      ["PPN (11%)", formatRupiah(projectDetail?.ppn)],
-      ["Grand Total", formatRupiah(projectDetail?.grandTotal)],
+      ["Subtotal", projectDetail?.subtotal],
+      ["DPP", projectDetail?.dpp],
+      ["PPN (11%)", projectDetail?.ppn],
+      ["Grand Total", projectDetail?.grandTotal],
     ];
-    autoTable(doc, {
-      startY: y,
-      body: rows,
-      theme: "grid",
-      styles: { fontSize: 9, lineColor: black, lineWidth: 0.35 },
-      columnStyles: { 0: { cellWidth: 40, fontStyle: "bold" }, 1: { cellWidth: 50, halign: "right" } },
-      margin: { left: right - 90 },
+    const summaryX = right - 90;
+    const summaryWidth = 90;
+    const labelWidth = 40;
+    const rowHeight = 6;
+
+    rows.forEach(([label, value], index) => {
+      const rowY = y + index * rowHeight;
+      doc.setFillColor(...brown);
+      doc.setDrawColor(...black);
+      doc.setLineWidth(0.35);
+      doc.rect(summaryX, rowY, labelWidth, rowHeight, "FD");
+      doc.rect(summaryX + labelWidth, rowY, summaryWidth - labelWidth, rowHeight, "FD");
+
+      doc.setTextColor(...black);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(String(label), summaryX + labelWidth / 2, rowY + 4.2, { align: "center" });
+      doc.text("Rp", summaryX + labelWidth + 3, rowY + 4.2);
+      doc.text(formatAmount(value as number | null | undefined), right - 2, rowY + 4.2, {
+        align: "right",
+      });
     });
 
-    let signatureY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+    let signatureY = y + rows.length * rowHeight + 12;
     const signatureHeight = 52;
     if (signatureY + signatureHeight > pageHeight - 12) {
       doc.addPage();
@@ -142,9 +188,10 @@ export default function InvoiceSection({
     }
 
     const signatureX = right - 90;
-    const col1 = 30;
-    const col2 = 30;
-    const col3 = 30;
+    // Keep the signature grid aligned with the 40/50 subtotal grid above.
+    const col1 = 40;
+    const col2 = 25;
+    const col3 = 25;
     const headerHeight = 7;
     const signHeight = 30;
     const nameHeight = 15;
@@ -170,7 +217,7 @@ export default function InvoiceSection({
     doc.text("Donna Bella", signatureX + col1 / 2, nameY, { align: "center" });
     doc.text("Hirajati Natawiria", signatureX + col1 + col2 / 2, nameY, { align: "center" });
     doc.text("Lilik Sujieanto", signatureX + col1 + col2 + col3 / 2, nameY, { align: "center" });
-    doc.setFont("times", "normal");
+    doc.setFont("times", "bold");
     doc.text("Director", signatureX + col1 + col2 + col3 / 2, nameY + 5, { align: "center" });
 
     return doc;

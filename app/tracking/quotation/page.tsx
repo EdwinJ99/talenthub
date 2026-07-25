@@ -252,14 +252,14 @@ const handleStartProject = async () => {
           <div className="flex justify-end">
             <div className="w-full max-w-xl rounded-xl border border-yellow-200 bg-yellow-50 p-6">
               <div className="space-y-2 text-sm">
-                <TotalRow label="Subtotal" value="Rp. 320.000.000" />
-                <TotalRow label="DPP" value="Rp. 320.000.000" />
-                <TotalRow label="PPN (11%)" value="Rp. 35.200.000" />
+                <TotalRow label="Subtotal" value="Rp 320,000,000" />
+                <TotalRow label="DPP" value="Rp 320,000,000" />
+                <TotalRow label="PPN (11%)" value="Rp 35,200,000" />
               </div>
 
               <div className="mt-6 flex justify-between text-lg font-bold">
                 <span>Grand Total</span>
-                <span>Rp. 355.200.000</span>
+                <span>Rp 355,200,000</span>
               </div>
             </div>
           </div>

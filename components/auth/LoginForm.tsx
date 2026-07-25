@@ -16,11 +16,18 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (!normalizedEmail || normalizedEmail.length > 254 || password.length > 128) {
+      setError("Email atau password tidak valid")
+      return
+    }
+
     setLoading(true)
     setError("")
 
     const result = await signIn("credentials", {
-      email,
+      email: normalizedEmail,
       password,
       redirect: false
     })
@@ -43,6 +50,8 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
           placeholder="email@company.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
+          maxLength={254}
+          autoComplete="email"
           className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-emerald-500"
           required
         />
@@ -55,6 +64,8 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
           placeholder="Masukkan password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          maxLength={128}
+          autoComplete="current-password"
           className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-emerald-500"
           required
         />

@@ -240,7 +240,7 @@ export default function QuotationSection({
 
     const summaryRows = [
       {
-        label: "total",
+        label: "Subtotal",
         value: projectDetail?.subtotal,
       },
       {
@@ -248,11 +248,11 @@ export default function QuotationSection({
         value: projectDetail?.dpp,
       },
       {
-        label: "PPN",
+        label: "PPN (11%)",
         value: projectDetail?.ppn,
       },
       {
-        label: "Total",
+        label: "Grand Total",
         value: projectDetail?.grandTotal,
       },
     ];
