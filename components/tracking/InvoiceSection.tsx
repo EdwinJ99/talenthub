@@ -14,7 +14,7 @@ type Props = {
 };
 
 const formatRupiah = (value: number | null | undefined) =>
-  `Rp ${Number(value ?? 0).toLocaleString("id-ID")}`;
+  `Rp ${Number(value ?? 0).toLocaleString("en-US")}`;
 
 export default function InvoiceSection({
   projectDetail,
@@ -132,6 +132,46 @@ export default function InvoiceSection({
       columnStyles: { 0: { cellWidth: 40, fontStyle: "bold" }, 1: { cellWidth: 50, halign: "right" } },
       margin: { left: right - 90 },
     });
+
+    let signatureY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
+    const signatureHeight = 52;
+    if (signatureY + signatureHeight > pageHeight - 12) {
+      doc.addPage();
+      drawBorder();
+      signatureY = 22;
+    }
+
+    const signatureX = right - 90;
+    const col1 = 30;
+    const col2 = 30;
+    const col3 = 30;
+    const headerHeight = 7;
+    const signHeight = 30;
+    const nameHeight = 15;
+
+    doc.setDrawColor(...black);
+    doc.setLineWidth(0.35);
+    doc.rect(signatureX, signatureY, col1, headerHeight);
+    doc.rect(signatureX + col1, signatureY, col2 + col3, headerHeight);
+    doc.rect(signatureX, signatureY + headerHeight, col1, signHeight);
+    doc.rect(signatureX + col1, signatureY + headerHeight, col2, signHeight);
+    doc.rect(signatureX + col1 + col2, signatureY + headerHeight, col3, signHeight);
+    doc.rect(signatureX, signatureY + headerHeight + signHeight, col1, nameHeight);
+    doc.rect(signatureX + col1, signatureY + headerHeight + signHeight, col2, nameHeight);
+    doc.rect(signatureX + col1 + col2, signatureY + headerHeight + signHeight, col3, nameHeight);
+
+    doc.setFont("times", "bold");
+    doc.setFontSize(9);
+    doc.text("Provided by", signatureX + col1 / 2, signatureY + 5, { align: "center" });
+    doc.text("Approved By", signatureX + col1 + (col2 + col3) / 2, signatureY + 5, { align: "center" });
+
+    const nameY = signatureY + headerHeight + signHeight + 6;
+    doc.setFontSize(8);
+    doc.text("Donna Bella", signatureX + col1 / 2, nameY, { align: "center" });
+    doc.text("Hirajati Natawiria", signatureX + col1 + col2 / 2, nameY, { align: "center" });
+    doc.text("Lilik Sujieanto", signatureX + col1 + col2 + col3 / 2, nameY, { align: "center" });
+    doc.setFont("times", "normal");
+    doc.text("Director", signatureX + col1 + col2 + col3 / 2, nameY + 5, { align: "center" });
 
     return doc;
   };

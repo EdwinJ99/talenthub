@@ -85,7 +85,7 @@ export default function DetailReportClient() {
           <div><h1 className="text-2xl font-bold sm:text-3xl">Detail Report</h1><p className="mt-1 text-slate-500">Post Performance Analytics</p></div>
           <button disabled={scraping || !data?.items.length} onClick={() => scrape(data?.items.map((item) => item.detailId) ?? [])}
             className="rounded-xl bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-50">
-            {scraping ? 'Fetching metadata...' : 'Refresh metadata'}
+            {scraping ? 'Updating data...' : 'Update Data'}
           </button>
         </div>
         {errors.length > 0 && <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{errors.map((error) => <p key={error}>{error}</p>)}</div>}
@@ -138,7 +138,7 @@ function ReportCard({ item, loading }: { item: Item; loading: boolean }) {
 function Metric({ title, value }: { title: string; value: string }) { return <div className="rounded-xl border border-slate-200 p-4"><p className="text-sm text-slate-500">{title}</p><p className="mt-1 text-lg font-bold">{value}</p></div>; }
 function Field({ label, value }: { label: string; value: string }) { return <div><p className="text-sm font-semibold text-slate-400">{label}</p><p className="mt-2 rounded-xl border bg-slate-50 px-4 py-3 text-sm font-medium">{value}</p></div>; }
 function Status({ text }: { text: string }) { return <div className="rounded-2xl border bg-white p-10 text-center text-slate-500">{text}</div>; }
-function format(value: number) { return new Intl.NumberFormat('id-ID').format(value); }
+function format(value: number) { return new Intl.NumberFormat('en-US').format(value); }
 function thumbnailSource(url: string | null, fallback: string) {
   return url ? `/api/tracking/detail-report/thumbnail?url=${encodeURIComponent(url)}` : fallback;
 }

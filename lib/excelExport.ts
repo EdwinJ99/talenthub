@@ -26,8 +26,8 @@ export const createExcelWorkbook = (
   // 2. Map creator data to the desired format
   const data = creators.map((creator, index) => ({
     "No.": index + 1,
-    "Influencer Name": creator.name ?? "N/A",
-    Username: creator.username ?? "N/A",
+    "Influencer Name": creator.name ?? "-",
+    Username: creator.username ?? "-",
     Followers: creator.followers,
     "Total Post": creator.totalPost,
     "ER (%)": creator.engagementRate,
@@ -35,8 +35,8 @@ export const createExcelWorkbook = (
     "Avg. Brand View": creator.averageViewBrand,
     "CPV All": creator.cpvAll,
     "CPV Branded": creator.cpvBranded,
-    SOW: creator.sow ?? "N/A",
-    Platform: creator.platform ?? "N/A",
+    SOW: creator.sow ?? "-",
+    Platform: creator.platform ?? "-",
     Qty: creator.drf_qty,
     "Rate Card": creator.markupPrice,
     Total: creator.total,
@@ -45,8 +45,8 @@ export const createExcelWorkbook = (
   // 3. Create worksheet and add data in sections
   const ws = XLSX.utils.aoa_to_sheet([
     [`Project: ${projectDetail?.name ?? "Untitled Project"}`],
-    [`Brand: ${projectDetail?.brand ?? "N/A"}`],
-    [`PIC: ${projectDetail?.createdBy ?? "N/A"} | Date: ${projectDetail?.createdAt ? new Date(projectDetail.createdAt).toLocaleDateString("en-GB", { day: 'numeric', month: 'long', year: 'numeric' }) : "N/A"}`],
+    [`Brand: ${projectDetail?.brand ?? "-"}`],
+    [`PIC: ${projectDetail?.createdBy ?? "-"} | Date: ${projectDetail?.createdAt ? new Date(projectDetail.createdAt).toLocaleDateString("en-GB", { day: 'numeric', month: 'long', year: 'numeric' }) : "-"}`],
   ]);
 
   // Merge title cells

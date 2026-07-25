@@ -77,7 +77,6 @@ export async function POST(
     const brandName = escapeHtml(project.mst_brand?.brd_nama ?? "Partner");
     const projectName = escapeHtml(project.prj_nama);
     const quotationNumber = escapeHtml(project.prj_quotationno ?? project.prj_kode);
-    const senderName = escapeHtml(session.user.name ?? "D'BEST Influence");
 
     await transporter.sendMail({
       from: `D'BEST Influence <${smtpUser}>`,
@@ -99,7 +98,7 @@ export async function POST(
                 <tr><td style="padding:12px 16px;color:#6b7280">Quotation No.</td><td style="padding:12px 16px;font-weight:700">${quotationNumber}</td></tr>
               </table>
               <p>Please review the attached document. We are happy to help with any questions or requested adjustments.</p>
-              <p style="margin-bottom:0">Best regards,<br><strong>${senderName}</strong><br>D'BEST Influence</p>
+              <p style="margin-bottom:0">Best regards,<br><strong>D'BEST Influence</strong></p>
             </div>
             <div style="padding:18px 36px;background:#f9fafb;color:#6b7280;font-size:12px;text-align:center">This email was sent automatically through TalentHub.</div>
           </div>

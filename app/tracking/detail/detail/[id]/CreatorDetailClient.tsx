@@ -238,7 +238,7 @@ export default function CreatorDetailClient(props: { profile: Profile; posts: Po
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <MetricCard
                 label="Total Posts"
-                value={insights.totalPosts.toLocaleString()}
+                value={insights.totalPosts.toLocaleString("en-US")}
                 tint="text-indigo-500"
                 icon={<Users className="h-5 w-5" />}
               />

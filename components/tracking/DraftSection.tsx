@@ -132,7 +132,7 @@ export default function DraftSection({
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 md:w-auto"
           >
             <FileDocumentIcon className="h-4 w-4" />
-            Download Spreadsheet
+            Download Excel
           </button>
           {spreadsheetUrl && (
             <a
@@ -151,7 +151,7 @@ export default function DraftSection({
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 md:w-auto"
           >
             <FileDocumentIcon className="h-4 w-4" />
-            {sending ? "Creating & Sending..." : "Send Google Spreadsheet"}
+            {sending ? "Sending Link..." : "Send Link Spreadsheet"}
           </button>
           {!readOnly && (
             <button

@@ -65,7 +65,7 @@ export default function QuotationSection({
     const black: [number, number, number] = [0, 0, 0];
 
     const formatRupiah = (value: number | null | undefined) =>
-      Number(value ?? 0).toLocaleString("id-ID");
+      Number(value ?? 0).toLocaleString("en-US");
 
     // Fungsi untuk menggambar bingkai di setiap halaman
     const drawPageBorder = () => {
@@ -121,8 +121,8 @@ export default function QuotationSection({
       doc.setFont("helvetica", "normal");
       doc.text("Brand", contentLeft, 57);
       doc.text("Project", contentLeft, 63);
-      doc.text(`: ${String(projectDetail?.brand ?? "N/A").toUpperCase()}`, 44, 57);
-      doc.text(`: ${String(projectDetail?.name ?? "N/A")}`, 44, 63);
+      doc.text(`: ${String(projectDetail?.brand ?? "-").toUpperCase()}`, 44, 57);
+      doc.text(`: ${String(projectDetail?.name ?? "-")}`, 44, 63);
 
       // KANAN
       const rightLabelX = 120;
@@ -133,7 +133,7 @@ export default function QuotationSection({
       doc.text(":", rightColonX, 57);
       doc.text(":", rightColonX, 63);
       doc.text(formattedDate, rightValueX, 57);
-      doc.text(String(projectDetail?.quotationNo ?? "N/A"), rightValueX, 63);
+      doc.text(String(projectDetail?.quotationNo ?? "-"), rightValueX, 63);
     };
 
     // Panggil kedua fungsi untuk halaman pertama
@@ -149,7 +149,7 @@ export default function QuotationSection({
       head: [["Description", "SOW", "Platform", "Qty", "Rate Card", "Total"]],
 
       body: creators.map((creator) => [
-        creator.name || "N/A",
+        creator.name || "-",
 
         creator.sow ?? "-",
 
@@ -522,7 +522,7 @@ export default function QuotationSection({
 
       <span>
         Rp{" "}
-        {Number(projectDetail?.grandTotal ?? 0).toLocaleString("id-ID")}
+        {Number(projectDetail?.grandTotal ?? 0).toLocaleString("en-US")}
       </span>
     </div>
 
@@ -635,7 +635,7 @@ function Row({
       <span>{label}</span>
 
       <span>
-        Rp {Number(value ?? 0).toLocaleString("id-ID")}
+        Rp {Number(value ?? 0).toLocaleString("en-US")}
       </span>
     </div>
   );

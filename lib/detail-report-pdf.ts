@@ -39,7 +39,7 @@ const ORANGE: [number, number, number] = [214, 143, 72];
 const PAPER: [number, number, number] = [252, 252, 250];
 
 function number(value: number) {
-  return new Intl.NumberFormat('id-ID').format(value);
+  return new Intl.NumberFormat('en-US').format(value);
 }
 
 function username(value: string) {

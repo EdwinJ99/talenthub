@@ -332,11 +332,11 @@ export default function CreatorTable({
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.followers ? creator.followers.toLocaleString() : "N/A"}
+          {creator.followers ? creator.followers.toLocaleString("en-US") : "-"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.totalPost ? creator.totalPost.toLocaleString() : "N/A"}
+          {creator.totalPost ? creator.totalPost.toLocaleString("en-US") : "-"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
@@ -344,13 +344,13 @@ export default function CreatorTable({
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.averageView ? creator.averageView.toLocaleString() : "N/A"}
+          {creator.averageView ? creator.averageView.toLocaleString("en-US") : "-"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
           {creator.averageViewBrand
-            ? creator.averageViewBrand.toLocaleString()
-            : "N/A"}
+            ? creator.averageViewBrand.toLocaleString("en-US")
+            : "-"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
@@ -358,8 +358,8 @@ export default function CreatorTable({
             ? "Rp" +
               Math.round(
                 creator.rateCard / creator.averageView
-              ).toLocaleString()
-            : "N/A"}
+              ).toLocaleString("en-US")
+            : "-"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
@@ -367,8 +367,8 @@ export default function CreatorTable({
             ? "Rp" +
               Math.round(
                 creator.rateCard / creator.averageViewBrand
-              ).toLocaleString()
-            : "N/A"}
+              ).toLocaleString("en-US")
+            : "-"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
@@ -401,12 +401,12 @@ export default function CreatorTable({
           ) : creator.sow ? (
             creator.sow
           ) : (
-            "N/A"
+            "-"
           )}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.platform ? creator.platform : "N/A"}
+          {creator.platform ? creator.platform : "-"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
@@ -439,9 +439,9 @@ export default function CreatorTable({
                   }
                 />
               ) : creator.rateCard ? (
-                creator.rateCard.toLocaleString()
+                creator.rateCard.toLocaleString("en-US")
               ) : (
-                "N/A"
+                "-"
               )}
             </td>
             <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
@@ -457,27 +457,27 @@ export default function CreatorTable({
                   }
                 />
               ) : creator.markupPrice ? (
-                creator.markupPrice.toLocaleString()
+                creator.markupPrice.toLocaleString("en-US")
               ) : (
-                "N/A"
+                "-"
               )}
             </td>
           </>
         ) : (
           <>
             <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-              {creator.rateCard ? creator.rateCard.toLocaleString() : "N/A"}
+              {creator.rateCard ? creator.rateCard.toLocaleString("en-US") : "-"}
             </td>
             <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
               {creator.markupPrice
-                ? creator.markupPrice.toLocaleString()
-                : "N/A"}
+                ? creator.markupPrice.toLocaleString("en-US")
+                : "-"}
             </td>
           </>
         )}
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.total ? creator.total.toLocaleString() : ""}
+          {creator.total ? creator.total.toLocaleString("en-US") : "-"}
         </td>
 
         {runningMode ? (
