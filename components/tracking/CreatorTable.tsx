@@ -59,13 +59,20 @@ function PhotoCell(props: { creator: any }) {
   );
 }
 
-function DraftPriceInput({ value, label, invalid, onCommit }: {
+function DraftPriceInput({
+  value,
+  label,
+  invalid,
+  onCommit,
+}: {
   value: number | null | undefined;
   label: string;
   invalid: boolean;
   onCommit: (value: number | null) => void;
 }) {
-  const [inputValue, setInputValue] = useState(value && value > 0 ? String(value) : "");
+  const [inputValue, setInputValue] = useState(
+    value && value > 0 ? String(value) : ""
+  );
 
   useEffect(() => {
     setInputValue(value && value > 0 ? String(value) : "");
@@ -80,16 +87,24 @@ function DraftPriceInput({ value, label, invalid, onCommit }: {
         aria-label={label}
         value={inputValue}
         placeholder="Required"
-        onChange={(event) => setInputValue(event.target.value.replace(/\D/g, ""))}
+        onChange={(event) =>
+          setInputValue(event.target.value.replace(/\D/g, ""))
+        }
         onBlur={() => onCommit(inputValue ? Number(inputValue) : null)}
         onKeyDown={(event) => {
           if (event.key === "Enter") event.currentTarget.blur();
         }}
-        className={`w-full rounded-md border px-3 py-2 text-right outline-none ${invalid
-          ? "border-red-500 bg-red-50 text-red-700"
-          : "border-slate-300 bg-white focus:border-sky-500"}`}
+        className={`w-full rounded-md border px-3 py-2 text-right outline-none ${
+          invalid
+            ? "border-red-500 bg-red-50 text-red-700"
+            : "border-slate-300 bg-white focus:border-sky-500"
+        }`}
       />
-      {invalid && <p className="mt-1 text-xs font-semibold text-red-600">Required, numbers only</p>}
+      {invalid && (
+        <p className="mt-1 text-xs font-semibold text-red-600">
+          Required, numbers only
+        </p>
+      )}
     </div>
   );
 }
@@ -104,14 +119,24 @@ type Props = {
   runningMode?: boolean;
   draftPricingMode?: boolean;
   draftPricingEditable?: boolean;
-  invalidPricingFields?: Record<number, { rateCard: boolean; markupPrice: boolean; qty: boolean }>;
-  onDraftPriceChange?: (creatorId: number, field: "rateCard" | "markupPrice" | "qty", value: number | null) => void;
+  invalidPricingFields?: Record<
+    number,
+    { rateCard: boolean; markupPrice: boolean; qty: boolean }
+  >;
+  onDraftPriceChange?: (
+    creatorId: number,
+    field: "rateCard" | "markupPrice" | "qty",
+    value: number | null
+  ) => void;
   onAddSow?: (creatorId: number) => void;
-  invalidRunningFields?: Record<number, {
-    planningUpload: boolean;
-    actualUpload: boolean;
-    linkContent: boolean;
-  }>;
+  invalidRunningFields?: Record<
+    number,
+    {
+      planningUpload: boolean;
+      actualUpload: boolean;
+      linkContent: boolean;
+    }
+  >;
   getSortIcon: (field: string) => ReactNode;
   showDelete?: boolean;
   onDelete?: (id: number) => void;
@@ -151,7 +176,6 @@ export default function CreatorTable({
   selectedReportIds = [],
   onReportSelectionChange,
 }: Props) {
-
   const pageSize = 10;
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(creators.length / pageSize));
@@ -206,7 +230,10 @@ export default function CreatorTable({
     const detailHref = `/tracking/report/detail-report?projectId=${creator.drf_projectid}&detailIds=${creator.drf_id}`;
 
     return (
-      <tr key={creator.id} className="border-b border-gray-200 hover:bg-gray-50 text-gray-800">
+      <tr
+        key={creator.id}
+        className="border-b border-gray-200 hover:bg-gray-50 text-gray-800"
+      >
         <td className="border-x px-4 py-3 text-center">
           <input
             type="checkbox"
@@ -236,7 +263,12 @@ export default function CreatorTable({
         </td>
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
           {creator.drf_link_content ? (
-            <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">
+            <a
+              href={creator.drf_link_content}
+              target="_blank"
+              rel="noreferrer"
+              className="text-sky-600 hover:underline"
+            >
               View content
             </a>
           ) : (
@@ -248,7 +280,10 @@ export default function CreatorTable({
         </td>
         <td className="p-3 text-center whitespace-nowrap sticky right-0 bg-white">
           {showView ? (
-            <Link href={detailHref} className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+            <Link
+              href={detailHref}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-1.5 text-slate-700 hover:bg-slate-50"
+            >
               <InvoiceIcon className="h-4 w-4 text-slate-900" />
               <span>View</span>
             </Link>
@@ -266,13 +301,20 @@ export default function CreatorTable({
     const invalidRunning = invalidRunningFields[creator.drf_id];
     const usedSowIds = new Set(
       creators
-        .filter((item) => item.drf_creatorid === creator.drf_creatorid && item.drf_id !== creator.drf_id)
+        .filter(
+          (item) =>
+            item.drf_creatorid === creator.drf_creatorid &&
+            item.drf_id !== creator.drf_id
+        )
         .map((item) => item.sowId)
         .filter(Boolean)
     );
 
     return (
-      <tr key={creator.id} className="border-b border-gray-200 hover:bg-gray-50 text-gray-800">
+      <tr
+        key={creator.id}
+        className="border-b border-gray-200 hover:bg-gray-50 text-gray-800"
+      >
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
           {startIndex + index + 1}
         </td>
@@ -306,15 +348,27 @@ export default function CreatorTable({
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.averageViewBrand ? creator.averageViewBrand.toLocaleString() : "N/A"}
+          {creator.averageViewBrand
+            ? creator.averageViewBrand.toLocaleString()
+            : "N/A"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.cpvAll ? creator.cpvAll.toLocaleString() : "N/A"}
+          {creator.rateCard && creator.averageView
+            ? "Rp" +
+              Math.round(
+                creator.rateCard / creator.averageView
+              ).toLocaleString()
+            : "N/A"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.cpvBranded ? creator.cpvBranded.toLocaleString() : "N/A"}
+          {creator.rateCard && creator.averageViewBrand
+            ? "Rp" +
+              Math.round(
+                creator.rateCard / creator.averageViewBrand
+              ).toLocaleString()
+            : "N/A"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
@@ -323,7 +377,8 @@ export default function CreatorTable({
               value={creator.sowId ? creator.sowId : ""}
               disabled={sowReadOnly}
               onChange={(event) => {
-                const val = event.target.value === "" ? null : Number(event.target.value);
+                const val =
+                  event.target.value === "" ? null : Number(event.target.value);
                 if (onSowChange) onSowChange(creator.drf_id, val);
               }}
               className={
@@ -334,13 +389,19 @@ export default function CreatorTable({
             >
               <option value="">Select SOW</option>
               {sowOptions.map((sow) => (
-                <option key={sow.sow_id} value={sow.sow_id} disabled={usedSowIds.has(sow.sow_id)}>
+                <option
+                  key={sow.sow_id}
+                  value={sow.sow_id}
+                  disabled={usedSowIds.has(sow.sow_id)}
+                >
                   {sow.sow_nama ? sow.sow_nama : "SOW #" + sow.sow_id}
                 </option>
               ))}
             </select>
+          ) : creator.sow ? (
+            creator.sow
           ) : (
-            creator.sow ? creator.sow : "N/A"
+            "N/A"
           )}
         </td>
 
@@ -354,9 +415,13 @@ export default function CreatorTable({
               value={creator.drf_qty}
               label={`Qty for ${creator.name || "creator"}`}
               invalid={Boolean(invalidPricingFields[creator.drf_id]?.qty)}
-              onCommit={(value) => onDraftPriceChange?.(creator.drf_id, "qty", value)}
+              onCommit={(value) =>
+                onDraftPriceChange?.(creator.drf_id, "qty", value)
+              }
             />
-          ) : creator.drf_qty ?? "-"}
+          ) : (
+            creator.drf_qty ?? "-"
+          )}
         </td>
 
         {draftPricingMode ? (
@@ -366,20 +431,36 @@ export default function CreatorTable({
                 <DraftPriceInput
                   value={creator.rateCard}
                   label={`Rate Card for ${creator.name || "creator"}`}
-                  invalid={Boolean(invalidPricingFields[creator.drf_id]?.rateCard)}
-                  onCommit={(value) => onDraftPriceChange?.(creator.drf_id, "rateCard", value)}
+                  invalid={Boolean(
+                    invalidPricingFields[creator.drf_id]?.rateCard
+                  )}
+                  onCommit={(value) =>
+                    onDraftPriceChange?.(creator.drf_id, "rateCard", value)
+                  }
                 />
-              ) : creator.rateCard ? creator.rateCard.toLocaleString() : "N/A"}
+              ) : creator.rateCard ? (
+                creator.rateCard.toLocaleString()
+              ) : (
+                "N/A"
+              )}
             </td>
             <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
               {draftPricingEditable ? (
                 <DraftPriceInput
                   value={creator.markupPrice}
                   label={`Mark Price for ${creator.name || "creator"}`}
-                  invalid={Boolean(invalidPricingFields[creator.drf_id]?.markupPrice)}
-                  onCommit={(value) => onDraftPriceChange?.(creator.drf_id, "markupPrice", value)}
+                  invalid={Boolean(
+                    invalidPricingFields[creator.drf_id]?.markupPrice
+                  )}
+                  onCommit={(value) =>
+                    onDraftPriceChange?.(creator.drf_id, "markupPrice", value)
+                  }
                 />
-              ) : creator.markupPrice ? creator.markupPrice.toLocaleString() : "N/A"}
+              ) : creator.markupPrice ? (
+                creator.markupPrice.toLocaleString()
+              ) : (
+                "N/A"
+              )}
             </td>
           </>
         ) : (
@@ -388,7 +469,9 @@ export default function CreatorTable({
               {creator.rateCard ? creator.rateCard.toLocaleString() : "N/A"}
             </td>
             <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-              {creator.markupPrice ? creator.markupPrice.toLocaleString() : "N/A"}
+              {creator.markupPrice
+                ? creator.markupPrice.toLocaleString()
+                : "N/A"}
             </td>
           </>
         )}
@@ -399,40 +482,75 @@ export default function CreatorTable({
 
         {runningMode ? (
           <>
-            <td className={invalidRunning && invalidRunning.planningUpload ? "p-3 border-r border-gray-200 text-center whitespace-nowrap bg-red-50 font-medium text-red-700" : "p-3 border-r border-gray-200 text-center whitespace-nowrap"}>
+            <td
+              className={
+                invalidRunning && invalidRunning.planningUpload
+                  ? "p-3 border-r border-gray-200 text-center whitespace-nowrap bg-red-50 font-medium text-red-700"
+                  : "p-3 border-r border-gray-200 text-center whitespace-nowrap"
+              }
+            >
               {creator.drf_planning_upload ? (
-                new Date(creator.drf_planning_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+                new Date(creator.drf_planning_upload).toLocaleDateString(
+                  "id-ID",
+                  { day: "numeric", month: "long", year: "numeric" }
+                )
               ) : (
                 <>
                   <span>-</span>
                   {invalidRunning && invalidRunning.planningUpload ? (
-                    <p className="mt-1 text-xs font-bold text-red-700">Required</p>
+                    <p className="mt-1 text-xs font-bold text-red-700">
+                      Required
+                    </p>
                   ) : null}
                 </>
               )}
             </td>
-            <td className={invalidRunning && invalidRunning.actualUpload ? "p-3 border-r border-gray-200 text-center whitespace-nowrap bg-red-50 font-medium text-red-700" : "p-3 border-r border-gray-200 text-center whitespace-nowrap"}>
+            <td
+              className={
+                invalidRunning && invalidRunning.actualUpload
+                  ? "p-3 border-r border-gray-200 text-center whitespace-nowrap bg-red-50 font-medium text-red-700"
+                  : "p-3 border-r border-gray-200 text-center whitespace-nowrap"
+              }
+            >
               {creator.drf_actual_upload ? (
-                new Date(creator.drf_actual_upload).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
+                new Date(creator.drf_actual_upload).toLocaleDateString(
+                  "id-ID",
+                  { day: "numeric", month: "long", year: "numeric" }
+                )
               ) : (
                 <>
                   <span>-</span>
                   {invalidRunning && invalidRunning.actualUpload ? (
-                    <p className="mt-1 text-xs font-bold text-red-700">Required</p>
+                    <p className="mt-1 text-xs font-bold text-red-700">
+                      Required
+                    </p>
                   ) : null}
                 </>
               )}
             </td>
-            <td className={invalidRunning && invalidRunning.linkContent ? "p-3 border-r border-gray-200 text-center whitespace-nowrap bg-red-50 font-medium text-red-700" : "p-3 border-r border-gray-200 text-center whitespace-nowrap"}>
+            <td
+              className={
+                invalidRunning && invalidRunning.linkContent
+                  ? "p-3 border-r border-gray-200 text-center whitespace-nowrap bg-red-50 font-medium text-red-700"
+                  : "p-3 border-r border-gray-200 text-center whitespace-nowrap"
+              }
+            >
               {creator.drf_link_content ? (
-                <a href={creator.drf_link_content} target="_blank" rel="noreferrer" className="text-sky-600 hover:underline">
+                <a
+                  href={creator.drf_link_content}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sky-600 hover:underline"
+                >
                   View content
                 </a>
               ) : (
                 <>
                   <span>-</span>
                   {invalidRunning && invalidRunning.linkContent ? (
-                    <p className="mt-1 text-xs font-bold text-red-700">Required</p>
+                    <p className="mt-1 text-xs font-bold text-red-700">
+                      Required
+                    </p>
                   ) : null}
                 </>
               )}
@@ -462,7 +580,11 @@ export default function CreatorTable({
               </button>
             ) : null}
             {showDelete ? (
-              <button onClick={() => { if (onDelete) onDelete(creator.drf_id); }}>
+              <button
+                onClick={() => {
+                  if (onDelete) onDelete(creator.drf_id);
+                }}
+              >
                 <DeleteIcon className="h-5 w-5 text-red-500" />
               </button>
             ) : null}
@@ -475,21 +597,37 @@ export default function CreatorTable({
   return (
     <div className="mt-6">
       <div className="overflow-x-auto border border-gray-200 rounded-lg w-full max-h-[500px] overflow-y-auto">
-        <table className={reportMode ? "min-w-[900px] w-full text-sm border-collapse" : "min-w-[1500px] w-full text-sm border-collapse"}>
+        <table
+          className={
+            reportMode
+              ? "min-w-[900px] w-full text-sm border-collapse"
+              : "min-w-[1500px] w-full text-sm border-collapse"
+          }
+        >
           <thead>
-
             <tr className="border-y border-slate-400 bg-slate-300 text-left text-slate-900">
               {reportMode && (
                 <th className="border-x px-3 py-3 text-center">
                   <input
                     type="checkbox"
                     aria-label="Select all creators on this page"
-                    checked={visibleCreators.length > 0 && visibleCreators.every((creator) => selectedReportIds.includes(creator.drf_id))}
+                    checked={
+                      visibleCreators.length > 0 &&
+                      visibleCreators.every((creator) =>
+                        selectedReportIds.includes(creator.drf_id)
+                      )
+                    }
                     onChange={(event) => {
-                      const pageIds = visibleCreators.map((creator) => creator.drf_id);
-                      onReportSelectionChange?.(event.target.checked
-                        ? [...new Set([...selectedReportIds, ...pageIds])]
-                        : selectedReportIds.filter((id) => !pageIds.includes(id)));
+                      const pageIds = visibleCreators.map(
+                        (creator) => creator.drf_id
+                      );
+                      onReportSelectionChange?.(
+                        event.target.checked
+                          ? [...new Set([...selectedReportIds, ...pageIds])]
+                          : selectedReportIds.filter(
+                              (id) => !pageIds.includes(id)
+                            )
+                      );
                     }}
                     className="h-4 w-4 accent-sky-500"
                   />
@@ -504,7 +642,9 @@ export default function CreatorTable({
                 >
                   <div className="flex items-center justify-between">
                     <span>{head.label}</span>
-                    <span className="text-gray-400 text-xs ml-1">{getSortIcon(head.field)}</span>
+                    <span className="text-gray-400 text-xs ml-1">
+                      {getSortIcon(head.field)}
+                    </span>
                   </div>
                 </th>
               ))}
@@ -516,7 +656,9 @@ export default function CreatorTable({
 
           <tbody>
             {visibleCreators.map((creator, index) =>
-              reportMode ? renderReportRow(creator, index) : renderNormalRow(creator, index)
+              reportMode
+                ? renderReportRow(creator, index)
+                : renderNormalRow(creator, index)
             )}
           </tbody>
         </table>
@@ -525,7 +667,8 @@ export default function CreatorTable({
       <div className="flex items-center justify-between mt-4 text-sm text-gray-600">
         <span>
           Showing {creators.length > 0 ? startIndex + 1 : 0} to{" "}
-          {Math.min(startIndex + pageSize, creators.length)} of {creators.length} entries
+          {Math.min(startIndex + pageSize, creators.length)} of{" "}
+          {creators.length} entries
         </span>
 
         {totalPages > 1 ? (
@@ -539,25 +682,29 @@ export default function CreatorTable({
               Previous
             </button>
 
-            {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-              <button
-                key={pageNumber}
-                type="button"
-                onClick={() => setCurrentPage(pageNumber)}
-                className={
-                  pageNumber === safeCurrentPage
-                    ? "px-3 py-1 border-r border-gray-200 bg-blue-50 font-bold text-blue-600"
-                    : "px-3 py-1 border-r border-gray-200 hover:bg-gray-50 text-gray-700"
-                }
-              >
-                {pageNumber}
-              </button>
-            ))}
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(
+              (pageNumber) => (
+                <button
+                  key={pageNumber}
+                  type="button"
+                  onClick={() => setCurrentPage(pageNumber)}
+                  className={
+                    pageNumber === safeCurrentPage
+                      ? "px-3 py-1 border-r border-gray-200 bg-blue-50 font-bold text-blue-600"
+                      : "px-3 py-1 border-r border-gray-200 hover:bg-gray-50 text-gray-700"
+                  }
+                >
+                  {pageNumber}
+                </button>
+              )
+            )}
 
             <button
               type="button"
               disabled={safeCurrentPage === totalPages}
-              onClick={() => setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))}
+              onClick={() =>
+                setCurrentPage(Math.min(totalPages, safeCurrentPage + 1))
+              }
               className="px-3 py-1 bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
             >
               Next
