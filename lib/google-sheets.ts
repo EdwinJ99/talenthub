@@ -5,6 +5,23 @@ const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
+type GoogleTokenResponse = {
+  access_token?: string;
+  expires_in?: number;
+  error?: string;
+  error_description?: string;
+};
+
+function googleOAuthError(result: GoogleTokenResponse) {
+  const detail = result.error_description ?? result.error ?? 'Google OAuth refresh failed';
+  if (result.error === 'invalid_grant' || /expired|revoked/i.test(detail)) {
+    return new Error(
+      'Google OAuth authorization has expired or was revoked. Reconnect the Google account, replace GOOGLE_OAUTH_REFRESH_TOKEN in .env, then restart the application. Ensure the OAuth consent screen is In production (or Internal) so the refresh token does not expire after 7 days.',
+    );
+  }
+  return new Error(`Google OAuth authentication failed: ${detail}`);
+}
+
 function base64url(value: string | Buffer) {
   return Buffer.from(value).toString('base64url');
 }
@@ -43,8 +60,8 @@ async function accessToken() {
         grant_type: 'refresh_token',
       }),
     });
-    const result = await response.json() as { access_token?: string; expires_in?: number; error_description?: string };
-    if (!response.ok || !result.access_token) throw new Error(result.error_description ?? 'Google OAuth refresh failed');
+    const result = await response.json() as GoogleTokenResponse;
+    if (!response.ok || !result.access_token) throw googleOAuthError(result);
     cachedToken = { value: result.access_token, expiresAt: Date.now() + (result.expires_in ?? 3600) * 1000 };
     return cachedToken.value;
   }

@@ -80,13 +80,12 @@ export default function QuotationSection({
       doc.setTextColor(...black);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11);
-      doc.text("PT DUTA KARYARAYA MANDIRI", contentLeft, 16);
+      doc.text("D'BEST INFLUENCE", contentLeft, 16);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.text("Ruko Permata Regency D/37", contentLeft, 22);
-      doc.text("Jl Haji Kelik RT 001 RW 006", contentLeft, 27);
-      doc.text("Jakarta Barat - DKI Jakarta", contentLeft, 32);
-      doc.text("+62 818 693 309", contentLeft, 37);
+      doc.text("Kembangan, Jakarta Barat 11510", contentLeft, 27);
+      doc.text("0811 - 1262 - 726", contentLeft, 32);
 
       // LOGO AREA
       doc.setDrawColor(190, 150, 120);
@@ -120,9 +119,11 @@ export default function QuotationSection({
       // KIRI
       doc.setFont("helvetica", "normal");
       doc.text("Brand", contentLeft, 57);
-      doc.text("Project", contentLeft, 63);
+      doc.text("Contact", contentLeft, 63);
+      doc.text("Project", contentLeft, 69);
       doc.text(`: ${String(projectDetail?.brand ?? "-").toUpperCase()}`, 44, 57);
-      doc.text(`: ${String(projectDetail?.name ?? "-")}`, 44, 63);
+      doc.text(`: ${String(projectDetail?.brandContact ?? "-") || "-"}`, 44, 63);
+      doc.text(`: ${String(projectDetail?.name ?? "-")}`, 44, 69);
 
       // KANAN
       const rightLabelX = 120;
@@ -144,7 +145,7 @@ export default function QuotationSection({
     // 5. TABEL CREATOR
     // =====================================================
     autoTable(doc, {
-      startY: 74,
+      startY: 80,
 
       head: [["Description", "SOW", "Platform", "Qty", "Rate Card", "Total"]],
 
@@ -349,13 +350,7 @@ export default function QuotationSection({
     doc.rect(signatureX, signatureY + headerHeight, col1, signHeight);
 
     doc.rect(signatureX + col1, signatureY + headerHeight, col2, signHeight);
-
-    doc.rect(
-      signatureX + col1 + col2,
-      signatureY + headerHeight,
-      col3,
-      signHeight
-    );
+    doc.rect(signatureX + col1 + col2, signatureY + headerHeight, col3, signHeight);
 
     // NAMA
     doc.rect(
@@ -365,19 +360,8 @@ export default function QuotationSection({
       nameHeight
     );
 
-    doc.rect(
-      signatureX + col1,
-      signatureY + headerHeight + signHeight,
-      col2,
-      nameHeight
-    );
-
-    doc.rect(
-      signatureX + col1 + col2,
-      signatureY + headerHeight + signHeight,
-      col3,
-      nameHeight
-    );
+    doc.rect(signatureX + col1, signatureY + headerHeight + signHeight, col2, nameHeight);
+    doc.rect(signatureX + col1 + col2, signatureY + headerHeight + signHeight, col3, nameHeight);
 
     // HEADER TEXT
     doc.setFont("times", "bold");
@@ -401,17 +385,9 @@ export default function QuotationSection({
 
     doc.text("Donna Bella", signatureX + col1 / 2, nameY, { align: "center" });
 
-    doc.text("Hirajati Natawiria", signatureX + col1 + col2 / 2, nameY, {
-      align: "center",
-    });
-
-    doc.text("Lilik Sujieanto", signatureX + col1 + col2 + col3 / 2, nameY, {
-      align: "center",
-    });
-
-    doc.text("Director", signatureX + col1 + col2 + col3 / 2, nameY + 5, {
-      align: "center",
-    });
+    doc.text("Hirajati Natawiria", signatureX + col1 + col2 / 2, nameY, { align: "center" });
+    doc.text("Lilik Sujieanto", signatureX + col1 + col2 + col3 / 2, nameY, { align: "center" });
+    doc.text("Director", signatureX + col1 + col2 + col3 / 2, nameY + 5, { align: "center" });
 
     // =====================================================
     // 9. SAVE PDF
