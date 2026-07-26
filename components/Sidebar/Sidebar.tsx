@@ -157,25 +157,25 @@ const menuItems: MenuItem[] = [
     ),
   },
 
-  {
-    label: "Influencer",
-    href: "/influencer",
-    roles: ["ADMIN"],
-    icon: (
-      <svg
-        viewBox="0 0 24 24"
-        className="h-5 w-5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      >
-        <path d="M16 19a4 4 0 0 0-8 0" />
-        <circle cx="12" cy="9" r="3" />
-        <path d="M19 19a3 3 0 0 0-2.2-2.88" />
-        <path d="M17 7.5a2.5 2.5 0 0 1 0 5" />
-      </svg>
-    ),
-  },
+  // {
+  //   label: "Influencer",
+  //   href: "/influencer",
+  //   roles: ["ADMIN"],
+  //   icon: (
+  //     <svg
+  //       viewBox="0 0 24 24"
+  //       className="h-5 w-5"
+  //       fill="none"
+  //       stroke="currentColor"
+  //       strokeWidth="1.8"
+  //     >
+  //       <path d="M16 19a4 4 0 0 0-8 0" />
+  //       <circle cx="12" cy="9" r="3" />
+  //       <path d="M19 19a3 3 0 0 0-2.2-2.88" />
+  //       <path d="M17 7.5a2.5 2.5 0 0 1 0 5" />
+  //     </svg>
+  //   ),
+  // },
 
   {
     label: "Master Data",
