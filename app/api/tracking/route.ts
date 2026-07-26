@@ -110,6 +110,8 @@ if (id) {
 
     brandId: project.prj_brand,
     brand: project.mst_brand?.brd_nama ?? "",
+    brandContact: project.mst_brand?.brd_notelp ?? "",
+    brandEmail: project.mst_brand?.brd_email ?? "",
 
     name: project.prj_nama,
 

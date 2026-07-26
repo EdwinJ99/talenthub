@@ -58,13 +58,12 @@ export default function InvoiceSection({
     doc.setTextColor(...black);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
-    doc.text("PT DUTA KARYARAYA MANDIRI", left, 16);
+    doc.text("D'BEST INFLUENCE", left, 16);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text("Ruko Permata Regency D/37", left, 22);
-    doc.text("Jl Haji Kelik RT 001 RW 006", left, 27);
-    doc.text("Jakarta Barat - DKI Jakarta", left, 32);
-    doc.text("+62 818 693 309", left, 37);
+    doc.text("Kembangan, Jakarta Barat 11510", left, 27);
+    doc.text("0811 - 1262 - 726", left, 32);
 
     doc.setDrawColor(190, 150, 120);
     doc.setLineWidth(0.7);
@@ -94,9 +93,11 @@ export default function InvoiceSection({
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.text("Brand", left, 57);
-    doc.text("Project", left, 63);
+    doc.text("Contact", left, 63);
+    doc.text("Project", left, 69);
     doc.text(`: ${String(projectDetail?.brand ?? "-").toUpperCase()}`, 44, 57);
-    doc.text(`: ${String(projectDetail?.name ?? "-")}`, 44, 63);
+    doc.text(`: ${String(projectDetail?.brandContact ?? "-") || "-"}`, 44, 63);
+    doc.text(`: ${String(projectDetail?.name ?? "-")}`, 44, 69);
 
     const rightLabelX = 120;
     const rightColonX = 140;
@@ -109,7 +110,7 @@ export default function InvoiceSection({
     doc.text(String(projectDetail?.code ?? "-"), rightValueX, 63);
 
     autoTable(doc, {
-      startY: 74,
+      startY: 80,
       head: [["Description", "SOW", "Platform", "Qty", "Rate Card", "Total"]],
       body: creators.map((creator) => [
         creator.name ?? "-",
