@@ -354,19 +354,19 @@ export default function CreatorTable({
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.rateCard && creator.averageView
+          {creator.markupPrice && creator.averageView
             ? "Rp" +
               Math.round(
-                creator.rateCard / creator.averageView
+                creator.markupPrice / creator.averageView
               ).toLocaleString("en-US")
             : "-"}
         </td>
 
         <td className="p-3 border-r border-gray-200 text-center whitespace-nowrap">
-          {creator.rateCard && creator.averageViewBrand
+          {creator.markupPrice && creator.averageViewBrand
             ? "Rp" +
               Math.round(
-                creator.rateCard / creator.averageViewBrand
+                creator.markupPrice / creator.averageViewBrand
               ).toLocaleString("en-US")
             : "-"}
         </td>
@@ -388,7 +388,14 @@ export default function CreatorTable({
               }
             >
               <option value="">Select SOW</option>
-              {sowOptions.map((sow) => (
+              {sowOptions.filter((sow) => {
+                const name = (sow.sow_nama ?? "").toLowerCase();
+                const tiktok = /tiktok|tik tok|\btt\b/.test(name);
+                const instagram = /instagram|\big\b|reels?|story|carousel/.test(name);
+                return creator.platform?.toLowerCase().includes("tiktok")
+                  ? !instagram || tiktok
+                  : !tiktok || instagram;
+              }).map((sow) => (
                 <option
                   key={sow.sow_id}
                   value={sow.sow_id}

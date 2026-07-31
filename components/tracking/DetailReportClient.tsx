@@ -107,7 +107,7 @@ function ReportCard({ item, loading }: { item: Item; loading: boolean }) {
     { title: 'Repost', raw: report.reposts, value: format(report.reposts) },
     { title: 'Views', raw: report.views, value: format(report.views) },
     { title: 'Play', raw: report.plays, value: format(report.plays) },
-    { title: 'Duration', raw: report.duration, value: `${report.duration.toFixed(report.duration % 1 ? 1 : 0)} seconds` },
+    { title: 'AVG Duration View', raw: report.duration, value: `${report.duration.toFixed(report.duration % 1 ? 1 : 0)} seconds` },
     { title: 'Share', raw: report.shares, value: format(report.shares) },
   ].filter((metric) => metric.raw > 0) : [];
   const fallbackImage = '/image/default-kol-avatar.png';
@@ -140,7 +140,9 @@ function Field({ label, value }: { label: string; value: string }) { return <div
 function Status({ text }: { text: string }) { return <div className="rounded-2xl border bg-white p-10 text-center text-slate-500">{text}</div>; }
 function format(value: number) { return new Intl.NumberFormat('en-US').format(value); }
 function thumbnailSource(url: string | null, fallback: string) {
-  return url ? `/api/tracking/detail-report/thumbnail?url=${encodeURIComponent(url)}` : fallback;
+  return url?.startsWith('data:image/')
+    ? url
+    : url ? `/api/tracking/detail-report/thumbnail?url=${encodeURIComponent(url)}` : fallback;
 }
 
 function ReportLoading() {

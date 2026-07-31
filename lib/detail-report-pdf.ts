@@ -37,6 +37,7 @@ const MINT: [number, number, number] = [174, 211, 197];
 const PINK: [number, number, number] = [235, 177, 180];
 const ORANGE: [number, number, number] = [214, 143, 72];
 const PAPER: [number, number, number] = [252, 252, 250];
+const DEFAULT_THUMBNAIL = '/image/default-kol-avatar.png';
 
 function number(value: number) {
   return new Intl.NumberFormat('en-US').format(value);
@@ -87,10 +88,14 @@ function addPage(doc: jsPDF, page: number) {
 async function imageData(url: string | null): Promise<{ data: string; width: number; height: number } | null> {
   if (!url) return null;
   try {
-    const response = await fetch(`/api/tracking/detail-report/thumbnail?url=${encodeURIComponent(url)}`);
-    if (!response.ok) return null;
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
+    const storedImage = url.startsWith('data:image/');
+    const response = storedImage
+      ? null
+      : await fetch(url.startsWith('/')
+        ? url
+        : `/api/tracking/detail-report/thumbnail?url=${encodeURIComponent(url)}`);
+    if (response && !response.ok) return null;
+    const objectUrl = storedImage ? url : URL.createObjectURL(await response!.blob());
     return await new Promise((resolve) => {
       const image = new Image();
       image.onload = () => {
@@ -98,10 +103,13 @@ async function imageData(url: string | null): Promise<{ data: string; width: num
         canvas.width = image.naturalWidth;
         canvas.height = image.naturalHeight;
         canvas.getContext('2d')?.drawImage(image, 0, 0);
-        URL.revokeObjectURL(objectUrl);
+        if (!storedImage) URL.revokeObjectURL(objectUrl);
         resolve({ data: canvas.toDataURL('image/jpeg', 0.88), width: image.naturalWidth, height: image.naturalHeight });
       };
-      image.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+      image.onerror = () => {
+        if (!storedImage) URL.revokeObjectURL(objectUrl);
+        resolve(null);
+      };
       image.src = objectUrl;
     });
   } catch {
@@ -115,14 +123,14 @@ function metricRows(item: ReportItem) {
   return [
     ['Followers', item.followers], ['Views', report.views], ['Play', report.plays],
     ['Likes', report.likes], ['Comments', report.comments], ['Saves', report.saves],
-    ['Shares', report.shares], ['Repost', report.reposts],
+    ['Shares', report.shares], ['Repost', report.reposts], ['AVG Duration View', report.duration],
   ].filter((row): row is [string, number] => Number(row[1]) > 0);
 }
 
 function captionImage(value: string) {
   const canvas = document.createElement('canvas');
   canvas.width = 1312;
-  canvas.height = 400;
+  canvas.height = 224;
   const context = canvas.getContext('2d');
   if (!context) return null;
 
@@ -260,22 +268,25 @@ export async function createDetailReportPdf(payload: DetailReportPayload) {
     doc.setTextColor(91, 108, 118);
     doc.text(`${item.creatorName} · ${item.platform}${item.sow ? ` · ${item.sow}` : ''}`, 19, 38);
 
-    const thumbnail = await imageData(item.report?.thumbnail_url ?? null);
+    const thumbnail = await imageData(item.report?.thumbnail_url ?? null)
+      ?? await imageData(DEFAULT_THUMBNAIL);
     doc.setFillColor(241, 245, 244);
     doc.roundedRect(18, 46, 78, 132, 3, 3, 'F');
+    doc.setDrawColor(31, 41, 45);
+    doc.setLineWidth(1.2);
+    doc.roundedRect(20, 48, 74, 128, 5, 5, 'S');
+    doc.setFillColor(31, 41, 45);
+    doc.roundedRect(46, 50, 22, 3, 1.5, 1.5, 'F');
+    doc.roundedRect(50, 171, 14, 1.5, 0.75, 0.75, 'F');
     if (thumbnail) {
-      const maxWidth = 72;
-      const maxHeight = 126;
+      const maxWidth = 68;
+      const maxHeight = 112;
       const scale = Math.min(maxWidth / thumbnail.width, maxHeight / thumbnail.height);
       const imageWidth = thumbnail.width * scale;
       const imageHeight = thumbnail.height * scale;
-      const imageX = 21 + (maxWidth - imageWidth) / 2;
-      const imageY = 49 + (maxHeight - imageHeight) / 2;
+      const imageX = 23 + (maxWidth - imageWidth) / 2;
+      const imageY = 56 + (maxHeight - imageHeight) / 2;
       try { doc.addImage(thumbnail.data, 'JPEG', imageX, imageY, imageWidth, imageHeight, undefined, 'FAST'); } catch { /* fallback panel remains */ }
-    } else {
-      doc.setTextColor(135, 149, 156);
-      doc.setFontSize(11);
-      doc.text('Thumbnail unavailable', 57, 111, { align: 'center' });
     }
 
     doc.setTextColor(...NAVY);
@@ -284,12 +295,12 @@ export async function createDetailReportPdf(payload: DetailReportPayload) {
     doc.text('Content Performance', 109, 51);
     const metrics = metricRows(item);
     metrics.forEach(([label, value], index) => {
-      const col = index % 4;
-      const row = Math.floor(index / 4);
-      const x = 109 + col * 42;
+      const col = index % 3;
+      const row = Math.floor(index / 3);
+      const x = 109 + col * 55;
       const y = 60 + row * 29;
       doc.setFillColor(246, 248, 247);
-      doc.roundedRect(x, y, 38, 23, 2, 2, 'F');
+      doc.roundedRect(x, y, 50, 23, 2, 2, 'F');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(95, 112, 121);
@@ -301,11 +312,11 @@ export async function createDetailReportPdf(payload: DetailReportPayload) {
     });
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
-    doc.text('Caption', 109, 126);
+    doc.text('Caption', 109, 148);
     doc.setFillColor(248, 249, 248);
-    doc.roundedRect(109, 130, 164, 50, 2, 2, 'F');
+    doc.roundedRect(109, 152, 164, 28, 2, 2, 'F');
     const renderedCaption = captionImage(item.report?.caption || '-');
-    if (renderedCaption) doc.addImage(renderedCaption, 'PNG', 109, 130, 164, 50, undefined, 'FAST');
+    if (renderedCaption) doc.addImage(renderedCaption, 'PNG', 109, 152, 164, 28, undefined, 'FAST');
   }
 
   return doc;

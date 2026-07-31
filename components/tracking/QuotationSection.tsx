@@ -13,7 +13,7 @@ type Props = {
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
 
-  handleStartProject: () => void;
+  handleStartProject: (taxRate: number) => void;
   readOnly?: boolean;
   showView?: boolean;
   onView?: (creator: any) => void;
@@ -33,6 +33,7 @@ export default function QuotationSection({
   const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [taxRate, setTaxRate] = useState(() => Number(projectDetail?.taxRate ?? 11));
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => {
@@ -131,10 +132,13 @@ export default function QuotationSection({
       const rightValueX = 144;
       doc.text("Date", rightLabelX, 57);
       doc.text("Quotation No", rightLabelX, 63);
+      doc.text("Transaction No", rightLabelX, 69);
       doc.text(":", rightColonX, 57);
       doc.text(":", rightColonX, 63);
+      doc.text(":", rightColonX, 69);
       doc.text(formattedDate, rightValueX, 57);
       doc.text(String(projectDetail?.quotationNo ?? "-"), rightValueX, 63);
+      doc.text(String(projectDetail?.code ?? "-"), rightValueX, 69);
     };
 
     // Panggil kedua fungsi untuk halaman pertama
@@ -249,12 +253,12 @@ export default function QuotationSection({
         value: projectDetail?.dpp,
       },
       {
-        label: "PPN (11%)",
-        value: projectDetail?.ppn,
+        label: `PPN (${taxRate}%)`,
+        value: Number(projectDetail?.dpp ?? 0) * taxRate / 100,
       },
       {
         label: "Grand Total",
-        value: projectDetail?.grandTotal,
+        value: Number(projectDetail?.dpp ?? 0) * (1 + taxRate / 100),
       },
     ];
 
@@ -488,17 +492,27 @@ export default function QuotationSection({
       value={projectDetail?.dpp}
     />
 
-    <Row
-      label="PPN (11%)"
-      value={projectDetail?.ppn}
-    />
+    <div className="mb-3 flex items-center justify-between gap-4">
+      <label htmlFor="tax-rate" className="font-medium">PPN (%)</label>
+      <input id="tax-rate" type="number" min="0" max="100" step="0.01" value={taxRate}
+        disabled={readOnly}
+        onChange={(event) => setTaxRate(Number(event.target.value))}
+        onBlur={() => {
+          if (!readOnly) fetch(`/api/tracking?id=${projectDetail?.id}`, {
+            method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prj_tax_rate: taxRate }),
+          });
+        }}
+        className="w-24 rounded-md border border-slate-300 px-3 py-2 text-right disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" />
+    </div>
+    <Row label={`PPN (${taxRate}%)`} value={Number(projectDetail?.dpp ?? 0) * taxRate / 100} />
 
     <div className="mt-4 flex justify-between border-t pt-4 text-xl font-bold">
       <span>Grand Total</span>
 
       <span>
         Rp{" "}
-        {Number(projectDetail?.grandTotal ?? 0).toLocaleString("en-US")}
+        {(Number(projectDetail?.dpp ?? 0) * (1 + taxRate / 100)).toLocaleString("en-US")}
       </span>
     </div>
 
@@ -557,7 +571,7 @@ export default function QuotationSection({
 
         {!readOnly && (
           <button
-            onClick={handleStartProject}
+            onClick={() => handleStartProject(taxRate)}
             className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white sm:w-auto"
           >
             Start Project

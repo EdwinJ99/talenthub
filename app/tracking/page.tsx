@@ -213,7 +213,10 @@ const handleDelete = async (projectId: number) => {
       </section>
 
       <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-      {filteredProjects.map((project) => {
+      {[...filteredProjects].sort((a, b) =>
+        Number(b.status === "Draft") - Number(a.status === "Draft") ||
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ).map((project) => {
         const stepIndex = getStepIndex(project.status);
 
         return (

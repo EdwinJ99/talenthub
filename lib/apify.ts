@@ -121,6 +121,7 @@ export interface ContentMetrics {
   platform: 'instagram' | 'tiktok';
   caption: string;
   thumbnailUrl?: string;
+  thumbnailCandidates?: string[];
   likes: number;
   comments: number;
   saves: number;
@@ -142,6 +143,20 @@ function normalizeContentUrl(value: string): string {
   return url.toString();
 }
 
+function imageUrls(...values: unknown[]): string[] {
+  const result: string[] = [];
+  const visit = (value: unknown) => {
+    if (typeof value === 'string') {
+      if (/^https?:\/\//i.test(value)) result.push(value);
+      return;
+    }
+    if (Array.isArray(value)) return value.forEach(visit);
+    if (value && typeof value === 'object') Object.values(value).forEach(visit);
+  };
+  values.forEach(visit);
+  return [...new Set(result)];
+}
+
 export function detectContentPlatform(value: string): 'instagram' | 'tiktok' {
   const hostname = new URL(value).hostname.toLowerCase().replace(/^www\./, '');
   if (hostname === 'instagram.com' || hostname.endsWith('.instagram.com')) return 'instagram';
@@ -160,7 +175,7 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
     ? await client.actor('data-slayer/instagram-post-details').call({ urls: [contentUrl] })
     : await client.actor('clockworks/tiktok-scraper').call({
         postURLs: [contentUrl], scrapeRelatedVideos: false, resultsPerPage: 1,
-        shouldDownloadCovers: false,
+        shouldDownloadCovers: true,
       });
   const { items } = await client.dataset(run.defaultDatasetId).listItems({ limit: 1 });
   const item = items[0] as Record<string, any> | undefined;
@@ -176,10 +191,15 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
       metrics.ig_play_count ?? metrics.play_count ?? item.play_count
       ?? item.plays_count ?? item.videoPlayCount
     );
+    const thumbnailCandidates = imageUrls(
+      item.thumbnail_url, item.thumbnailUrl, item.display_url, item.displayUrl,
+      item.image_url, item.media_url, item.images, item.carousel_media,
+      item.carouselMedia, item.childPosts,
+    );
     return {
       contentUrl, platform, caption,
-      thumbnailUrl: item.thumbnail_url ?? item.thumbnailUrl ?? item.display_url ?? item.displayUrl
-        ?? item.image_url ?? item.media_url ?? item.images?.[0],
+      thumbnailUrl: thumbnailCandidates[0],
+      thumbnailCandidates,
       likes: int(metrics.like_count ?? item.like_count ?? item.likesCount ?? item.likes_count),
       comments: int(metrics.comment_count ?? item.comment_count ?? item.commentsCount ?? item.comments_count),
       saves: int(metrics.save_count ?? item.save_count ?? item.saves_count ?? item.savesCount),
@@ -192,9 +212,16 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
     };
   }
 
+  const thumbnailCandidates = imageUrls(
+    item.videoMeta?.coverUrl, item.videoMeta?.originalCoverUrl,
+    item.videoMeta?.dynamicCoverUrl, item.video?.cover, item.video?.originCover,
+    item.covers, item.cover, item.originCover, item.dynamicCover,
+    item.downloadedCovers, item.downloadedCover,
+  );
   return {
     contentUrl, platform, caption: item.text ?? item.desc ?? '',
-    thumbnailUrl: item.videoMeta?.coverUrl ?? item.videoMeta?.originalCoverUrl ?? item.covers?.default,
+    thumbnailUrl: thumbnailCandidates[0],
+    thumbnailCandidates,
     likes: int(item.diggCount ?? item.digg_count ?? item.stats?.diggCount),
     comments: int(item.commentCount ?? item.comment_count ?? item.stats?.commentCount),
     saves: int(item.collectCount ?? item.collect_count ?? item.stats?.collectCount),

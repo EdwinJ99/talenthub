@@ -154,7 +154,9 @@ function sheetValues(project: Awaited<ReturnType<typeof loadProject>>) {
       const creator = detail.mst_creators;
       return [index + 1, creator.name, creator.username, creator.followers ?? 0, creator.total_post ?? 0,
         Number(creator.engagement_rate ?? 0), creator.average_view ?? 0, creator.average_view_brand ?? 0,
-        Number(creator.cpv_all ?? 0), Number(creator.cpv_branded ?? 0), detail.mst_sow?.sow_nama ?? '-',
+        creator.average_view ? Number(detail.drf_markup_price ?? 0) / creator.average_view : 0,
+        creator.average_view_brand ? Number(detail.drf_markup_price ?? 0) / creator.average_view_brand : 0,
+        detail.mst_sow?.sow_nama ?? '-',
         creator.social_media, detail.drf_qty,
         Number(detail.drf_markup_price ?? 0),
         Number(detail.drf_markup_price ?? 0) * Number(detail.drf_qty ?? 0)];
