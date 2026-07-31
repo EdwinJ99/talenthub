@@ -42,31 +42,29 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
         <input
           type="email"
-          placeholder="email@company.com"
+          placeholder="Email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           maxLength={254}
           autoComplete="email"
-          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-emerald-500"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white"
           required
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">Password</label>
         <input
           type="password"
-          placeholder="Masukkan password"
+          placeholder="Password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           maxLength={128}
           autoComplete="current-password"
-          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm outline-none transition focus:border-emerald-500"
+          className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm text-slate-800 outline-none transition focus:border-slate-400 focus:bg-white"
           required
         />
       </div>
@@ -80,7 +78,7 @@ export default function LoginForm({ callbackUrl }: LoginFormProps) {
       <button
         type="submit"
         disabled={loading}
-        className="flex h-11 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-400"
+        className="mt-2 flex h-12 w-full items-center justify-center rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
       >
         {loading ? "Signing in..." : "Login"}
       </button>
