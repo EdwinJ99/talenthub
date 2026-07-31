@@ -50,7 +50,6 @@ export default function InvoiceSection({
     const drawPageDecoration = () => {
       doc.setFillColor(250, 224, 210);
       doc.rect(7, 7, pageWidth - 14, 4, "F");
-      doc.rect(7, pageHeight - 11, pageWidth - 14, 4, "F");
     };
 
     drawPageDecoration();
@@ -166,7 +165,8 @@ export default function InvoiceSection({
       [`PPN (${Number(projectDetail?.taxRate ?? 11)}%)`, projectDetail?.ppn],
       ["TOTAL AMOUNT", projectDetail?.grandTotal],
     ];
-    const summaryX = 136;
+    // Align the value divider with the main table's Amount column.
+    const summaryX = 130;
     const summaryWidth = tableRight - summaryX;
     const labelWidth = 34;
     const rowHeight = 6;
@@ -183,8 +183,7 @@ export default function InvoiceSection({
       doc.setFont("helvetica", index === rows.length - 1 ? "bold" : "normal");
       doc.setFontSize(8.5);
       doc.text(String(label), summaryX + 2, rowY + 4.2);
-      doc.text("Rp", summaryX + labelWidth + 2, rowY + 4.2);
-      doc.text(formatAmount(value as number | null | undefined), tableRight - 1, rowY + 4.2, {
+      doc.text(`Rp ${formatAmount(value as number | null | undefined)}`, tableRight - 1, rowY + 4.2, {
         align: "right",
       });
     });
@@ -206,6 +205,8 @@ export default function InvoiceSection({
     doc.text("Donna Bella Apri San", signatureCenter, footerY + 13, { align: "center" });
     doc.setFont("helvetica", "bold");
     doc.text("Direktur", signatureCenter, footerY + 18, { align: "center" });
+    doc.setFillColor(250, 224, 210);
+    doc.rect(7, footerY + 23, pageWidth - 14, 5, "F");
 
     return doc;
   };
