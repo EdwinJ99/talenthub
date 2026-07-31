@@ -54,7 +54,9 @@ export async function GET(request: Request) {
     );
 
     const dpp = subtotal;
-    const ppn = dpp * 0.11;
+    const project = await prisma.trs_project.findUnique({ where: { prj_id: projectId } });
+    const taxRate = Number(project?.prj_tax_rate ?? 11);
+    const ppn = dpp * taxRate / 100;
     const grandTotal = dpp + ppn;
 
     return NextResponse.json({
@@ -79,8 +81,8 @@ export async function GET(request: Request) {
         averageView: item.mst_creators.average_view,
         averageViewBrand: item.mst_creators.average_view_brand,
 
-        cpvAll: Number(item.mst_creators.cpv_all),
-        cpvBranded: Number(item.mst_creators.cpv_branded),
+        cpvAll: item.mst_creators.average_view ? Number(item.drf_markup_price ?? 0) / item.mst_creators.average_view : 0,
+        cpvBranded: item.mst_creators.average_view_brand ? Number(item.drf_markup_price ?? 0) / item.mst_creators.average_view_brand : 0,
 
         sowId: item.drf_sow,
         sow: item.mst_sow?.sow_nama,
@@ -97,6 +99,7 @@ export async function GET(request: Request) {
       dpp,
       ppn,
       grandTotal,
+      taxRate,
     });
   } catch (error) {
     console.error(error);

@@ -116,6 +116,7 @@ const loadCreators = async () => {
       dpp: data.dpp,
       ppn: data.ppn,
       grandTotal: data.grandTotal,
+      taxRate: data.taxRate,
     }));
   } catch (error) {
     console.error("Error loading creators:", error);
@@ -319,7 +320,7 @@ const handleGenerateQuotation = async () => {
   router.push(`/tracking/detail?projectId=${projectId}&view=Quotation`);
 };
 
-const handleStartProject = async () => {
+const handleStartProject = async (taxRate: number) => {
   const result = await confirmStartProject();
 
   if (!result.isConfirmed) return;
@@ -331,6 +332,7 @@ const handleStartProject = async () => {
     },
     body: JSON.stringify({
       prj_status: 3, // 3 = Running
+      prj_tax_rate: taxRate,
     }),
   });
 
@@ -341,6 +343,7 @@ const handleStartProject = async () => {
   }
 
   await loadProject();
+  await loadCreators();
 
   await showSuccess(
     "Success",
@@ -456,6 +459,7 @@ const handleGenerateInvoice = async () => {
   }
 
   await loadProject();
+  await loadCreators();
   await showSuccess("Success", "Invoice has been generated successfully.");
   router.push(`/tracking/detail?projectId=${projectId}&view=Invoice`);
 };

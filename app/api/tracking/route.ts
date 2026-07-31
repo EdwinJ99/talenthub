@@ -112,11 +112,14 @@ if (id) {
     brand: project.mst_brand?.brd_nama ?? "",
     brandContact: project.mst_brand?.brd_notelp ?? "",
     brandEmail: project.mst_brand?.brd_email ?? "",
+    brandAddress: project.mst_brand?.brd_alamat ?? "",
+    brandPic: project.mst_brand?.brd_pic1 ?? "",
 
     name: project.prj_nama,
 
     quotationNo: project.prj_quotationno,
     invoiceNo: project.prj_invoiceno,
+    taxRate: Number(project.prj_tax_rate),
     payment: project.mst_payment
       ? {
           bank: project.mst_payment.pyt_bank,
@@ -225,8 +228,8 @@ const project = await prisma.trs_project.create({
 
     prj_brand: Number(body.prj_brand),
     prj_nama: body.prj_nama,
-    prj_quotationno: body.prj_quotationno ?? null,
-    prj_invoiceno: body.prj_invoiceno ?? null,
+    prj_quotationno: body.prj_quotationno ?? projectCode.replace(/^TRS-/i, "QUO-"),
+    prj_invoiceno: body.prj_invoiceno ?? projectCode.replace(/^TRS-/i, "INV-"),
 
     prj_dstartdate: new Date(body.prj_dstartdate),
 
@@ -452,6 +455,13 @@ export async function PUT(request: Request) {
 
     if (body.prj_invoiceno !== undefined)
       updateData.prj_invoiceno = body.prj_invoiceno;
+
+    if (body.prj_tax_rate !== undefined) {
+      const taxRate = Number(body.prj_tax_rate);
+      if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100)
+        return NextResponse.json({ error: "Tax rate must be between 0 and 100" }, { status: 400 });
+      updateData.prj_tax_rate = taxRate;
+    }
 
     if (body.prj_dstartdate)
       updateData.prj_dstartdate = new Date(body.prj_dstartdate);

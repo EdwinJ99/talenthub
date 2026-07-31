@@ -43,43 +43,26 @@ export default function InvoiceSection({
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const left = 16;
     const right = pageWidth - 16;
-    const brown: [number, number, number] = [205, 159, 126];
     const black: [number, number, number] = [0, 0, 0];
 
-    const drawBorder = () => {
-      doc.setDrawColor(...black);
-      doc.setLineWidth(0.7);
-      doc.rect(10, 6, pageWidth - 20, pageHeight - 12);
+    const drawPageDecoration = () => {
+      doc.setFillColor(250, 224, 210);
+      doc.rect(7, 7, pageWidth - 14, 4, "F");
+      doc.rect(7, pageHeight - 11, pageWidth - 14, 4, "F");
     };
 
-    drawBorder();
+    drawPageDecoration();
     doc.setTextColor(...black);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("D'BEST INFLUENCE", left, 16);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text("Ruko Permata Regency D/37", left, 22);
-    doc.text("Kembangan, Jakarta Barat 11510", left, 27);
-    doc.text("0811 - 1262 - 726", left, 32);
-
-    doc.setDrawColor(190, 150, 120);
-    doc.setLineWidth(0.7);
-    doc.circle(160, 23, 14);
-    doc.setFont("times", "bold");
-    doc.setFontSize(15);
-    doc.setTextColor(150, 110, 85);
-    doc.text("D'BEST", 160, 22, { align: "center" });
     doc.setFont("times", "bolditalic");
+    doc.setFontSize(17);
+    doc.text("D'BEST", 8, 20);
     doc.setFontSize(8);
-    doc.text("Influence", 160, 27, { align: "center" });
+    doc.text("Influence", 19, 24, { align: "center" });
 
-    doc.setTextColor(...black);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(12);
-    doc.text("Invoice For", left, 50);
+    doc.setFontSize(14);
+    doc.text("INVOICE", right, 20, { align: "right" });
 
     const invoiceDate = projectDetail?.invoiceStartDate
       ? new Date(projectDetail.invoiceStartDate)
@@ -90,136 +73,137 @@ export default function InvoiceSection({
       year: "numeric",
     });
 
+    const numberBoxX = 107;
+    const numberBoxWidth = 42;
+    const numberBox = (label: string, value: string, y: number) => {
+      doc.setFillColor(250, 224, 210);
+      doc.rect(numberBoxX, y, numberBoxWidth, 5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.text(label, numberBoxX + numberBoxWidth / 2, y + 3.5, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.text(value || "-", numberBoxX + numberBoxWidth / 2, y + 8, { align: "center" });
+    };
+    numberBox("TRANSACTION NO", String(projectDetail?.code ?? "-"), 17);
+    numberBox("INVOICE NO", String(projectDetail?.invoiceNo ?? "-"), 31);
+    numberBox("QUOTATION NO", String(projectDetail?.quotationNo ?? "-"), 45);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("Invoice To", 8, 33);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text("Brand", left, 57);
-    doc.text("Contact", left, 63);
-    doc.text("Project", left, 69);
-    doc.text(`: ${String(projectDetail?.brand ?? "-").toUpperCase()}`, 44, 57);
-    doc.text(`: ${String(projectDetail?.brandContact ?? "-") || "-"}`, 44, 63);
-    doc.text(`: ${String(projectDetail?.name ?? "-")}`, 44, 69);
+    doc.setFontSize(7);
+    const invoiceTo = [
+      String(projectDetail?.brand ?? "-").toUpperCase(),
+      String(projectDetail?.brandPic ?? "-"),
+      String(projectDetail?.brandEmail ?? "-"),
+      String(projectDetail?.brandAddress ?? "-"),
+      String(projectDetail?.brandContact ?? "-"),
+    ];
+    invoiceTo.forEach((line, index) =>
+      doc.text(doc.splitTextToSize(line || "-", 82), 8, 38 + index * 5)
+    );
 
-    const rightLabelX = 120;
-    const rightColonX = 140;
-    const rightValueX = 144;
-    doc.text("Date", rightLabelX, 57);
-    doc.text("Invoice No", rightLabelX, 63);
-    doc.text(":", rightColonX, 57);
-    doc.text(":", rightColonX, 63);
-    doc.text(formattedDate, rightValueX, 57);
-    doc.text(String(projectDetail?.code ?? "-"), rightValueX, 63);
+    const fromX = 179;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.text("Date", 157, 28);
+    doc.text(formattedDate, right, 28, { align: "right" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("From", fromX, 36, { align: "center" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.text("D'BEST-INFLUENCE", fromX, 41, { align: "center" });
+    doc.text("0811 - 1262 - 726", fromX, 46, { align: "center" });
+    doc.text("Ruko Permata Regency D/37", fromX, 53, { align: "center" });
+    doc.text("Kembangan, Jakarta Barat 11510", fromX, 58, { align: "center" });
 
+    const invoiceRows = creators.map((creator, index) => [
+      index + 1,
+      creator.name ?? "-",
+      `${creator.sow ?? "-"} · ${creator.platform ?? "-"}`,
+      formatRupiah(creator.total),
+    ]);
+    while (invoiceRows.length < 20) invoiceRows.push([invoiceRows.length + 1, "", "", ""]);
     autoTable(doc, {
-      startY: 80,
-      head: [["Description", "SOW", "Platform", "Qty", "Rate Card", "Total"]],
-      body: creators.map((creator) => [
-        creator.name ?? "-",
-        creator.sow ?? "-",
-        creator.platform ?? "-",
-        creator.drf_qty ?? "-",
-        formatRupiah(creator.markupPrice),
-        formatRupiah(creator.total),
-      ]),
+      startY: 70,
+      head: [["No", "Description", "Statement Of Work", "Amount"]],
+      body: invoiceRows,
       theme: "grid",
-      headStyles: { fillColor: brown, textColor: black, fontStyle: "bold", halign: "center", lineColor: black, lineWidth: 0.35 },
-      bodyStyles: { textColor: black, fontSize: 9, lineColor: black, lineWidth: 0.35 },
+      headStyles: { fillColor: [250, 224, 210], textColor: black, fontStyle: "bold", halign: "center", lineColor: black, lineWidth: 0.25, minCellHeight: 5 },
+      bodyStyles: { textColor: black, fontSize: 6.5, lineColor: black, lineWidth: 0.2, minCellHeight: 4.6, cellPadding: 0.8 },
       columnStyles: {
-        0: { cellWidth: 36 },
-        1: { cellWidth: 48 },
-        2: { cellWidth: 24 },
-        3: { cellWidth: 14, halign: "center" },
-        4: { cellWidth: 28, halign: "right" },
-        5: { cellWidth: 28, halign: "right" },
+        0: { cellWidth: 9, halign: "center" },
+        1: { cellWidth: 67 },
+        2: { cellWidth: 81 },
+        3: { cellWidth: 39, halign: "right" },
       },
-      margin: { left, right: left },
-      didDrawPage: drawBorder,
+      margin: { left: 7, right: 7 },
+      didDrawPage: drawPageDecoration,
     });
 
-    let y = (doc as any).lastAutoTable.finalY + 10;
-    if (y > pageHeight - 75) {
+    let y = (doc as any).lastAutoTable.finalY + 6;
+    if (y > pageHeight - 82) {
       doc.addPage();
-      drawBorder();
-      y = 22;
+      drawPageDecoration();
+      y = 20;
     }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text("Payment Method", left, y);
+    doc.setFontSize(8);
+    doc.text("Payment Methode", 8, y);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(`Bank : ${payment?.bank ?? "-"}`, left, y + 7);
-    doc.text(`Account No : ${payment?.accountNo ?? "-"}`, left, y + 13);
-    doc.text(`Account Name : ${payment?.accountName ?? "-"}`, left, y + 19);
+    doc.setFontSize(7);
+    doc.text(`Bank Name     : ${payment?.bank ?? "-"}`, 8, y + 5);
+    doc.text(`Account No    : ${payment?.accountNo ?? "-"}`, 8, y + 10);
+    doc.text(`Name          : ${payment?.accountName ?? "-"}`, 8, y + 15);
 
     const rows = [
-      ["Subtotal", projectDetail?.subtotal],
+      ["Total", projectDetail?.subtotal],
       ["DPP", projectDetail?.dpp],
-      ["PPN (11%)", projectDetail?.ppn],
-      ["Grand Total", projectDetail?.grandTotal],
+      [`PPN (${Number(projectDetail?.taxRate ?? 11)}%)`, projectDetail?.ppn],
+      ["TOTAL AMOUNT", projectDetail?.grandTotal],
     ];
-    const summaryX = right - 90;
-    const summaryWidth = 90;
-    const labelWidth = 40;
-    const rowHeight = 6;
+    const summaryX = 136;
+    const summaryWidth = right - summaryX;
+    const labelWidth = 34;
+    const rowHeight = 5;
 
     rows.forEach(([label, value], index) => {
       const rowY = y + index * rowHeight;
-      doc.setFillColor(...brown);
+      doc.setFillColor(250, 224, 210);
       doc.setDrawColor(...black);
-      doc.setLineWidth(0.35);
-      doc.rect(summaryX, rowY, labelWidth, rowHeight, "FD");
-      doc.rect(summaryX + labelWidth, rowY, summaryWidth - labelWidth, rowHeight, "FD");
+      doc.setLineWidth(0.2);
+      doc.rect(summaryX, rowY, labelWidth, rowHeight, index === rows.length - 1 ? "FD" : "S");
+      doc.rect(summaryX + labelWidth, rowY, summaryWidth - labelWidth, rowHeight, "S");
 
       doc.setTextColor(...black);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text(String(label), summaryX + labelWidth / 2, rowY + 4.2, { align: "center" });
-      doc.text("Rp", summaryX + labelWidth + 3, rowY + 4.2);
-      doc.text(formatAmount(value as number | null | undefined), right - 2, rowY + 4.2, {
+      doc.setFont("helvetica", index === rows.length - 1 ? "bold" : "normal");
+      doc.setFontSize(7);
+      doc.text(String(label), summaryX + 2, rowY + 3.6);
+      doc.text("Rp", summaryX + labelWidth + 2, rowY + 3.6);
+      doc.text(formatAmount(value as number | null | undefined), right - 1, rowY + 3.6, {
         align: "right",
       });
     });
 
-    let signatureY = y + rows.length * rowHeight + 12;
-    const signatureHeight = 52;
-    if (signatureY + signatureHeight > pageHeight - 12) {
-      doc.addPage();
-      drawBorder();
-      signatureY = 22;
-    }
-
-    const signatureX = right - 90;
-    // Keep the signature grid aligned with the 40/50 subtotal grid above.
-    const col1 = 40;
-    const col2 = 25;
-    const col3 = 25;
-    const headerHeight = 7;
-    const signHeight = 30;
-    const nameHeight = 15;
-
-    doc.setDrawColor(...black);
-    doc.setLineWidth(0.35);
-    doc.rect(signatureX, signatureY, col1, headerHeight);
-    doc.rect(signatureX + col1, signatureY, col2 + col3, headerHeight);
-    doc.rect(signatureX, signatureY + headerHeight, col1, signHeight);
-    doc.rect(signatureX + col1, signatureY + headerHeight, col2, signHeight);
-    doc.rect(signatureX + col1 + col2, signatureY + headerHeight, col3, signHeight);
-    doc.rect(signatureX, signatureY + headerHeight + signHeight, col1, nameHeight);
-    doc.rect(signatureX + col1, signatureY + headerHeight + signHeight, col2, nameHeight);
-    doc.rect(signatureX + col1 + col2, signatureY + headerHeight + signHeight, col3, nameHeight);
-
-    doc.setFont("times", "bold");
-    doc.setFontSize(9);
-    doc.text("Provided by", signatureX + col1 / 2, signatureY + 5, { align: "center" });
-    doc.text("Approved By", signatureX + col1 + (col2 + col3) / 2, signatureY + 5, { align: "center" });
-
-    const nameY = signatureY + headerHeight + signHeight + 6;
+    const footerY = y + 34;
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(8);
-    doc.text("Donna Bella", signatureX + col1 / 2, nameY, { align: "center" });
-    doc.text("Hirajati Natawiria", signatureX + col1 + col2 / 2, nameY, { align: "center" });
-    doc.text("Lilik Sujieanto", signatureX + col1 + col2 + col3 / 2, nameY, { align: "center" });
-    doc.setFont("times", "bold");
-    doc.text("Director", signatureX + col1 + col2 + col3 / 2, nameY + 5, { align: "center" });
+    doc.text("Terms and Condition", 8, footerY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.text(doc.splitTextToSize(
+      "Please send payment within 30 days of receiving this invoice. There will be a 1.5% interest charge per month on late invoices.",
+      80,
+    ), 8, footerY + 5);
+
+    doc.setFontSize(7);
+    doc.text(`Jakarta, ${formattedDate}`, right - 15, footerY - 5, { align: "center" });
+    doc.text("Donna Bella Apri San", right - 15, footerY + 13, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.text("Direktur", right - 15, footerY + 18, { align: "center" });
 
     return doc;
   };
@@ -299,7 +283,7 @@ export default function InvoiceSection({
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-6"><h3 className="text-xl font-bold text-slate-900">Payment Method</h3>{payment ? <div className="mt-6 space-y-4 text-sm"><PaymentRow label="Bank" value={payment.bank} /><PaymentRow label="Account No" value={payment.accountNo} /><PaymentRow label="Account Name" value={payment.accountName} /></div> : <p className="mt-6 text-sm text-slate-500">Payment details are not available for this invoice.</p>}</div>
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6"><div className="space-y-3 text-sm"><TotalRow label="Subtotal" value={formatRupiah(projectDetail?.subtotal)} /><TotalRow label="DPP" value={formatRupiah(projectDetail?.dpp)} /><TotalRow label="PPN (11%)" value={formatRupiah(projectDetail?.ppn)} /></div><div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900"><span>Grand Total</span><span>{formatRupiah(projectDetail?.grandTotal)}</span></div></div>
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6"><div className="space-y-3 text-sm"><TotalRow label="Subtotal" value={formatRupiah(projectDetail?.subtotal)} /><TotalRow label="DPP" value={formatRupiah(projectDetail?.dpp)} /><TotalRow label={`PPN (${Number(projectDetail?.taxRate ?? 11)}%)`} value={formatRupiah(projectDetail?.ppn)} /></div><div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900"><span>Grand Total</span><span>{formatRupiah(projectDetail?.grandTotal)}</span></div></div>
       </div>
 
       {uploadedPdf && previewUrl && <div className="mt-6 flex flex-col gap-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700"><FileDocumentIcon className="h-5 w-5" /></div><div className="min-w-0"><p className="text-sm font-bold text-slate-900">PDF Ready to Send</p><p className="truncate text-xs text-slate-600">{uploadedPdf.name}</p></div></div><button type="button" onClick={() => setIsPreviewOpen(true)} className="inline-flex w-full justify-center rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 sm:w-auto">Preview PDF</button></div>}

@@ -8,6 +8,50 @@ async function authorized() {
   return Boolean((await getServerSession(authOptions))?.user);
 }
 
+function imageType(bytes: Buffer, header: string) {
+  if (header.startsWith('image/')) return header.split(';')[0];
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) return 'image/jpeg';
+  if (bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return 'image/png';
+  if (bytes.subarray(0, 4).toString() === 'RIFF' && bytes.subarray(8, 12).toString() === 'WEBP') return 'image/webp';
+  if (bytes.subarray(4, 12).toString().includes('ftypavif')) return 'image/avif';
+  return null;
+}
+
+async function persistThumbnail(urls: string[], platform: string, contentUrl: string) {
+  const candidates = [...new Set(urls.filter((url) => /^https?:\/\//i.test(url)))];
+  for (const url of candidates) try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
+        Accept: 'image/*,*/*;q=0.8',
+        Referer: platform === 'tiktok' ? 'https://www.tiktok.com/' : 'https://www.instagram.com/',
+      },
+      cache: 'no-store',
+    });
+    if (!response.ok) continue;
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const type = imageType(bytes, response.headers.get('content-type') ?? '');
+    if (!type || bytes.length === 0 || bytes.length > 5_000_000) continue;
+    return `data:${type};base64,${bytes.toString('base64')}`;
+  } catch { /* try the next cover */ }
+
+  try {
+    const response = await fetch(contentUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36' },
+      cache: 'no-store',
+    });
+    const html = await response.text();
+    const encoded = html.match(/<meta[^>]+property=[\"']og:image[\"'][^>]+content=[\"']([^\"']+)/i)?.[1]
+      ?? html.match(/<meta[^>]+content=[\"']([^\"']+)[\"'][^>]+property=[\"']og:image[\"']/i)?.[1];
+    if (encoded) {
+      const fallback = encoded.replace(/&amp;/g, '&');
+      if (!candidates.includes(fallback)) return persistThumbnail([fallback], platform, contentUrl);
+    }
+  } catch { /* keep the original CDN URL as final fallback */ }
+
+  return candidates[0] ?? null;
+}
+
 function parseIds(values: string[]): number[] {
   return [...new Set(values.flatMap((value) => value.split(',')).map(Number))]
     .filter((id) => Number.isInteger(id) && id > 0);
@@ -82,19 +126,24 @@ export async function POST(request: Request) {
     if (!row.drf_link_content) return { detailId: row.drf_id, error: 'URL content is empty' };
     try {
       const metric = await scrapeContentUrl(row.drf_link_content);
+      const thumbnail = await persistThumbnail(
+        metric.thumbnailCandidates ?? (metric.thumbnailUrl ? [metric.thumbnailUrl] : []),
+        metric.platform,
+        metric.contentUrl,
+      );
       const interactions = metric.likes + metric.comments + metric.saves + metric.reposts + metric.shares;
       const performance = metric.views > 0 ? (interactions / metric.views) * 100 : 0;
       await prisma.detail_report.upsert({
         where: { dtl_project_id: row.drf_id },
         update: {
           content_url: metric.contentUrl, platform: metric.platform, caption: metric.caption,
-          thumbnail_url: metric.thumbnailUrl, likes: metric.likes, comments: metric.comments,
+          thumbnail_url: thumbnail, likes: metric.likes, comments: metric.comments,
           saves: metric.saves, reposts: metric.reposts, views: metric.views, plays: metric.plays,
           duration: metric.duration, shares: metric.shares, performance, scraped_at: new Date(),
         },
         create: {
           dtl_project_id: row.drf_id, content_url: metric.contentUrl, platform: metric.platform,
-          caption: metric.caption, thumbnail_url: metric.thumbnailUrl, likes: metric.likes,
+          caption: metric.caption, thumbnail_url: thumbnail, likes: metric.likes,
           comments: metric.comments, saves: metric.saves, reposts: metric.reposts,
           views: metric.views, plays: metric.plays, duration: metric.duration,
           shares: metric.shares, performance,

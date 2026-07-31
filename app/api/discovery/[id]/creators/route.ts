@@ -91,7 +91,7 @@ export async function POST(
     });
 
     // 6. Insert creator baru
-    await prisma.dtl_project.createMany({   : detailData });
+    await prisma.dtl_project.createMany({ data: detailData });
 
     // 7. Update jejak modifikasi di project induk
     await prisma.trs_project.update({
