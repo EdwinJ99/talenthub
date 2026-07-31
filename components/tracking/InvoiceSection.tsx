@@ -40,10 +40,11 @@ export default function InvoiceSection({
     `Invoice_${projectDetail?.code ?? projectDetail?.name ?? "Project"}.pdf`;
 
   const createInvoicePdf = () => {
-    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "letter" });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const right = pageWidth - 16;
+    const tableRight = pageWidth - 7;
     const black: [number, number, number] = [0, 0, 0];
 
     const drawPageDecoration = () => {
@@ -55,13 +56,13 @@ export default function InvoiceSection({
     drawPageDecoration();
     doc.setTextColor(...black);
     doc.setFont("times", "bolditalic");
-    doc.setFontSize(17);
+    doc.setFontSize(18);
     doc.text("D'BEST", 8, 20);
     doc.setFontSize(8);
     doc.text("Influence", 19, 24, { align: "center" });
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.text("INVOICE", right, 20, { align: "right" });
 
     const invoiceDate = projectDetail?.invoiceStartDate
@@ -79,7 +80,7 @@ export default function InvoiceSection({
       doc.setFillColor(250, 224, 210);
       doc.rect(numberBoxX, y, numberBoxWidth, 5, "F");
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(7);
+      doc.setFontSize(8.5);
       doc.text(label, numberBoxX + numberBoxWidth / 2, y + 3.5, { align: "center" });
       doc.setFont("helvetica", "normal");
       doc.text(value || "-", numberBoxX + numberBoxWidth / 2, y + 8, { align: "center" });
@@ -89,10 +90,10 @@ export default function InvoiceSection({
     numberBox("QUOTATION NO", String(projectDetail?.quotationNo ?? "-"), 45);
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(8.5);
     doc.text("Invoice To", 8, 33);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(8.5);
     const invoiceTo = [
       String(projectDetail?.brand ?? "-").toUpperCase(),
       String(projectDetail?.brandPic ?? "-"),
@@ -106,14 +107,14 @@ export default function InvoiceSection({
 
     const fromX = 179;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(8.5);
     doc.text("Date", 157, 28);
     doc.text(formattedDate, right, 28, { align: "right" });
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(8.5);
     doc.text("From", fromX, 36, { align: "center" });
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
+    doc.setFontSize(8.5);
     doc.text("D'BEST-INFLUENCE", fromX, 41, { align: "center" });
     doc.text("0811 - 1262 - 726", fromX, 46, { align: "center" });
     doc.text("Ruko Permata Regency D/37", fromX, 53, { align: "center" });
@@ -125,25 +126,24 @@ export default function InvoiceSection({
       `${creator.sow ?? "-"} · ${creator.platform ?? "-"}`,
       formatRupiah(creator.total),
     ]);
-    while (invoiceRows.length < 20) invoiceRows.push([invoiceRows.length + 1, "", "", ""]);
     autoTable(doc, {
       startY: 70,
       head: [["No", "Description", "Statement Of Work", "Amount"]],
       body: invoiceRows,
       theme: "grid",
-      headStyles: { fillColor: [250, 224, 210], textColor: black, fontStyle: "bold", halign: "center", lineColor: black, lineWidth: 0.25, minCellHeight: 5 },
-      bodyStyles: { textColor: black, fontSize: 6.5, lineColor: black, lineWidth: 0.2, minCellHeight: 4.6, cellPadding: 0.8 },
+      headStyles: { fillColor: [250, 224, 210], textColor: black, fontStyle: "bold", fontSize: 9, halign: "center", lineColor: black, lineWidth: 0.25, minCellHeight: 6 },
+      bodyStyles: { textColor: black, fontSize: 8.5, lineColor: black, lineWidth: 0.2, minCellHeight: 6, cellPadding: 1.1 },
       columnStyles: {
         0: { cellWidth: 9, halign: "center" },
         1: { cellWidth: 67 },
         2: { cellWidth: 81 },
-        3: { cellWidth: 39, halign: "right" },
+        3: { cellWidth: pageWidth - 14 - 9 - 67 - 81, halign: "right" },
       },
       margin: { left: 7, right: 7 },
       didDrawPage: drawPageDecoration,
     });
 
-    let y = (doc as any).lastAutoTable.finalY + 6;
+    let y = (doc as any).lastAutoTable.finalY;
     if (y > pageHeight - 82) {
       doc.addPage();
       drawPageDecoration();
@@ -151,13 +151,14 @@ export default function InvoiceSection({
     }
 
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
-    doc.text("Payment Methode", 8, y);
+    doc.setFontSize(9);
+    const paymentY = y + 5;
+    doc.text("Payment Methode", 8, paymentY);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(7);
-    doc.text(`Bank Name     : ${payment?.bank ?? "-"}`, 8, y + 5);
-    doc.text(`Account No    : ${payment?.accountNo ?? "-"}`, 8, y + 10);
-    doc.text(`Name          : ${payment?.accountName ?? "-"}`, 8, y + 15);
+    doc.setFontSize(8);
+    doc.text(`Bank Name     : ${payment?.bank ?? "-"}`, 8, paymentY + 5);
+    doc.text(`Account No    : ${payment?.accountNo ?? "-"}`, 8, paymentY + 10);
+    doc.text(`Name          : ${payment?.accountName ?? "-"}`, 8, paymentY + 15);
 
     const rows = [
       ["Total", projectDetail?.subtotal],
@@ -166,44 +167,45 @@ export default function InvoiceSection({
       ["TOTAL AMOUNT", projectDetail?.grandTotal],
     ];
     const summaryX = 136;
-    const summaryWidth = right - summaryX;
+    const summaryWidth = tableRight - summaryX;
     const labelWidth = 34;
-    const rowHeight = 5;
+    const rowHeight = 6;
 
     rows.forEach(([label, value], index) => {
       const rowY = y + index * rowHeight;
       doc.setFillColor(250, 224, 210);
       doc.setDrawColor(...black);
       doc.setLineWidth(0.2);
-      doc.rect(summaryX, rowY, labelWidth, rowHeight, index === rows.length - 1 ? "FD" : "S");
-      doc.rect(summaryX + labelWidth, rowY, summaryWidth - labelWidth, rowHeight, "S");
+      doc.rect(summaryX, rowY, labelWidth, rowHeight, "FD");
+      doc.rect(summaryX + labelWidth, rowY, summaryWidth - labelWidth, rowHeight, "FD");
 
       doc.setTextColor(...black);
       doc.setFont("helvetica", index === rows.length - 1 ? "bold" : "normal");
-      doc.setFontSize(7);
-      doc.text(String(label), summaryX + 2, rowY + 3.6);
-      doc.text("Rp", summaryX + labelWidth + 2, rowY + 3.6);
-      doc.text(formatAmount(value as number | null | undefined), right - 1, rowY + 3.6, {
+      doc.setFontSize(8.5);
+      doc.text(String(label), summaryX + 2, rowY + 4.2);
+      doc.text("Rp", summaryX + labelWidth + 2, rowY + 4.2);
+      doc.text(formatAmount(value as number | null | undefined), tableRight - 1, rowY + 4.2, {
         align: "right",
       });
     });
 
     const footerY = y + 34;
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(8);
+    doc.setFontSize(9);
     doc.text("Terms and Condition", 8, footerY);
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(6.5);
+    doc.setFontSize(7.5);
     doc.text(doc.splitTextToSize(
       "Please send payment within 30 days of receiving this invoice. There will be a 1.5% interest charge per month on late invoices.",
       80,
     ), 8, footerY + 5);
 
-    doc.setFontSize(7);
-    doc.text(`Jakarta, ${formattedDate}`, right - 15, footerY - 5, { align: "center" });
-    doc.text("Donna Bella Apri San", right - 15, footerY + 13, { align: "center" });
+    doc.setFontSize(8);
+    const signatureCenter = summaryX + summaryWidth / 2;
+    doc.text(`Jakarta, ${formattedDate}`, signatureCenter, footerY - 5, { align: "center" });
+    doc.text("Donna Bella Apri San", signatureCenter, footerY + 13, { align: "center" });
     doc.setFont("helvetica", "bold");
-    doc.text("Direktur", right - 15, footerY + 18, { align: "center" });
+    doc.text("Direktur", signatureCenter, footerY + 18, { align: "center" });
 
     return doc;
   };

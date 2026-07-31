@@ -117,8 +117,8 @@ if (id) {
 
     name: project.prj_nama,
 
-    quotationNo: project.prj_quotationno,
-    invoiceNo: project.prj_invoiceno,
+    quotationNo: project.prj_quotationno ?? project.prj_kode.replace(/^TRS-/i, "QUO-"),
+    invoiceNo: project.prj_invoiceno ?? project.prj_kode.replace(/^TRS-/i, "INV-"),
     taxRate: Number(project.prj_tax_rate),
     payment: project.mst_payment
       ? {
@@ -310,10 +310,11 @@ export async function PUT(request: Request) {
 
     const isGeneratingInvoice = Number(body.prj_status) === 5;
     let selectedPaymentId: number | null = null;
+    let generatedInvoiceNo: string | null = null;
     if (isGeneratingInvoice) {
       const currentProject = await prisma.trs_project.findUnique({
         where: { prj_id: id },
-        select: { prj_status: true },
+        select: { prj_status: true, prj_kode: true, prj_invoiceno: true },
       });
 
       if (!currentProject) {
@@ -351,6 +352,8 @@ export async function PUT(request: Request) {
       }
 
       selectedPaymentId = payment.pyt_id;
+      generatedInvoiceNo = currentProject.prj_invoiceno
+        ?? currentProject.prj_kode.replace(/^TRS-/i, "INV-");
     }
 
     if (Number(body.prj_status) === 4) {
@@ -441,6 +444,9 @@ export async function PUT(request: Request) {
 
     if (selectedPaymentId) {
       updateData.prj_paymentid = selectedPaymentId;
+    }
+    if (generatedInvoiceNo) {
+      updateData.prj_invoiceno = generatedInvoiceNo;
     }
 
     // ================= Data Project =================
