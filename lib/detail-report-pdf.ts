@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { normalizePlatform, SOCIAL_PLATFORMS } from './social-platform';
 
 type StoredReport = {
   caption: string | null;
@@ -189,6 +190,176 @@ function captionImage(value: string) {
   return canvas.toDataURL('image/png');
 }
 
+function phone(doc: jsPDF, x: number, y: number, heading: string) {
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(25, 35, 40);
+  doc.setLineWidth(0.7);
+  doc.roundedRect(x, y, 61, 151, 4, 4, 'FD');
+  doc.setFillColor(20, 25, 28);
+  doc.roundedRect(x + 20, y + 3, 21, 4, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...NAVY);
+  doc.text(heading, x + 30.5, y + 13, { align: 'center' });
+  doc.setDrawColor(225, 229, 231);
+  doc.line(x + 2, y + 17, x + 59, y + 17);
+}
+
+function insightRow(doc: jsPDF, x: number, y: number, label: string, value: string) {
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(61, 72, 78);
+  doc.text(label, x, y);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text(value, x + 49, y, { align: 'right' });
+}
+
+function duration(value: number) {
+  const seconds = Math.max(0, Math.round(value));
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor(seconds % 86400 / 3600);
+  const minutes = Math.floor(seconds % 3600 / 60);
+  const rest = seconds % 60;
+  return [days && `${days}d`, hours && `${hours}h`, minutes && `${minutes}m`, `${rest}s`].filter(Boolean).join(' ');
+}
+
+function donutChart(values: number[]) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 500;
+  canvas.height = 500;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  const colors = ['#f000b8', '#7b2cff', '#ff8a00', '#24c7a5', '#ef476f'];
+  const total = values.reduce((sum, value) => sum + value, 0);
+  context.clearRect(0, 0, 500, 500);
+  context.lineWidth = 62;
+  context.lineCap = 'butt';
+  let start = -Math.PI / 2;
+  (total ? values : [1]).forEach((value, index) => {
+    const end = start + (value / (total || 1)) * Math.PI * 2;
+    context.beginPath();
+    context.strokeStyle = colors[index % colors.length];
+    context.arc(250, 250, 180, start, end);
+    context.stroke();
+    start = end;
+  });
+  return canvas.toDataURL('image/png');
+}
+
+function rateBar(doc: jsPDF, x: number, y: number, label: string, value: number, color: [number, number, number]) {
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  doc.setTextColor(...NAVY);
+  doc.text(label, x, y);
+  doc.text(`${value.toFixed(2)}%`, x + 50, y, { align: 'right' });
+  doc.setFillColor(234, 237, 239);
+  doc.roundedRect(x, y + 2, 50, 3.5, 1.5, 1.5, 'F');
+  doc.setFillColor(...color);
+  doc.roundedRect(x, y + 2, 50 * Math.min(value / 100, 1), 3.5, 1.5, 1.5, 'F');
+}
+
+async function shortVideoInsightsPage(doc: jsPDF, item: ReportItem) {
+  const report = item.report!;
+  const xs = [12, 82, 152, 222];
+  const y = 42;
+  const interactions = report.likes + report.comments + report.saves + report.shares + report.reposts;
+  const viewRatio = item.followers > 0 ? report.views / item.followers * 100 : 0;
+  const rate = (value: number) => report.views > 0 ? value / report.views * 100 : 0;
+  const platform = normalizePlatform(item.platform) ?? 'instagram';
+  const platformInfo = SOCIAL_PLATFORMS[platform];
+  const thumbnail = await imageData(report.thumbnail_url) ?? await imageData(DEFAULT_THUMBNAIL);
+
+  title(doc, username(item.username), 29);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(79, 101, 112);
+  doc.text(`${item.creatorName} · ${item.platform}${item.sow ? ` · ${item.sow}` : ''}`, 19, 37);
+
+  phone(doc, xs[0], y, `${platformInfo.label} preview`);
+  if (thumbnail) {
+    const maxWidth = 55;
+    const maxHeight = 94;
+    const scale = Math.min(maxWidth / thumbnail.width, maxHeight / thumbnail.height);
+    const imageWidth = thumbnail.width * scale;
+    const imageHeight = thumbnail.height * scale;
+    try {
+      doc.addImage(thumbnail.data, 'JPEG', xs[0] + 3 + (maxWidth - imageWidth) / 2,
+        y + 20 + (maxHeight - imageHeight) / 2, imageWidth, imageHeight, undefined, 'FAST');
+    } catch { /* default phone background remains */ }
+  }
+  doc.setFillColor(247, 248, 248);
+  doc.roundedRect(xs[0] + 4, y + 116, 53, 18, 2, 2, 'F');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.2);
+  doc.setTextColor(61, 72, 78);
+  const caption = doc.splitTextToSize(report.caption || '-', 48).slice(0, 3);
+  doc.text(caption, xs[0] + 6, y + 122);
+  doc.setFillColor(20, 25, 28);
+  doc.roundedRect(xs[0] + 4, y + 137, 53, 9, 3, 3, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(5.5);
+  doc.text(`${number(report.likes)} likes  ·  ${number(report.comments)} comments`, xs[0] + 30.5, y + 143, { align: 'center' });
+
+  phone(doc, xs[1], y, `${platformInfo.label} analytics`);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.text('Overview', xs[1] + 5, y + 28);
+  insightRow(doc, xs[1] + 5, y + 39, 'Followers', number(item.followers));
+  insightRow(doc, xs[1] + 5, y + 48, 'Views', number(report.views));
+  insightRow(doc, xs[1] + 5, y + 57, 'Play', number(report.plays));
+  insightRow(doc, xs[1] + 5, y + 66, 'Est. watch time', duration(report.views * report.duration));
+  insightRow(doc, xs[1] + 5, y + 75, 'Interactions', number(interactions));
+  insightRow(doc, xs[1] + 5, y + 84, 'Profile activity', 'N/A');
+  insightRow(doc, xs[1] + 5, y + 93, 'AVG duration', `${report.duration.toFixed(1)}s`);
+  doc.setDrawColor(224, 0, 156);
+  doc.setLineWidth(3.5);
+  doc.circle(xs[1] + 30.5, y + 124, 15, 'S');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...NAVY);
+  doc.text(number(report.views), xs[1] + 30.5, y + 126, { align: 'center' });
+  doc.setFontSize(6);
+  doc.text('Views', xs[1] + 30.5, y + 133, { align: 'center' });
+
+  phone(doc, xs[2], y, 'Performance rates');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('Views compared with followers', xs[2] + 4, y + 29);
+  doc.setFontSize(18);
+  doc.text(`${viewRatio.toFixed(1)}%`, xs[2] + 30.5, y + 48, { align: 'center' });
+  doc.setFillColor(235, 237, 239);
+  doc.roundedRect(xs[2] + 5, y + 57, 51, 5, 2, 2, 'F');
+  doc.setFillColor(224, 0, 156);
+  doc.roundedRect(xs[2] + 5, y + 57, 51 * Math.min(viewRatio / 100, 1), 5, 2, 2, 'F');
+  rateBar(doc, xs[2] + 5, y + 76, 'Like rate', rate(report.likes), [240, 0, 184]);
+  rateBar(doc, xs[2] + 5, y + 91, 'Save rate', rate(report.saves), [123, 44, 255]);
+  rateBar(doc, xs[2] + 5, y + 106, 'Share rate', rate(report.shares), [255, 138, 0]);
+  rateBar(doc, xs[2] + 5, y + 121, 'Engagement rate', rate(interactions), [36, 199, 165]);
+
+  phone(doc, xs[3], y, 'Interactions');
+  const donut = donutChart([report.likes, report.comments, report.saves, report.shares, report.reposts]);
+  if (donut) doc.addImage(donut, 'PNG', xs[3] + 8, y + 24, 45, 45, undefined, 'FAST');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(...NAVY);
+  doc.text(number(interactions), xs[3] + 30.5, y + 51, { align: 'center' });
+  doc.setFontSize(5.5);
+  doc.text('TOTAL', xs[3] + 30.5, y + 59, { align: 'center' });
+  insightRow(doc, xs[3] + 5, y + 82, 'Likes', number(report.likes));
+  insightRow(doc, xs[3] + 5, y + 93, 'Comments', number(report.comments));
+  insightRow(doc, xs[3] + 5, y + 104, 'Saves', number(report.saves));
+  insightRow(doc, xs[3] + 5, y + 115, 'Shares', number(report.shares));
+  insightRow(doc, xs[3] + 5, y + 126, 'Reposts', number(report.reposts));
+  const legendColors: Array<[number, number, number]> = [
+    [240, 0, 184], [123, 44, 255], [255, 138, 0], [36, 199, 165], [239, 71, 111],
+  ];
+  legendColors.forEach((color, index) => {
+    doc.setFillColor(...color);
+    doc.circle(xs[3] + 3, y + 80 + index * 11, 1, 'F');
+  });
+}
+
 export async function createDetailReportPdf(payload: DetailReportPayload) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const width = doc.internal.pageSize.getWidth();
@@ -262,6 +433,11 @@ export async function createDetailReportPdf(payload: DetailReportPayload) {
   for (const item of reportItems) {
     page++;
     addPage(doc, page);
+    const mappedPlatform = normalizePlatform(item.platform);
+    if (mappedPlatform) {
+      await shortVideoInsightsPage(doc, item);
+      continue;
+    }
     title(doc, username(item.username));
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);

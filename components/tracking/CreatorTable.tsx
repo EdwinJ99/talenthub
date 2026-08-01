@@ -6,6 +6,7 @@ import DeleteIcon from "@/components/icons/DeleteIcon";
 import EditIcon from "@/components/icons/EditIcon";
 import CheckIcon from "@/components/icons/CheckIcon";
 import InvoiceIcon from "@/components/icons/InvoiceIcon";
+import { isSowForPlatform } from "@/lib/social-platform";
 
 const DEFAULT_CREATOR_PHOTO = "/image/default-kol-avatar.png";
 
@@ -388,14 +389,7 @@ export default function CreatorTable({
               }
             >
               <option value="">Select SOW</option>
-              {sowOptions.filter((sow) => {
-                const name = (sow.sow_nama ?? "").toLowerCase();
-                const tiktok = /tiktok|tik tok|\btt\b/.test(name);
-                const instagram = /instagram|\big\b|reels?|story|carousel/.test(name);
-                return creator.platform?.toLowerCase().includes("tiktok")
-                  ? !instagram || tiktok
-                  : !tiktok || instagram;
-              }).map((sow) => (
+              {sowOptions.filter((sow) => isSowForPlatform(sow.sow_nama, creator.platform)).map((sow) => (
                 <option
                   key={sow.sow_id}
                   value={sow.sow_id}

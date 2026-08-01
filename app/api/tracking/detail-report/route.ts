@@ -18,13 +18,17 @@ function imageType(bytes: Buffer, header: string) {
 }
 
 async function persistThumbnail(urls: string[], platform: string, contentUrl: string) {
+  const referers: Record<string, string> = {
+    instagram: 'https://www.instagram.com/', tiktok: 'https://www.tiktok.com/',
+    youtube: 'https://www.youtube.com/', twitter: 'https://x.com/',
+  };
   const candidates = [...new Set(urls.filter((url) => /^https?:\/\//i.test(url)))];
   for (const url of candidates) try {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36',
         Accept: 'image/*,*/*;q=0.8',
-        Referer: platform === 'tiktok' ? 'https://www.tiktok.com/' : 'https://www.instagram.com/',
+        Referer: referers[platform] ?? new URL(contentUrl).origin,
       },
       cache: 'no-store',
     });

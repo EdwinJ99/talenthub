@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { normalizePlatform, SOCIAL_PLATFORMS } from '@/lib/social-platform';
 
 type Report = {
   caption: string | null; thumbnail_url: string | null; likes: number; comments: number;
@@ -9,7 +10,7 @@ type Report = {
   shares: number; performance: number; scraped_at: string;
 };
 type Item = { detailId: number; creatorName: string; username: string; photo: string | null;
-  sow: string | null; contentUrl: string | null; report: Report | null };
+  platform: string; sow: string | null; contentUrl: string | null; report: Report | null };
 type Payload = { project: { brand: string | null; name: string; pic: string; date: string | null }; items: Item[] };
 
 export default function DetailReportClient() {
@@ -99,6 +100,8 @@ export default function DetailReportClient() {
 
 function ReportCard({ item, loading }: { item: Item; loading: boolean }) {
   const report = item.report;
+  const platform = normalizePlatform(item.platform);
+  const platformInfo = platform ? SOCIAL_PLATFORMS[platform] : null;
   const metrics = report ? [
     { title: 'Performance', raw: report.performance, value: `${report.performance.toFixed(2)}%` },
     { title: 'Likes', raw: report.likes, value: format(report.likes) },
@@ -114,7 +117,8 @@ function ReportCard({ item, loading }: { item: Item; loading: boolean }) {
   return (
     <article className="rounded-2xl border border-slate-200 p-4 sm:p-6">
       <div className="mb-5 flex items-center gap-3"><img src={item.photo ?? '/image/default-kol-avatar.png'} alt="" className="h-12 w-12 rounded-full object-cover" />
-        <div><h2 className="font-bold text-slate-900">{item.creatorName}</h2><p className="text-sm text-slate-500">@{item.username}{item.sow ? ` · ${item.sow}` : ''}</p></div></div>
+        <div><h2 className="font-bold text-slate-900">{item.creatorName}</h2><p className="text-sm text-slate-500">@{item.username} · {platformInfo?.label ?? item.platform}{item.sow ? ` · ${item.sow}` : ''}</p></div>
+      </div>
       {!item.contentUrl ? <p className="rounded-xl bg-amber-50 p-4 text-amber-800">URL Content has not been entered.</p> : !report ?
         <p className="rounded-xl bg-slate-50 p-4 text-slate-500">{loading ? 'Fetching metadata from URL...' : 'Metadata is not available.'}</p> :
         <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">

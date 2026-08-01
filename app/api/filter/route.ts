@@ -24,9 +24,12 @@ export async function GET() {
       }),
     ]);
 
-    const socialMediaOptions = generalFilters
+    const configuredSocialMedia = generalFilters
       .filter((item) => item.type === "socialMedia")
       .map((item) => item.name);
+    const requiredSocialMedia = ["Instagram", "TikTok", "YouTube", "Twitter/X"];
+    const socialMediaOptions = [...requiredSocialMedia, ...configuredSocialMedia]
+      .filter((value, index, values) => values.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index);
 
     const tierOptions = generalFilters
       .filter((item) => item.type === "tier")
