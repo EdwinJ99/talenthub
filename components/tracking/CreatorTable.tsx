@@ -571,9 +571,20 @@ export default function CreatorTable({
               </button>
             ) : null}
             {showView && onView ? (
-              <Link href={detailHref} className="cursor-pointer">
-                <EyeIcon className="h-5 w-5 text-sky-600" />
-              </Link>
+              runningMode ? (
+                <button
+                  type="button"
+                  onClick={() => onView(creator)}
+                  aria-label={`View running content for ${creator.name}`}
+                  className="cursor-pointer"
+                >
+                  <EyeIcon className="h-5 w-5 text-sky-600" />
+                </button>
+              ) : (
+                <Link href={detailHref} className="cursor-pointer">
+                  <EyeIcon className="h-5 w-5 text-sky-600" />
+                </Link>
+              )
             ) : null}
             {onEdit ? (
               <button onClick={() => onEdit(creator.drf_id)}>
