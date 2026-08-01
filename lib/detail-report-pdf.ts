@@ -190,6 +190,43 @@ function captionImage(value: string) {
   return canvas.toDataURL('image/png');
 }
 
+function compactCaptionImage(value: string) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1060;
+  canvas.height = 220;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  const padding = 28;
+  const maxWidth = canvas.width - padding * 2;
+  const lineHeight = 72;
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#26343b';
+  context.font = '40px Arial, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+  context.textBaseline = 'top';
+
+  const lines: string[] = [];
+  let current = '';
+  for (const word of value.replace(/\s+/gu, ' ').trim().split(' ')) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (context.measureText(candidate).width <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+    if (current) lines.push(current);
+    current = word;
+  }
+  if (current) lines.push(current);
+  const visibleLines = lines.slice(0, 2);
+  if (lines.length > 2 && visibleLines.length) {
+    let last = visibleLines[visibleLines.length - 1];
+    while (last && context.measureText(`${last}…`).width > maxWidth) last = Array.from(last).slice(0, -1).join('');
+    visibleLines[visibleLines.length - 1] = `${last}…`;
+  }
+  visibleLines.forEach((line, index) => context.fillText(line, padding, 24 + index * lineHeight, maxWidth));
+  return canvas.toDataURL('image/png');
+}
+
 function phone(doc: jsPDF, x: number, y: number, heading: string) {
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(25, 35, 40);
@@ -259,6 +296,28 @@ function rateBar(doc: jsPDF, x: number, y: number, label: string, value: number,
   doc.roundedRect(x, y + 2, 50 * Math.min(value / 100, 1), 3.5, 1.5, 1.5, 'F');
 }
 
+function semiGauge(doc: jsPDF, centerX: number, centerY: number, radius: number) {
+  const segments = 48;
+  doc.setLineWidth(3.5);
+  doc.setLineCap('round');
+  for (let index = 0; index < segments; index++) {
+    const start = Math.PI + index / segments * Math.PI;
+    const end = Math.PI + (index + 0.82) / segments * Math.PI;
+    const progress = index / (segments - 1);
+    doc.setDrawColor(
+      Math.round(88 + progress * 145),
+      Math.round(25 - progress * 10),
+      Math.round(230 - progress * 39),
+    );
+    doc.line(
+      centerX + Math.cos(start) * radius,
+      centerY + Math.sin(start) * radius,
+      centerX + Math.cos(end) * radius,
+      centerY + Math.sin(end) * radius,
+    );
+  }
+}
+
 async function shortVideoInsightsPage(doc: jsPDF, item: ReportItem) {
   const report = item.report!;
   const xs = [12, 82, 152, 222];
@@ -276,10 +335,10 @@ async function shortVideoInsightsPage(doc: jsPDF, item: ReportItem) {
   doc.setTextColor(79, 101, 112);
   doc.text(`${item.creatorName} · ${item.platform}${item.sow ? ` · ${item.sow}` : ''}`, 19, 37);
 
-  phone(doc, xs[0], y, `${platformInfo.label} preview`);
+  phone(doc, xs[0], y, `${platformInfo.label} thumbnail`);
   if (thumbnail) {
     const maxWidth = 55;
-    const maxHeight = 94;
+    const maxHeight = 125;
     const scale = Math.min(maxWidth / thumbnail.width, maxHeight / thumbnail.height);
     const imageWidth = thumbnail.width * scale;
     const imageHeight = thumbnail.height * scale;
@@ -288,41 +347,58 @@ async function shortVideoInsightsPage(doc: jsPDF, item: ReportItem) {
         y + 20 + (maxHeight - imageHeight) / 2, imageWidth, imageHeight, undefined, 'FAST');
     } catch { /* default phone background remains */ }
   }
-  doc.setFillColor(247, 248, 248);
-  doc.roundedRect(xs[0] + 4, y + 116, 53, 18, 2, 2, 'F');
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(5.2);
-  doc.setTextColor(61, 72, 78);
-  const caption = doc.splitTextToSize(report.caption || '-', 48).slice(0, 3);
-  doc.text(caption, xs[0] + 6, y + 122);
-  doc.setFillColor(20, 25, 28);
-  doc.roundedRect(xs[0] + 4, y + 137, 53, 9, 3, 3, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(5.5);
-  doc.text(`${number(report.likes)} likes  ·  ${number(report.comments)} comments`, xs[0] + 30.5, y + 143, { align: 'center' });
 
   phone(doc, xs[1], y, `${platformInfo.label} analytics`);
+  if (thumbnail) {
+    const miniScale = Math.min(13 / thumbnail.width, 10 / thumbnail.height);
+    try {
+      doc.addImage(thumbnail.data, 'JPEG', xs[1] + 30.5 - thumbnail.width * miniScale / 2,
+        y + 19, thumbnail.width * miniScale, thumbnail.height * miniScale, undefined, 'FAST');
+    } catch { /* analytics content remains available without the mini cover */ }
+  }
+  const analyticsCaption = compactCaptionImage(report.caption || '-');
+  if (analyticsCaption) doc.addImage(analyticsCaption, 'PNG', xs[1] + 4, y + 31, 53, 11, undefined, 'FAST');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5);
+  doc.setTextColor(105, 116, 123);
+  doc.text(`Duration ${report.duration.toFixed(1)}s`, xs[1] + 30.5, y + 47, { align: 'center' });
+
+  const quickMetrics = [
+    ['LIKE', report.likes], ['COMM', report.comments], ['SHARE', report.shares],
+    ['REPOST', report.reposts], ['SAVE', report.saves],
+  ] as const;
+  quickMetrics.forEach(([label, value], index) => {
+    const metricX = xs[1] + 7 + index * 11.7;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(4.3);
+    doc.setTextColor(70, 79, 84);
+    doc.text(label, metricX, y + 54, { align: 'center' });
+    doc.setFontSize(5.3);
+    doc.setTextColor(...NAVY);
+    doc.text(number(value), metricX, y + 60, { align: 'center' });
+  });
+  doc.setDrawColor(226, 229, 231);
+  doc.line(xs[1] + 3, y + 65, xs[1] + 58, y + 65);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
-  doc.text('Overview', xs[1] + 5, y + 28);
-  insightRow(doc, xs[1] + 5, y + 39, 'Followers', number(item.followers));
-  insightRow(doc, xs[1] + 5, y + 48, 'Views', number(report.views));
-  insightRow(doc, xs[1] + 5, y + 57, 'Play', number(report.plays));
-  insightRow(doc, xs[1] + 5, y + 66, 'Est. watch time', duration(report.views * report.duration));
-  insightRow(doc, xs[1] + 5, y + 75, 'Interactions', number(interactions));
-  insightRow(doc, xs[1] + 5, y + 84, 'Profile activity', 'N/A');
-  insightRow(doc, xs[1] + 5, y + 93, 'AVG duration', `${report.duration.toFixed(1)}s`);
-  doc.setDrawColor(224, 0, 156);
-  doc.setLineWidth(3.5);
-  doc.circle(xs[1] + 30.5, y + 124, 15, 'S');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(13);
   doc.setTextColor(...NAVY);
-  doc.text(number(report.views), xs[1] + 30.5, y + 126, { align: 'center' });
-  doc.setFontSize(6);
-  doc.text('Views', xs[1] + 30.5, y + 133, { align: 'center' });
+  doc.text('Overview', xs[1] + 5, y + 74);
+  insightRow(doc, xs[1] + 5, y + 84, 'Views', number(report.views));
+  insightRow(doc, xs[1] + 5, y + 93, 'Watch time (est.)', duration(report.views * report.duration));
+  insightRow(doc, xs[1] + 5, y + 102, 'Interactions', number(interactions));
+  insightRow(doc, xs[1] + 5, y + 111, 'Profile activity', 'N/A');
+  doc.setDrawColor(226, 229, 231);
+  doc.line(xs[1] + 3, y + 117, xs[1] + 58, y + 117);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.text('Views', xs[1] + 5, y + 126);
+  semiGauge(doc, xs[1] + 30.5, y + 149, 17);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...NAVY);
+  doc.text(number(report.views), xs[1] + 30.5, y + 145, { align: 'center' });
 
-  phone(doc, xs[2], y, 'Performance rates');
+  phone(doc, xs[2], y, `${platformInfo.label} performance`);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7);
   doc.text('Views compared with followers', xs[2] + 4, y + 29);
@@ -337,7 +413,7 @@ async function shortVideoInsightsPage(doc: jsPDF, item: ReportItem) {
   rateBar(doc, xs[2] + 5, y + 106, 'Share rate', rate(report.shares), [255, 138, 0]);
   rateBar(doc, xs[2] + 5, y + 121, 'Engagement rate', rate(interactions), [36, 199, 165]);
 
-  phone(doc, xs[3], y, 'Interactions');
+  phone(doc, xs[3], y, `${platformInfo.label} interactions`);
   const donut = donutChart([report.likes, report.comments, report.saves, report.shares, report.reposts]);
   if (donut) doc.addImage(donut, 'PNG', xs[3] + 8, y + 24, 45, 45, undefined, 'FAST');
   doc.setFont('helvetica', 'bold');
