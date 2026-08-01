@@ -7,15 +7,24 @@ import {
   filterPostsByRange,
   type RawPostLike,
 } from "@/lib/insights";
-import {
-  Users,
-  Heart,
-  MessageCircle,
-  Eye,
-  TrendingUp,
-  Target,
-  ImageOff,
-} from "lucide-react";
+
+type IconProps = { className?: string };
+
+function Icon({ className, children }: IconProps & { children: React.ReactNode }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
+const Users = ({ className }: IconProps) => <Icon className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" /></Icon>;
+const Heart = ({ className }: IconProps) => <Icon className={className}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" /></Icon>;
+const MessageCircle = ({ className }: IconProps) => <Icon className={className}><path d="M21 11.5a8.4 8.4 0 0 1-9 8.5 9.8 9.8 0 0 1-4.2-.9L3 21l1.9-4.8A8.4 8.4 0 1 1 21 11.5Z" /></Icon>;
+const Eye = ({ className }: IconProps) => <Icon className={className}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></Icon>;
+const TrendingUp = ({ className }: IconProps) => <Icon className={className}><path d="m3 17 6-6 4 4 8-8" /><path d="M14 7h7v7" /></Icon>;
+const Target = ({ className }: IconProps) => <Icon className={className}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1" /></Icon>;
+const ImageOff = ({ className }: IconProps) => <Icon className={className}><path d="m2 2 20 20M10.4 10.4a2 2 0 1 1 2.8 2.8M10.5 5H5a2 2 0 0 0-2 2v12c0 .6.2 1.1.6 1.4M21 15V7a2 2 0 0 0-2-2h-4M3 16l4-4 7 7M14 14l1-1 6 6" /></Icon>;
 
 type Profile = {
   name: string;
