@@ -3,6 +3,7 @@ import FileDocumentIcon from "@/components/icons/FileDocumentIcon";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { showAlertValidationError, showSuccess } from "@/lib/alert";
+import { calculateTaxSummary } from "@/lib/tax";
 
 type Props = {
   projectDetail: any;
@@ -26,6 +27,10 @@ export default function InvoiceSection({
   handleFinish,
   readOnly = false,
 }: Props) {
+  const taxSummary = calculateTaxSummary(
+    Number(projectDetail?.subtotal ?? 0),
+    Number(projectDetail?.taxRate ?? 11),
+  );
   const [sending, setSending] = useState(false);
   const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -160,10 +165,10 @@ export default function InvoiceSection({
     doc.text(`Name          : ${payment?.accountName ?? "-"}`, 8, paymentY + 15);
 
     const rows = [
-      ["Total", projectDetail?.subtotal],
-      ["DPP", projectDetail?.dpp],
-      [`PPN (${Number(projectDetail?.taxRate ?? 11)}%)`, projectDetail?.ppn],
-      ["TOTAL AMOUNT", projectDetail?.grandTotal],
+      ["Total", taxSummary.subtotal],
+      ["DPP", taxSummary.dpp],
+      [`PPN (${taxSummary.taxRate}%)`, taxSummary.ppn],
+      ["TOTAL AMOUNT", taxSummary.grandTotal],
     ];
     // Align the value divider with the main table's Amount column.
     const summaryX = 130;
@@ -286,7 +291,7 @@ export default function InvoiceSection({
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-6"><h3 className="text-xl font-bold text-slate-900">Payment Method</h3>{payment ? <div className="mt-6 space-y-4 text-sm"><PaymentRow label="Bank" value={payment.bank} /><PaymentRow label="Account No" value={payment.accountNo} /><PaymentRow label="Account Name" value={payment.accountName} /></div> : <p className="mt-6 text-sm text-slate-500">Payment details are not available for this invoice.</p>}</div>
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6"><div className="space-y-3 text-sm"><TotalRow label="Subtotal" value={formatRupiah(projectDetail?.subtotal)} /><TotalRow label="DPP" value={formatRupiah(projectDetail?.dpp)} /><TotalRow label={`PPN (${Number(projectDetail?.taxRate ?? 11)}%)`} value={formatRupiah(projectDetail?.ppn)} /></div><div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900"><span>Grand Total</span><span>{formatRupiah(projectDetail?.grandTotal)}</span></div></div>
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6"><div className="space-y-3 text-sm"><TotalRow label="Subtotal" value={formatRupiah(taxSummary.subtotal)} /><TotalRow label="DPP" value={formatRupiah(taxSummary.dpp)} /><TotalRow label={`PPN (${taxSummary.taxRate}%)`} value={formatRupiah(taxSummary.ppn)} /></div><div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900"><span>Grand Total</span><span>{formatRupiah(taxSummary.grandTotal)}</span></div></div>
       </div>
 
       {uploadedPdf && previewUrl && <div className="mt-6 flex flex-col gap-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700"><FileDocumentIcon className="h-5 w-5" /></div><div className="min-w-0"><p className="text-sm font-bold text-slate-900">PDF Ready to Send</p><p className="truncate text-xs text-slate-600">{uploadedPdf.name}</p></div></div><button type="button" onClick={() => setIsPreviewOpen(true)} className="inline-flex w-full justify-center rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 sm:w-auto">Preview PDF</button></div>}

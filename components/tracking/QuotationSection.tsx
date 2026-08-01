@@ -5,6 +5,7 @@ import autoTable from "jspdf-autotable";
 
 import CreatorTable from "./CreatorTable";
 import { showAlertValidationError, showSuccess } from "@/lib/alert";
+import { calculateTaxSummary } from "@/lib/tax";
 
 type Props = {
   creators: any[];
@@ -34,6 +35,7 @@ export default function QuotationSection({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [taxRate, setTaxRate] = useState(() => Number(projectDetail?.taxRate ?? 11));
+  const taxSummary = calculateTaxSummary(Number(projectDetail?.subtotal ?? 0), taxRate);
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => {
@@ -246,19 +248,19 @@ export default function QuotationSection({
     const summaryRows = [
       {
         label: "Subtotal",
-        value: projectDetail?.subtotal,
+        value: taxSummary.subtotal,
       },
       {
         label: "DPP",
-        value: projectDetail?.dpp,
+        value: taxSummary.dpp,
       },
       {
         label: `PPN (${taxRate}%)`,
-        value: Number(projectDetail?.dpp ?? 0) * taxRate / 100,
+        value: taxSummary.ppn,
       },
       {
         label: "Grand Total",
-        value: Number(projectDetail?.dpp ?? 0) * (1 + taxRate / 100),
+        value: taxSummary.grandTotal,
       },
     ];
 
@@ -484,12 +486,12 @@ export default function QuotationSection({
 
     <Row
       label="Subtotal"
-      value={projectDetail?.subtotal}
+      value={taxSummary.subtotal}
     />
 
     <Row
       label="DPP"
-      value={projectDetail?.dpp}
+      value={taxSummary.dpp}
     />
 
     <div className="mb-3 flex items-center justify-between gap-4">
@@ -505,14 +507,14 @@ export default function QuotationSection({
         }}
         className="w-24 rounded-md border border-slate-300 px-3 py-2 text-right disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" />
     </div>
-    <Row label={`PPN (${taxRate}%)`} value={Number(projectDetail?.dpp ?? 0) * taxRate / 100} />
+    <Row label={`PPN (${taxRate}%)`} value={taxSummary.ppn} />
 
     <div className="mt-4 flex justify-between border-t pt-4 text-xl font-bold">
       <span>Grand Total</span>
 
       <span>
         Rp{" "}
-        {(Number(projectDetail?.dpp ?? 0) * (1 + taxRate / 100)).toLocaleString("en-US")}
+        {taxSummary.grandTotal.toLocaleString("en-US")}
       </span>
     </div>
 

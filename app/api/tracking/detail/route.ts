@@ -2,6 +2,7 @@ import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import { calculateTaxSummary } from "@/lib/tax";
 
 async function authorize() {
   const session = await getServerSession(authOptions);
@@ -53,11 +54,9 @@ export async function GET(request: Request) {
       0
     );
 
-    const dpp = subtotal;
     const project = await prisma.trs_project.findUnique({ where: { prj_id: projectId } });
     const taxRate = Number(project?.prj_tax_rate ?? 11);
-    const ppn = dpp * taxRate / 100;
-    const grandTotal = dpp + ppn;
+    const { dpp, ppn, grandTotal } = calculateTaxSummary(subtotal, taxRate);
 
     return NextResponse.json({
       creators: details.map((item) => ({
