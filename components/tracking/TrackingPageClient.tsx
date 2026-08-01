@@ -43,8 +43,8 @@ export default function TrackingPageClient({
       <div className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">Tracking</p>
-            <h1 className="mt-2 text-2xl font-bold text-slate-900">Order Tracking Monitor</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-sky-700">Progress</p>
+            <h1 className="mt-2 text-2xl font-bold text-slate-900">Order Progress Monitor</h1>
             <p className="mt-2 max-w-3xl text-sm text-slate-600">
               Monitor all orders in the selected filter with submitted, confirmed, and checked progress from Sunter Plant 1 to Sunter Plant 2.
             </p>
@@ -64,7 +64,7 @@ export default function TrackingPageClient({
         <SummaryCard label="Submitted" value={summary.submittedOrders} accent="text-amber-600" />
         <SummaryCard label="Confirmed" value={summary.confirmedOrders} accent="text-sky-600" />
         <SummaryCard label="Checked" value={summary.checkedOrders} accent="text-emerald-600" />
-        <SummaryCard label="Total Tracking" value={summary.totalOrders} accent="text-slate-900" />
+        <SummaryCard label="Total Progress" value={summary.totalOrders} accent="text-slate-900" />
       </div>
 
       {rows.length === 0 ? (
