@@ -318,9 +318,31 @@ function semiGauge(doc: jsPDF, centerX: number, centerY: number, radius: number)
   }
 }
 
+function quickMetricIcon(type: 'like' | 'comment' | 'share' | 'repost' | 'save') {
+  const paths = {
+    like: 'M20.8 4.6c-1.5-1.5-4-1.5-5.5 0L12 7.9 8.7 4.6a3.9 3.9 0 0 0-5.5 5.5L12 19l8.8-8.9a3.9 3.9 0 0 0 0-5.5Z',
+    comment: 'M21 11.5a8.4 8.4 0 0 1-9 8.4 9.6 9.6 0 0 1-4-.9L3 21l1.7-4.5A8.4 8.4 0 1 1 21 11.5Z',
+    share: 'M22 2 15 22l-4-9-9-4 20-7ZM11 13 22 2',
+    repost: 'M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3',
+    save: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z',
+  } as const;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  context.scale(128 / 24, 128 / 24);
+  context.strokeStyle = '#151b1e';
+  context.lineWidth = 1.8;
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  context.stroke(new Path2D(paths[type]));
+  return canvas.toDataURL('image/png');
+}
+
 async function shortVideoInsightsPage(doc: jsPDF, item: ReportItem) {
   const report = item.report!;
-  const xs = [12, 82, 152, 222];
+  const xs = [20, 85, 150, 215];
   const y = 42;
   const interactions = report.likes + report.comments + report.saves + report.shares + report.reposts;
   const viewRatio = item.followers > 0 ? report.views / item.followers * 100 : 0;
@@ -357,46 +379,44 @@ async function shortVideoInsightsPage(doc: jsPDF, item: ReportItem) {
     } catch { /* analytics content remains available without the mini cover */ }
   }
   const analyticsCaption = compactCaptionImage(report.caption || '-');
-  if (analyticsCaption) doc.addImage(analyticsCaption, 'PNG', xs[1] + 4, y + 31, 53, 11, undefined, 'FAST');
+  if (analyticsCaption) doc.addImage(analyticsCaption, 'PNG', xs[1] + 4, y + 30, 53, 10, undefined, 'FAST');
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(5);
   doc.setTextColor(105, 116, 123);
-  doc.text(`Duration ${report.duration.toFixed(1)}s`, xs[1] + 30.5, y + 47, { align: 'center' });
+  doc.text(`Duration ${report.duration.toFixed(1)}s`, xs[1] + 30.5, y + 43, { align: 'center' });
 
   const quickMetrics = [
-    ['LIKE', report.likes], ['COMM', report.comments], ['SHARE', report.shares],
-    ['REPOST', report.reposts], ['SAVE', report.saves],
+    ['like', report.likes], ['comment', report.comments], ['share', report.shares],
+    ['repost', report.reposts], ['save', report.saves],
   ] as const;
-  quickMetrics.forEach(([label, value], index) => {
+  quickMetrics.forEach(([icon, value], index) => {
     const metricX = xs[1] + 7 + index * 11.7;
+    const iconImage = quickMetricIcon(icon);
+    if (iconImage) doc.addImage(iconImage, 'PNG', metricX - 2.4, y + 46.5, 4.8, 4.8, undefined, 'FAST');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(4.3);
-    doc.setTextColor(70, 79, 84);
-    doc.text(label, metricX, y + 54, { align: 'center' });
     doc.setFontSize(5.3);
     doc.setTextColor(...NAVY);
-    doc.text(number(value), metricX, y + 60, { align: 'center' });
+    doc.text(number(value), metricX, y + 56, { align: 'center' });
   });
   doc.setDrawColor(226, 229, 231);
-  doc.line(xs[1] + 3, y + 65, xs[1] + 58, y + 65);
+  doc.line(xs[1] + 3, y + 61, xs[1] + 58, y + 61);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
   doc.setTextColor(...NAVY);
-  doc.text('Overview', xs[1] + 5, y + 74);
-  insightRow(doc, xs[1] + 5, y + 84, 'Views', number(report.views));
-  insightRow(doc, xs[1] + 5, y + 93, 'Watch time (est.)', duration(report.views * report.duration));
-  insightRow(doc, xs[1] + 5, y + 102, 'Interactions', number(interactions));
-  insightRow(doc, xs[1] + 5, y + 111, 'Profile activity', 'N/A');
+  doc.text('Overview', xs[1] + 5, y + 69);
+  insightRow(doc, xs[1] + 5, y + 78, 'Views', number(report.views));
+  insightRow(doc, xs[1] + 5, y + 86, 'Watch time (est.)', duration(report.views * report.duration));
+  insightRow(doc, xs[1] + 5, y + 94, 'Interactions', number(interactions));
   doc.setDrawColor(226, 229, 231);
-  doc.line(xs[1] + 3, y + 117, xs[1] + 58, y + 117);
+  doc.line(xs[1] + 3, y + 100, xs[1] + 58, y + 100);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(7.5);
-  doc.text('Views', xs[1] + 5, y + 126);
-  semiGauge(doc, xs[1] + 30.5, y + 149, 17);
+  doc.text('Views', xs[1] + 5, y + 108);
+  semiGauge(doc, xs[1] + 30.5, y + 146, 24);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(11);
   doc.setTextColor(...NAVY);
-  doc.text(number(report.views), xs[1] + 30.5, y + 145, { align: 'center' });
+  doc.text(number(report.views), xs[1] + 30.5, y + 139, { align: 'center' });
 
   phone(doc, xs[2], y, `${platformInfo.label} performance`);
   doc.setFont('helvetica', 'bold');
