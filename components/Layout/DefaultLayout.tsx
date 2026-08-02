@@ -24,8 +24,8 @@ export default function DefaultLayout({ children }: DefaultLayoutProps) {
   const pathname = usePathname();
   const currentPage = pathname.includes("/tracking")
   ? {
-      title: "Tracking",
-      description: "Track and monitor project campaign progress",
+      title: "Progress",
+      description: "Monitor project campaign progress from draft to finish",
     }
   : pathname.includes("/influencer")
   ? {

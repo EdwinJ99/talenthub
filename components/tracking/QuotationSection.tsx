@@ -5,6 +5,7 @@ import autoTable from "jspdf-autotable";
 
 import CreatorTable from "./CreatorTable";
 import { showAlertValidationError, showSuccess } from "@/lib/alert";
+import { calculateTaxSummary } from "@/lib/tax";
 
 type Props = {
   creators: any[];
@@ -33,12 +34,68 @@ export default function QuotationSection({
   const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [taxRate, setTaxRate] = useState(() => Number(projectDetail?.taxRate ?? 11));
+  const initialTaxRate = Number(projectDetail?.taxRate ?? 11);
+  const [taxRateInput, setTaxRateInput] = useState(() => String(initialTaxRate));
+  const [savedTaxRate, setSavedTaxRate] = useState(initialTaxRate);
+  const [savingTaxRate, setSavingTaxRate] = useState(false);
+  const taxRate = Number(taxRateInput);
+  const taxRateIsValid = taxRateInput.trim() !== "" && Number.isFinite(taxRate) && taxRate >= 0 && taxRate <= 100;
+  const taxSummary = calculateTaxSummary(Number(projectDetail?.subtotal ?? 0), taxRate);
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
+
+  useEffect(() => {
+    const nextTaxRate = Number(projectDetail?.taxRate ?? 11);
+    setTaxRateInput(String(nextTaxRate));
+    setSavedTaxRate(nextTaxRate);
+  }, [projectDetail?.id, projectDetail?.taxRate]);
+
+  const saveTaxRate = async () => {
+    if (readOnly || savingTaxRate) return false;
+
+    if (!taxRateIsValid) {
+      await showAlertValidationError("PPN must be a number between 0 and 100.");
+      setTaxRateInput(String(savedTaxRate));
+      return false;
+    }
+
+    if (taxRate === savedTaxRate) return true;
+
+    const projectId = Number(projectDetail?.id);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      await showAlertValidationError("Project data was not found.");
+      setTaxRateInput(String(savedTaxRate));
+      return false;
+    }
+
+    setSavingTaxRate(true);
+    try {
+      const response = await fetch(`/api/tracking?id=${projectId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prj_tax_rate: taxRate }),
+      });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to update PPN.");
+      }
+
+      setSavedTaxRate(taxRate);
+      setTaxRateInput(String(taxRate));
+      await showSuccess("PPN updated", `Tax rate has been updated to ${taxRate}%.`);
+      return true;
+    } catch (error) {
+      setTaxRateInput(String(savedTaxRate));
+      await showAlertValidationError(error instanceof Error ? error.message : "Failed to update PPN.");
+      return false;
+    } finally {
+      setSavingTaxRate(false);
+    }
+  };
 
   const getQuotationFileName = () => {
     const projectCode = String(projectDetail?.code ?? "").trim();
@@ -246,19 +303,19 @@ export default function QuotationSection({
     const summaryRows = [
       {
         label: "Subtotal",
-        value: projectDetail?.subtotal,
+        value: taxSummary.subtotal,
       },
       {
         label: "DPP",
-        value: projectDetail?.dpp,
+        value: taxSummary.dpp,
       },
       {
         label: `PPN (${taxRate}%)`,
-        value: Number(projectDetail?.dpp ?? 0) * taxRate / 100,
+        value: taxSummary.ppn,
       },
       {
         label: "Grand Total",
-        value: Number(projectDetail?.dpp ?? 0) * (1 + taxRate / 100),
+        value: taxSummary.grandTotal,
       },
     ];
 
@@ -484,35 +541,31 @@ export default function QuotationSection({
 
     <Row
       label="Subtotal"
-      value={projectDetail?.subtotal}
+      value={taxSummary.subtotal}
     />
 
     <Row
       label="DPP"
-      value={projectDetail?.dpp}
+      value={taxSummary.dpp}
     />
 
     <div className="mb-3 flex items-center justify-between gap-4">
       <label htmlFor="tax-rate" className="font-medium">PPN (%)</label>
-      <input id="tax-rate" type="number" min="0" max="100" step="0.01" value={taxRate}
-        disabled={readOnly}
-        onChange={(event) => setTaxRate(Number(event.target.value))}
-        onBlur={() => {
-          if (!readOnly) fetch(`/api/tracking?id=${projectDetail?.id}`, {
-            method: "PUT", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prj_tax_rate: taxRate }),
-          });
-        }}
-        className="w-24 rounded-md border border-slate-300 px-3 py-2 text-right disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500" />
+      <input id="tax-rate" type="number" min="0" max="100" step="0.01" value={taxRateInput}
+        disabled={readOnly || savingTaxRate}
+        aria-invalid={!taxRateIsValid}
+        onChange={(event) => setTaxRateInput(event.target.value)}
+        onBlur={() => void saveTaxRate()}
+        className={`w-24 rounded-md border px-3 py-2 text-right disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${taxRateIsValid ? "border-slate-300" : "border-red-500 bg-red-50"}`} />
     </div>
-    <Row label={`PPN (${taxRate}%)`} value={Number(projectDetail?.dpp ?? 0) * taxRate / 100} />
+    <Row label={`PPN (${taxRate}%)`} value={taxSummary.ppn} />
 
     <div className="mt-4 flex justify-between border-t pt-4 text-xl font-bold">
       <span>Grand Total</span>
 
       <span>
         Rp{" "}
-        {(Number(projectDetail?.dpp ?? 0) * (1 + taxRate / 100)).toLocaleString("en-US")}
+        {taxSummary.grandTotal.toLocaleString("en-US")}
       </span>
     </div>
 
@@ -571,7 +624,13 @@ export default function QuotationSection({
 
         {!readOnly && (
           <button
-            onClick={() => handleStartProject(taxRate)}
+            onClick={async () => {
+              if (!taxRateIsValid) {
+                await showAlertValidationError("PPN must be a number between 0 and 100.");
+                return;
+              }
+              handleStartProject(taxRate);
+            }}
             className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white sm:w-auto"
           >
             Start Project

@@ -17,7 +17,7 @@ const shortcutItems: ShortcutItem[] = [
     accent: "from-indigo-500 to-sky-500",
   },
   {
-    title: "Tracking",
+    title: "Progress",
     description: "Pantau progress order dari submitted, confirmed, sampai checked per tanggal, shift, dan day/night.",
     href: "/tracking",
     accent: "from-sky-500 to-emerald-500",

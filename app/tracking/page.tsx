@@ -137,16 +137,16 @@ const handleDelete = async (projectId: number) => {
       <div className="space-y-5">
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <p className="text-xs font-bold tracking-[0.35em] text-sky-600">
-            TRACKING
+            PROGRESS
           </p>
 
           <div className="mt-3 grid gap-6 lg:grid-cols-[1.2fr_3fr]">
             <div>
               <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
-                Progress Project
+                Project Progress
               </h1>
               <p className="mt-4 max-w-xs text-sm text-slate-500">
-                You can tracking the all progress from project campaign
+                Monitor every campaign stage from draft to finish.
               </p>
             </div>
 

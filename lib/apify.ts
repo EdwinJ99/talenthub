@@ -1,4 +1,5 @@
 import { ApifyClient } from 'apify-client';
+import type { SocialPlatform } from './social-platform';
 
 const client = new ApifyClient({ token: process.env.APIFY_TOKEN! });
 
@@ -118,7 +119,7 @@ export async function validateUsernames(
 
 export interface ContentMetrics {
   contentUrl: string;
-  platform: 'instagram' | 'tiktok';
+  platform: SocialPlatform;
   caption: string;
   thumbnailUrl?: string;
   thumbnailCandidates?: string[];
@@ -157,11 +158,14 @@ function imageUrls(...values: unknown[]): string[] {
   return [...new Set(result)];
 }
 
-export function detectContentPlatform(value: string): 'instagram' | 'tiktok' {
+export function detectContentPlatform(value: string): SocialPlatform {
   const hostname = new URL(value).hostname.toLowerCase().replace(/^www\./, '');
   if (hostname === 'instagram.com' || hostname.endsWith('.instagram.com')) return 'instagram';
   if (hostname === 'tiktok.com' || hostname.endsWith('.tiktok.com')) return 'tiktok';
-  throw new Error('Only Instagram and TikTok content URLs are supported');
+  if (hostname === 'youtube.com' || hostname.endsWith('.youtube.com') || hostname === 'youtu.be') return 'youtube';
+  if (hostname === 'x.com' || hostname.endsWith('.x.com') || hostname === 'twitter.com'
+    || hostname.endsWith('.twitter.com')) return 'twitter';
+  throw new Error('Supported content URLs: Instagram, TikTok, YouTube, and Twitter/X');
 }
 
 export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
@@ -173,10 +177,20 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
   // This URL-specific actor returns those engagement fields and a stable thumbnail field.
   const run = platform === 'instagram'
     ? await client.actor('data-slayer/instagram-post-details').call({ urls: [contentUrl] })
-    : await client.actor('clockworks/tiktok-scraper').call({
+    : platform === 'tiktok'
+      ? await client.actor('clockworks/tiktok-scraper').call({
         postURLs: [contentUrl], scrapeRelatedVideos: false, resultsPerPage: 1,
         shouldDownloadCovers: true,
-      });
+      })
+      : platform === 'youtube'
+        ? await client.actor('streamers/youtube-scraper').call({
+          startUrls: [{ url: contentUrl }], maxResults: 1, maxResultsShorts: 1,
+          maxResultStreams: 0, downloadSubtitles: false,
+        })
+        : await client.actor('scrapesage/twitter-scraper').call({
+          tweetUrls: [contentUrl], includeProfile: false, includeTweets: true,
+          includeReplies: false, maxTweetsPerProfile: 1,
+        });
   const { items } = await client.dataset(run.defaultDatasetId).listItems({ limit: 1 });
   const item = items[0] as Record<string, any> | undefined;
   if (!item) throw new Error('Content could not be found or is not public');
@@ -212,23 +226,61 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
     };
   }
 
-  const thumbnailCandidates = imageUrls(
+  if (platform === 'tiktok') {
+    const thumbnailCandidates = imageUrls(
     item.videoMeta?.coverUrl, item.videoMeta?.originalCoverUrl,
     item.videoMeta?.dynamicCoverUrl, item.video?.cover, item.video?.originCover,
     item.covers, item.cover, item.originCover, item.dynamicCover,
     item.downloadedCovers, item.downloadedCover,
   );
+    return {
+      contentUrl, platform, caption: item.text ?? item.desc ?? '',
+      thumbnailUrl: thumbnailCandidates[0], thumbnailCandidates,
+      likes: int(item.diggCount ?? item.digg_count ?? item.stats?.diggCount),
+      comments: int(item.commentCount ?? item.comment_count ?? item.stats?.commentCount),
+      saves: int(item.collectCount ?? item.collect_count ?? item.stats?.collectCount),
+      reposts: int(item.repostCount ?? item.repost_count ?? item.stats?.repostCount),
+      views: int(item.playCount ?? item.play_count ?? item.stats?.playCount),
+      plays: int(item.playCount ?? item.play_count ?? item.stats?.playCount),
+      duration: Number(item.videoMeta?.duration ?? item.video?.duration ?? item.duration) || 0,
+      shares: int(item.shareCount ?? item.share_count ?? item.stats?.shareCount),
+    };
+  }
+
+  if (platform === 'youtube') {
+    const thumbnailCandidates = imageUrls(
+      item.thumbnailUrl, item.thumbnail, item.thumbnails, item.videoThumbnails,
+      item.bestThumbnail, item.channelThumbnailUrl,
+    );
+    const views = int(item.viewCount ?? item.views ?? item.viewsCount ?? item.stats?.views);
+    return {
+      contentUrl, platform,
+      caption: item.title ?? item.text ?? item.description ?? '',
+      thumbnailUrl: thumbnailCandidates[0], thumbnailCandidates,
+      likes: int(item.likes ?? item.likeCount ?? item.likesCount),
+      comments: int(item.commentsCount ?? item.commentCount ?? item.comments),
+      saves: 0, reposts: 0, views, plays: views,
+      duration: Number(item.duration ?? item.durationSeconds ?? item.lengthSeconds) || 0,
+      shares: 0,
+    };
+  }
+
+  const metrics = item.metrics ?? item.public_metrics ?? item.stats ?? {};
+  const thumbnailCandidates = imageUrls(
+    item.thumbnailUrl, item.thumbnail, item.media, item.extendedEntities,
+    item.entities?.media, item.card?.image, item.authorProfile?.profileImageUrl,
+  );
+  const views = int(metrics.viewCount ?? metrics.views ?? item.viewCount ?? item.views);
   return {
-    contentUrl, platform, caption: item.text ?? item.desc ?? '',
-    thumbnailUrl: thumbnailCandidates[0],
-    thumbnailCandidates,
-    likes: int(item.diggCount ?? item.digg_count ?? item.stats?.diggCount),
-    comments: int(item.commentCount ?? item.comment_count ?? item.stats?.commentCount),
-    saves: int(item.collectCount ?? item.collect_count ?? item.stats?.collectCount),
-    reposts: int(item.repostCount ?? item.repost_count ?? item.stats?.repostCount),
-    views: int(item.playCount ?? item.play_count ?? item.stats?.playCount),
-    plays: int(item.playCount ?? item.play_count ?? item.stats?.playCount),
-    duration: Number(item.videoMeta?.duration ?? item.video?.duration ?? item.duration) || 0,
-    shares: int(item.shareCount ?? item.share_count ?? item.stats?.shareCount),
+    contentUrl, platform,
+    caption: item.text ?? item.fullText ?? item.full_text ?? item.tweet ?? '',
+    thumbnailUrl: thumbnailCandidates[0], thumbnailCandidates,
+    likes: int(metrics.likeCount ?? metrics.likes ?? item.likeCount ?? item.favoriteCount),
+    comments: int(metrics.replyCount ?? metrics.replies ?? item.replyCount),
+    saves: int(metrics.bookmarkCount ?? metrics.bookmarks ?? item.bookmarkCount),
+    reposts: int(metrics.retweetCount ?? metrics.reposts ?? item.retweetCount),
+    views, plays: views,
+    duration: Number(item.duration ?? item.video?.duration ?? item.media?.[0]?.duration) || 0,
+    shares: int(metrics.quoteCount ?? metrics.quotes ?? item.quoteCount),
   };
 }

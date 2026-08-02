@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { normalizePlatform, SOCIAL_PLATFORMS } from './social-platform';
 
 type StoredReport = {
   caption: string | null;
@@ -189,6 +190,272 @@ function captionImage(value: string) {
   return canvas.toDataURL('image/png');
 }
 
+function compactCaptionImage(value: string) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1060;
+  canvas.height = 220;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  const padding = 28;
+  const maxWidth = canvas.width - padding * 2;
+  const lineHeight = 72;
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = '#26343b';
+  context.font = '40px Arial, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+  context.textBaseline = 'top';
+
+  const lines: string[] = [];
+  let current = '';
+  for (const word of value.replace(/\s+/gu, ' ').trim().split(' ')) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (context.measureText(candidate).width <= maxWidth) {
+      current = candidate;
+      continue;
+    }
+    if (current) lines.push(current);
+    current = word;
+  }
+  if (current) lines.push(current);
+  const visibleLines = lines.slice(0, 2);
+  if (lines.length > 2 && visibleLines.length) {
+    let last = visibleLines[visibleLines.length - 1];
+    while (last && context.measureText(`${last}…`).width > maxWidth) last = Array.from(last).slice(0, -1).join('');
+    visibleLines[visibleLines.length - 1] = `${last}…`;
+  }
+  visibleLines.forEach((line, index) => context.fillText(line, padding, 24 + index * lineHeight, maxWidth));
+  return canvas.toDataURL('image/png');
+}
+
+function phone(doc: jsPDF, x: number, y: number, heading: string) {
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(25, 35, 40);
+  doc.setLineWidth(0.7);
+  doc.roundedRect(x, y, 61, 151, 4, 4, 'FD');
+  doc.setFillColor(20, 25, 28);
+  doc.roundedRect(x + 20, y + 3, 21, 4, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(...NAVY);
+  doc.text(heading, x + 30.5, y + 13, { align: 'center' });
+  doc.setDrawColor(225, 229, 231);
+  doc.line(x + 2, y + 17, x + 59, y + 17);
+}
+
+function insightRow(doc: jsPDF, x: number, y: number, label: string, value: string) {
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(61, 72, 78);
+  doc.text(label, x, y);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...NAVY);
+  doc.text(value, x + 49, y, { align: 'right' });
+}
+
+function duration(value: number) {
+  const seconds = Math.max(0, Math.round(value));
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor(seconds % 86400 / 3600);
+  const minutes = Math.floor(seconds % 3600 / 60);
+  const rest = seconds % 60;
+  return [days && `${days}d`, hours && `${hours}h`, minutes && `${minutes}m`, `${rest}s`].filter(Boolean).join(' ');
+}
+
+function donutChart(values: number[]) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 500;
+  canvas.height = 500;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  const colors = ['#f000b8', '#7b2cff', '#ff8a00', '#24c7a5', '#ef476f'];
+  const total = values.reduce((sum, value) => sum + value, 0);
+  context.clearRect(0, 0, 500, 500);
+  context.lineWidth = 62;
+  context.lineCap = 'butt';
+  let start = -Math.PI / 2;
+  (total ? values : [1]).forEach((value, index) => {
+    const end = start + (value / (total || 1)) * Math.PI * 2;
+    context.beginPath();
+    context.strokeStyle = colors[index % colors.length];
+    context.arc(250, 250, 180, start, end);
+    context.stroke();
+    start = end;
+  });
+  return canvas.toDataURL('image/png');
+}
+
+function rateBar(doc: jsPDF, x: number, y: number, label: string, value: number, color: [number, number, number]) {
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6);
+  doc.setTextColor(...NAVY);
+  doc.text(label, x, y);
+  doc.text(`${value.toFixed(2)}%`, x + 50, y, { align: 'right' });
+  doc.setFillColor(234, 237, 239);
+  doc.roundedRect(x, y + 2, 50, 3.5, 1.5, 1.5, 'F');
+  doc.setFillColor(...color);
+  doc.roundedRect(x, y + 2, 50 * Math.min(value / 100, 1), 3.5, 1.5, 1.5, 'F');
+}
+
+function semiGauge(doc: jsPDF, centerX: number, centerY: number, radius: number) {
+  const segments = 48;
+  doc.setLineWidth(3.5);
+  doc.setLineCap('round');
+  for (let index = 0; index < segments; index++) {
+    const start = Math.PI + index / segments * Math.PI;
+    const end = Math.PI + (index + 0.82) / segments * Math.PI;
+    const progress = index / (segments - 1);
+    doc.setDrawColor(
+      Math.round(88 + progress * 145),
+      Math.round(25 - progress * 10),
+      Math.round(230 - progress * 39),
+    );
+    doc.line(
+      centerX + Math.cos(start) * radius,
+      centerY + Math.sin(start) * radius,
+      centerX + Math.cos(end) * radius,
+      centerY + Math.sin(end) * radius,
+    );
+  }
+}
+
+function quickMetricIcon(type: 'like' | 'comment' | 'share' | 'repost' | 'save') {
+  const paths = {
+    like: 'M20.8 4.6c-1.5-1.5-4-1.5-5.5 0L12 7.9 8.7 4.6a3.9 3.9 0 0 0-5.5 5.5L12 19l8.8-8.9a3.9 3.9 0 0 0 0-5.5Z',
+    comment: 'M21 11.5a8.4 8.4 0 0 1-9 8.4 9.6 9.6 0 0 1-4-.9L3 21l1.7-4.5A8.4 8.4 0 1 1 21 11.5Z',
+    share: 'M22 2 15 22l-4-9-9-4 20-7ZM11 13 22 2',
+    repost: 'M17 1l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3',
+    save: 'M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z',
+  } as const;
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  context.scale(128 / 24, 128 / 24);
+  context.strokeStyle = '#151b1e';
+  context.lineWidth = 1.8;
+  context.lineCap = 'round';
+  context.lineJoin = 'round';
+  context.stroke(new Path2D(paths[type]));
+  return canvas.toDataURL('image/png');
+}
+
+async function shortVideoInsightsPage(doc: jsPDF, item: ReportItem) {
+  const report = item.report!;
+  const xs = [20, 85, 150, 215];
+  const y = 42;
+  const interactions = report.likes + report.comments + report.saves + report.shares + report.reposts;
+  const viewRatio = item.followers > 0 ? report.views / item.followers * 100 : 0;
+  const rate = (value: number) => report.views > 0 ? value / report.views * 100 : 0;
+  const platform = normalizePlatform(item.platform) ?? 'instagram';
+  const platformInfo = SOCIAL_PLATFORMS[platform];
+  const thumbnail = await imageData(report.thumbnail_url) ?? await imageData(DEFAULT_THUMBNAIL);
+
+  title(doc, username(item.username), 29);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(79, 101, 112);
+  doc.text(`${item.creatorName} · ${item.platform}${item.sow ? ` · ${item.sow}` : ''}`, 19, 37);
+
+  phone(doc, xs[0], y, `${platformInfo.label} thumbnail`);
+  if (thumbnail) {
+    const maxWidth = 55;
+    const maxHeight = 125;
+    const scale = Math.min(maxWidth / thumbnail.width, maxHeight / thumbnail.height);
+    const imageWidth = thumbnail.width * scale;
+    const imageHeight = thumbnail.height * scale;
+    try {
+      doc.addImage(thumbnail.data, 'JPEG', xs[0] + 3 + (maxWidth - imageWidth) / 2,
+        y + 20 + (maxHeight - imageHeight) / 2, imageWidth, imageHeight, undefined, 'FAST');
+    } catch { /* default phone background remains */ }
+  }
+
+  phone(doc, xs[1], y, `${platformInfo.label} analytics`);
+  if (thumbnail) {
+    const miniScale = Math.min(13 / thumbnail.width, 10 / thumbnail.height);
+    try {
+      doc.addImage(thumbnail.data, 'JPEG', xs[1] + 30.5 - thumbnail.width * miniScale / 2,
+        y + 19, thumbnail.width * miniScale, thumbnail.height * miniScale, undefined, 'FAST');
+    } catch { /* analytics content remains available without the mini cover */ }
+  }
+  const analyticsCaption = compactCaptionImage(report.caption || '-');
+  if (analyticsCaption) doc.addImage(analyticsCaption, 'PNG', xs[1] + 4, y + 30, 53, 10, undefined, 'FAST');
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5);
+  doc.setTextColor(105, 116, 123);
+  doc.text(`Duration ${report.duration.toFixed(1)}s`, xs[1] + 30.5, y + 43, { align: 'center' });
+
+  const quickMetrics = [
+    ['like', report.likes], ['comment', report.comments], ['share', report.shares],
+    ['repost', report.reposts], ['save', report.saves],
+  ] as const;
+  quickMetrics.forEach(([icon, value], index) => {
+    const metricX = xs[1] + 7 + index * 11.7;
+    const iconImage = quickMetricIcon(icon);
+    if (iconImage) doc.addImage(iconImage, 'PNG', metricX - 2.4, y + 46.5, 4.8, 4.8, undefined, 'FAST');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.3);
+    doc.setTextColor(...NAVY);
+    doc.text(number(value), metricX, y + 56, { align: 'center' });
+  });
+  doc.setDrawColor(226, 229, 231);
+  doc.line(xs[1] + 3, y + 61, xs[1] + 58, y + 61);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(...NAVY);
+  doc.text('Overview', xs[1] + 5, y + 69);
+  insightRow(doc, xs[1] + 5, y + 78, 'Views', number(report.views));
+  insightRow(doc, xs[1] + 5, y + 86, 'Watch time (est.)', duration(report.views * report.duration));
+  insightRow(doc, xs[1] + 5, y + 94, 'Interactions', number(interactions));
+  doc.setDrawColor(226, 229, 231);
+  doc.line(xs[1] + 3, y + 100, xs[1] + 58, y + 100);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.text('Views', xs[1] + 5, y + 108);
+  semiGauge(doc, xs[1] + 30.5, y + 146, 24);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.setTextColor(...NAVY);
+  doc.text(number(report.views), xs[1] + 30.5, y + 139, { align: 'center' });
+
+  phone(doc, xs[2], y, `${platformInfo.label} performance`);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7);
+  doc.text('Views compared with followers', xs[2] + 4, y + 29);
+  doc.setFontSize(18);
+  doc.text(`${viewRatio.toFixed(1)}%`, xs[2] + 30.5, y + 48, { align: 'center' });
+  doc.setFillColor(235, 237, 239);
+  doc.roundedRect(xs[2] + 5, y + 57, 51, 5, 2, 2, 'F');
+  doc.setFillColor(224, 0, 156);
+  doc.roundedRect(xs[2] + 5, y + 57, 51 * Math.min(viewRatio / 100, 1), 5, 2, 2, 'F');
+  rateBar(doc, xs[2] + 5, y + 76, 'Like rate', rate(report.likes), [240, 0, 184]);
+  rateBar(doc, xs[2] + 5, y + 91, 'Save rate', rate(report.saves), [123, 44, 255]);
+  rateBar(doc, xs[2] + 5, y + 106, 'Share rate', rate(report.shares), [255, 138, 0]);
+  rateBar(doc, xs[2] + 5, y + 121, 'Engagement rate', rate(interactions), [36, 199, 165]);
+
+  phone(doc, xs[3], y, `${platformInfo.label} interactions`);
+  const donut = donutChart([report.likes, report.comments, report.saves, report.shares, report.reposts]);
+  if (donut) doc.addImage(donut, 'PNG', xs[3] + 8, y + 24, 45, 45, undefined, 'FAST');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(...NAVY);
+  doc.text(number(interactions), xs[3] + 30.5, y + 51, { align: 'center' });
+  doc.setFontSize(5.5);
+  doc.text('TOTAL', xs[3] + 30.5, y + 59, { align: 'center' });
+  insightRow(doc, xs[3] + 5, y + 82, 'Likes', number(report.likes));
+  insightRow(doc, xs[3] + 5, y + 93, 'Comments', number(report.comments));
+  insightRow(doc, xs[3] + 5, y + 104, 'Saves', number(report.saves));
+  insightRow(doc, xs[3] + 5, y + 115, 'Shares', number(report.shares));
+  insightRow(doc, xs[3] + 5, y + 126, 'Reposts', number(report.reposts));
+  const legendColors: Array<[number, number, number]> = [
+    [240, 0, 184], [123, 44, 255], [255, 138, 0], [36, 199, 165], [239, 71, 111],
+  ];
+  legendColors.forEach((color, index) => {
+    doc.setFillColor(...color);
+    doc.circle(xs[3] + 3, y + 80 + index * 11, 1, 'F');
+  });
+}
+
 export async function createDetailReportPdf(payload: DetailReportPayload) {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const width = doc.internal.pageSize.getWidth();
@@ -262,6 +529,11 @@ export async function createDetailReportPdf(payload: DetailReportPayload) {
   for (const item of reportItems) {
     page++;
     addPage(doc, page);
+    const mappedPlatform = normalizePlatform(item.platform);
+    if (mappedPlatform) {
+      await shortVideoInsightsPage(doc, item);
+      continue;
+    }
     title(doc, username(item.username));
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);

@@ -452,6 +452,7 @@ export const showRunningContentModal = async (
           </span>
         </div>
 
+        ${isView ? "" : `
         <div style="text-align:left">
           <label>Influencer Name</label>
 
@@ -470,6 +471,7 @@ export const showRunningContentModal = async (
             "
           />
         </div>
+        `}
 
         <div
           style="
