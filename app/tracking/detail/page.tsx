@@ -325,38 +325,32 @@ const handleStartProject = async (taxRate: number) => {
 
   if (!result.isConfirmed) return;
 
-  try {
-    const res = await fetch(`/api/tracking?id=${projectId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prj_status: 3, // 3 = Running
-        prj_tax_rate: taxRate,
-      }),
-    });
+  const res = await fetch(`/api/tracking?id=${projectId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      prj_status: 3, // 3 = Running
+      prj_tax_rate: taxRate,
+    }),
+  });
 
-    const responseBody = await res.json().catch(() => ({})) as { error?: string };
-    if (!res.ok) {
-      await showAlertValidationError(responseBody.error ?? "Failed to start the project.");
-      return;
-    }
-
-    await loadProject();
-    await loadCreators();
-
-    await showSuccess(
-      "Success",
-      "The project has been started."
-    );
-
-    router.push(`/tracking/detail?projectId=${projectId}&view=Running`);
-  } catch (error) {
-    await showAlertValidationError(
-      error instanceof Error ? error.message : "Failed to start the project."
-    );
+  if (!res.ok) {
+    const err = await res.json();
+    console.log(err);
+    return;
   }
+
+  await loadProject();
+  await loadCreators();
+
+  await showSuccess(
+    "Success",
+    "The project has been started."
+  );
+
+  router.push(`/tracking/detail?projectId=${projectId}&view=Running`);
 };
 
 const handleGenerateReport = async () => {
