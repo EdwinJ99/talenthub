@@ -57,7 +57,6 @@ export default function QuotationSection({
     if (readOnly || savingTaxRate) return false;
 
     if (!taxRateIsValid) {
-      await showAlertValidationError("PPN must be a number between 0 and 100.");
       setTaxRateInput(String(savedTaxRate));
       return false;
     }
@@ -66,7 +65,6 @@ export default function QuotationSection({
 
     const projectId = Number(projectDetail?.id);
     if (!Number.isInteger(projectId) || projectId <= 0) {
-      await showAlertValidationError("Project data was not found.");
       setTaxRateInput(String(savedTaxRate));
       return false;
     }
@@ -86,11 +84,10 @@ export default function QuotationSection({
 
       setSavedTaxRate(taxRate);
       setTaxRateInput(String(taxRate));
-      await showSuccess("PPN updated", `Tax rate has been updated to ${taxRate}%.`);
       return true;
     } catch (error) {
       setTaxRateInput(String(savedTaxRate));
-      await showAlertValidationError(error instanceof Error ? error.message : "Failed to update PPN.");
+      console.error("Failed to update PPN:", error);
       return false;
     } finally {
       setSavingTaxRate(false);
@@ -624,14 +621,9 @@ export default function QuotationSection({
 
         {!readOnly && (
           <button
-            onClick={async () => {
-              if (!taxRateIsValid) {
-                await showAlertValidationError("PPN must be a number between 0 and 100.");
-                return;
-              }
-              handleStartProject(taxRate);
-            }}
-            className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white sm:w-auto"
+            onClick={() => handleStartProject(taxRate)}
+            disabled={!taxRateIsValid}
+            className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
             Start Project
           </button>
