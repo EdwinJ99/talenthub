@@ -402,7 +402,7 @@ export default function CreatorDiscoveryPage() {
         return;
       }
 
-      showAlertSuccess("Creator berhasil ditambahkan ke project!");
+      showAlertSuccess("Creator successfully added to the project!");
       setSelectedRows([]);
 
       // TODO: sesuaikan path ini dengan route halaman draft/tracking kamu
