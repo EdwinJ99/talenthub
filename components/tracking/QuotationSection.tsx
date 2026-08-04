@@ -14,7 +14,7 @@ type Props = {
   handleSort: (field: string) => void;
   getSortIcon: (field: string) => ReactNode;
 
-  handleStartProject: (taxRate: number) => void;
+  handleStartProject: (taxRate: number) => Promise<void>;
   readOnly?: boolean;
   showView?: boolean;
   onView?: (creator: any) => void;
@@ -38,6 +38,7 @@ export default function QuotationSection({
   const [taxRateInput, setTaxRateInput] = useState(() => String(initialTaxRate));
   const [savedTaxRate, setSavedTaxRate] = useState(initialTaxRate);
   const [savingTaxRate, setSavingTaxRate] = useState(false);
+  const [startingProject, setStartingProject] = useState(false);
   const taxRate = Number(taxRateInput);
   const taxRateIsValid = taxRateInput.trim() !== "" && Number.isFinite(taxRate) && taxRate >= 0 && taxRate <= 100;
   const taxSummary = calculateTaxSummary(Number(projectDetail?.subtotal ?? 0), taxRate);
@@ -551,12 +552,23 @@ export default function QuotationSection({
 
     <div className="mb-3 flex items-center justify-between gap-4">
       <label htmlFor="tax-rate" className="font-medium">PPN (%)</label>
-      <input id="tax-rate" type="number" min="0" max="100" step="0.01" value={taxRateInput}
-        disabled={readOnly || savingTaxRate}
-        aria-invalid={!taxRateIsValid}
-        onChange={(event) => setTaxRateInput(event.target.value)}
-        onBlur={() => void saveTaxRate()}
-        className={`w-24 rounded-md border px-3 py-2 text-right disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${taxRateIsValid ? "border-slate-300" : "border-red-500 bg-red-50"}`} />
+      <div className="flex items-center gap-2">
+        <input id="tax-rate" type="number" min="0" max="100" step="0.01" value={taxRateInput}
+          disabled={readOnly || savingTaxRate || startingProject}
+          aria-invalid={!taxRateIsValid}
+          onChange={(event) => setTaxRateInput(event.target.value)}
+          className={`w-24 rounded-md border px-3 py-2 text-right disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${taxRateIsValid ? "border-slate-300" : "border-red-500 bg-red-50"}`} />
+        {!readOnly && (
+          <button
+            type="button"
+            onClick={() => void saveTaxRate()}
+            disabled={savingTaxRate || startingProject}
+            className="rounded-md bg-slate-900 px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {savingTaxRate ? "Updating..." : "Update PPN"}
+          </button>
+        )}
+      </div>
     </div>
     <Row label={`PPN (${taxRate}%)`} value={taxSummary.ppn} />
 
@@ -629,11 +641,17 @@ export default function QuotationSection({
                 await showAlertValidationError("PPN must be a number between 0 and 100.");
                 return;
               }
-              handleStartProject(taxRate);
+              setStartingProject(true);
+              try {
+                await handleStartProject(taxRate);
+              } finally {
+                setStartingProject(false);
+              }
             }}
-            className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white sm:w-auto"
+            disabled={startingProject || savingTaxRate}
+            className="w-full rounded-xl bg-black px-6 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-            Start Project
+            {startingProject ? "Starting..." : "Start Project"}
           </button>
         )}
       </div>
