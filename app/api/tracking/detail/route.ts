@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { calculateTaxSummary } from "@/lib/tax";
+import { getContentIdentity } from "@/lib/content-url";
 
 async function authorize() {
   const session = await getServerSession(authOptions);
@@ -161,6 +162,46 @@ export async function PATCH(req: Request) {
       modidate: new Date(),
     };
 
+    if (body.drf_planning_upload !== undefined || body.drf_actual_upload !== undefined) {
+      const detailProject = await prisma.dtl_project.findUnique({
+        where: { drf_id: id },
+        select: {
+          trs_project: {
+            select: { prj_rstartdate: true },
+          },
+        },
+      });
+
+      if (!detailProject) {
+        return NextResponse.json({ error: "Creator detail was not found" }, { status: 404 });
+      }
+
+      const startProjectDate = detailProject.trs_project.prj_rstartdate;
+      if (!startProjectDate) {
+        return NextResponse.json(
+          { error: "Start Project date is not available" },
+          { status: 400 },
+        );
+      }
+
+      const validateUploadDate = (value: unknown, label: string) => {
+        if (value === undefined || value === null || value === "") return null;
+        const uploadDate = new Date(String(value));
+        if (Number.isNaN(uploadDate.getTime())) return `${label} is not a valid date`;
+        if (uploadDate < startProjectDate) {
+          const minimumDate = startProjectDate.toISOString().slice(0, 10);
+          return `${label} cannot be earlier than Start Project (${minimumDate})`;
+        }
+        return null;
+      };
+
+      const dateError = validateUploadDate(body.drf_planning_upload, "Planning Upload")
+        ?? validateUploadDate(body.drf_actual_upload, "Actual Upload");
+      if (dateError) {
+        return NextResponse.json({ error: dateError }, { status: 400 });
+      }
+    }
+
     if (body.drf_sow !== undefined) {
       dataToUpdate.drf_sow = body.drf_sow === null || body.drf_sow === ""
         ? null
@@ -180,7 +221,41 @@ export async function PATCH(req: Request) {
     }
 
     if (body.drf_link_content !== undefined) {
-      dataToUpdate.drf_link_content = body.drf_link_content;
+      const linkContent = String(body.drf_link_content ?? "").trim();
+      if (!linkContent) {
+        dataToUpdate.drf_link_content = null;
+      } else {
+        const detail = await prisma.dtl_project.findUnique({
+          where: { drf_id: id },
+          include: { mst_creators: { select: { social_media: true } } },
+        });
+        if (!detail) return NextResponse.json({ error: "Creator detail was not found" }, { status: 404 });
+
+        let identity;
+        try {
+          identity = getContentIdentity(linkContent, detail.mst_creators.social_media);
+        } catch (error) {
+          return NextResponse.json(
+            { error: error instanceof Error ? error.message : "Invalid content URL" },
+            { status: 400 },
+          );
+        }
+        const projectLinks = await prisma.dtl_project.findMany({
+          where: { drf_projectid: detail.drf_projectid, drf_id: { not: id }, drf_link_content: { not: null } },
+          select: { drf_id: true, drf_link_content: true },
+        });
+        const duplicate = projectLinks.find((item) => {
+          try { return getContentIdentity(item.drf_link_content!).normalizedUrl === identity.normalizedUrl; }
+          catch { return false; }
+        });
+        if (duplicate) {
+          return NextResponse.json(
+            { error: `Duplicate content URL is already used by creator detail ${duplicate.drf_id}` },
+            { status: 409 },
+          );
+        }
+        dataToUpdate.drf_link_content = identity.normalizedUrl;
+      }
     }
 
     if (body.drf_rate !== undefined) {

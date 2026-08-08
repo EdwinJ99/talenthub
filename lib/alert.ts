@@ -143,7 +143,7 @@ export const confirmGenerateInvoice = async (payments: PaymentOption[]) => {
               color:#555;
             "
           >
-            Bank Name
+            Bank Name <span style="color:#ef4444">*</span>
           </label>
 
           <select
@@ -405,6 +405,7 @@ export const showRunningContentModal = async (
     planning_upload: string;
     actual_upload: string;
     link_content: string;
+    start_project_date: string;
   },
   mode: "edit" | "view"
 ) => {
@@ -482,12 +483,13 @@ export const showRunningContentModal = async (
           "
         >
           <div>
-            <label>Planning Upload</label>
+            <label>Planning Upload <span style="color:#ef4444">*</span></label>
 
             <input
               id="planning_upload"
               type="date"
               value="${data.planning_upload}"
+              min="${data.start_project_date}"
               ${isView ? "readonly" : ""}
               style="
                 width:100%;
@@ -502,12 +504,13 @@ export const showRunningContentModal = async (
           </div>
 
           <div>
-            <label>Actual Upload</label>
+            <label>Actual Upload <span style="color:#ef4444">*</span></label>
 
             <input
               id="actual_upload"
               type="date"
               value="${data.actual_upload}"
+              min="${data.start_project_date}"
               ${isView ? "readonly" : ""}
               style="
                 width:100%;
@@ -523,7 +526,7 @@ export const showRunningContentModal = async (
         </div>
 
         <div style="margin-top:16px;text-align:left">
-          <label>Link Content</label>
+          <label>Link Content <span style="color:#ef4444">*</span></label>
 
           <input
             id="link_content"
@@ -587,6 +590,20 @@ export const showRunningContentModal = async (
             const link_content =
               (document.getElementById("link_content") as HTMLInputElement)
                 ?.value || "";
+
+            if (planning_upload && planning_upload < data.start_project_date) {
+              Swal.showValidationMessage(
+                `Planning Upload cannot be earlier than Start Project (${data.start_project_date}).`
+              );
+              return;
+            }
+
+            if (actual_upload && actual_upload < data.start_project_date) {
+              Swal.showValidationMessage(
+                `Actual Upload cannot be earlier than Start Project (${data.start_project_date}).`
+              );
+              return;
+            }
 
             resolve({
               planning_upload,

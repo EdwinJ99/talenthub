@@ -498,6 +498,7 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
     planning_upload: formatDateForInput(creator.drf_planning_upload),
     actual_upload: formatDateForInput(creator.drf_actual_upload),
     link_content: creator.drf_link_content ?? "",
+    start_project_date: formatDateForInput(projectDetail?.runningStartDate),
   }, mode);
 
   // Jika user menutup modal atau dalam mode view, jangan lakukan apa-apa
@@ -518,15 +519,13 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
     });
 
     if (!response.ok) {
-      // Handle non-JSON error responses gracefully
       const errorText = await response.text();
+      let message = errorText || `Request failed with status ${response.status}`;
       try {
         const errorData = JSON.parse(errorText);
-        throw new Error(errorData.error || "Failed to update data");
-      } catch (e) {
-        // If parsing as JSON fails, throw the raw text
-        throw new Error(errorText || `Request failed with status ${response.status}`);
-      }
+        message = errorData.error || "Failed to update data";
+      } catch { /* use the raw response text */ }
+      throw new Error(message);
     }
 
     const updatedCreator = await response.json();
@@ -559,6 +558,9 @@ const handleUpdateRunningContent = async (creator: any, mode: "edit" | "view") =
     await showSuccess("Success", "Content data has been updated successfully.");
   } catch (error) {
     console.error("Error updating running content:", error);
+    await showAlertValidationError(
+      error instanceof Error ? error.message : "Failed to update running content."
+    );
   }
 };
 

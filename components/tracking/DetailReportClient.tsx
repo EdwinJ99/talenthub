@@ -13,6 +13,16 @@ type Item = { detailId: number; creatorName: string; username: string; photo: st
   platform: string; sow: string | null; contentUrl: string | null; report: Report | null };
 type Payload = { project: { brand: string | null; name: string; pic: string; date: string | null }; items: Item[] };
 
+const DEFAULT_PROFILE_PHOTO = '/image/default-kol-avatar.png';
+
+function profilePhotoSource(value: string | null | undefined) {
+  const url = String(value ?? '').trim();
+  if (!url) return DEFAULT_PROFILE_PHOTO;
+  if (url.startsWith('/') || url.startsWith('data:')) return url;
+  if (!/^https?:\/\//i.test(url)) return DEFAULT_PROFILE_PHOTO;
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
+
 export default function DetailReportClient() {
   const params = useSearchParams();
   const router = useRouter();
@@ -44,7 +54,9 @@ export default function DetailReportClient() {
       if (!response.ok && response.status !== 207) throw new Error(result.error ?? 'Failed to scrape content');
       setData((current) => current ? { ...current, items: result.items } : current);
       setErrors((result.results ?? []).filter((item: { error?: string }) => item.error)
-        .map((item: { detailId: number; error: string }) => `Creator #${item.detailId}: ${item.error}`));
+        .map((item: { detailId: number; creator?: string; contentUrl?: string | null; error: string }) =>
+          `${item.creator ?? `Creator #${item.detailId}`}: ${item.error}${item.contentUrl ? ` (${item.contentUrl})` : ""}`
+        ));
     } catch (error) {
       setErrors([error instanceof Error ? error.message : 'Failed to scrape content']);
     } finally { setScraping(false); }
@@ -116,8 +128,17 @@ function ReportCard({ item, loading }: { item: Item; loading: boolean }) {
   const fallbackImage = '/image/default-kol-avatar.png';
   return (
     <article className="rounded-2xl border border-slate-200 p-4 sm:p-6">
-      <div className="mb-5 flex items-center gap-3"><img src={item.photo ?? '/image/default-kol-avatar.png'} alt="" className="h-12 w-12 rounded-full object-cover" />
-        <div><h2 className="font-bold text-slate-900">{item.creatorName}</h2><p className="text-sm text-slate-500">@{item.username} · {platformInfo?.label ?? item.platform}{item.sow ? ` · ${item.sow}` : ''}</p></div>
+      <div className="mb-5 flex items-center gap-3"><img
+        src={profilePhotoSource(item.photo)}
+        alt={`Profile photo of ${item.creatorName}`}
+        onError={(event) => {
+          if (!event.currentTarget.src.endsWith(DEFAULT_PROFILE_PHOTO)) {
+            event.currentTarget.src = DEFAULT_PROFILE_PHOTO;
+          }
+        }}
+        className="h-12 w-12 rounded-full bg-slate-100 object-cover"
+      />
+        <div><h2 className="font-bold text-slate-900">{item.creatorName}</h2><p className="text-sm text-slate-500">@{item.username.replace(/^@+/, '')} · {platformInfo?.label ?? item.platform}{item.sow ? ` · ${item.sow}` : ''}</p></div>
       </div>
       {!item.contentUrl ? <p className="rounded-xl bg-amber-50 p-4 text-amber-800">URL Content has not been entered.</p> : !report ?
         <p className="rounded-xl bg-slate-50 p-4 text-slate-500">{loading ? 'Fetching metadata from URL...' : 'Metadata is not available.'}</p> :

@@ -8,15 +8,30 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 });
   }
 
-  // Validasi domain: Instagram/FB CDN + TikTok CDN
+  // Validate the parsed hostname instead of matching arbitrary URL text.
   const allowedHosts = [
     "cdninstagram.com",
     "fbcdn.net",
+    "instagram.com",
     "tiktokcdn.com",
     "tiktokcdn-us.com",
+    "tiktokcdn-eu.com",
     "ibyteimg.com",
+    "byteimg.com",
+    "muscdn.com",
+    "akamaized.net",
   ];
-  const isAllowed = allowedHosts.some((host) => imageUrl.includes(host));
+  let hostname: string;
+  try {
+    const parsed = new URL(imageUrl);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
+    hostname = parsed.hostname.toLowerCase();
+  } catch {
+    return NextResponse.json({ error: "Invalid image URL" }, { status: 400 });
+  }
+  const isAllowed = allowedHosts.some(
+    (host) => hostname === host || hostname.endsWith(`.${host}`),
+  );
   if (!isAllowed) {
     return NextResponse.json({ error: "Host not allowed" }, { status: 400 });
   }
@@ -41,6 +56,9 @@ export async function GET(request: NextRequest) {
 
     const buffer = await res.arrayBuffer();
     const contentType = res.headers.get("content-type") || "image/jpeg";
+    if (!contentType.toLowerCase().startsWith("image/")) {
+      return NextResponse.json({ error: "Remote resource is not an image" }, { status: 415 });
+    }
 
     return new NextResponse(buffer, {
       headers: {

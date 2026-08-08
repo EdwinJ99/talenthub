@@ -117,9 +117,10 @@ if (id) {
 
     name: project.prj_nama,
 
-    quotationNo: project.prj_quotationno ?? project.prj_kode.replace(/^TRS-/i, "QUO-"),
-    invoiceNo: project.prj_invoiceno ?? project.prj_kode.replace(/^TRS-/i, "INV-"),
+    quotationNo: project.prj_quotationno ?? "",
+    invoiceNo: project.prj_invoiceno ?? "",
     taxRate: Number(project.prj_tax_rate),
+    invoiceTaxRate: Number(project.prj_invoice_tax_rate ?? project.prj_tax_rate),
     payment: project.mst_payment
       ? {
           bank: project.mst_payment.pyt_bank,
@@ -311,10 +312,17 @@ export async function PUT(request: Request) {
     const isGeneratingInvoice = Number(body.prj_status) === 5;
     let selectedPaymentId: number | null = null;
     let generatedInvoiceNo: string | null = null;
+    let initialInvoiceTaxRate: number | null = null;
     if (isGeneratingInvoice) {
       const currentProject = await prisma.trs_project.findUnique({
         where: { prj_id: id },
-        select: { prj_status: true, prj_kode: true, prj_invoiceno: true },
+        select: {
+          prj_status: true,
+          prj_kode: true,
+          prj_invoiceno: true,
+          prj_tax_rate: true,
+          prj_invoice_tax_rate: true,
+        },
       });
 
       if (!currentProject) {
@@ -354,6 +362,9 @@ export async function PUT(request: Request) {
       selectedPaymentId = payment.pyt_id;
       generatedInvoiceNo = currentProject.prj_invoiceno
         ?? currentProject.prj_kode.replace(/^TRS-/i, "INV-");
+      initialInvoiceTaxRate = Number(
+        currentProject.prj_invoice_tax_rate ?? currentProject.prj_tax_rate,
+      );
     }
 
     if (Number(body.prj_status) === 4) {
@@ -448,6 +459,9 @@ export async function PUT(request: Request) {
     if (generatedInvoiceNo) {
       updateData.prj_invoiceno = generatedInvoiceNo;
     }
+    if (initialInvoiceTaxRate !== null) {
+      updateData.prj_invoice_tax_rate = initialInvoiceTaxRate;
+    }
 
     // ================= Data Project =================
     if (body.prj_brand !== undefined)
@@ -467,6 +481,13 @@ export async function PUT(request: Request) {
       if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 100)
         return NextResponse.json({ error: "Tax rate must be between 0 and 100" }, { status: 400 });
       updateData.prj_tax_rate = taxRate;
+    }
+
+    if (body.prj_invoice_tax_rate !== undefined) {
+      const invoiceTaxRate = Number(body.prj_invoice_tax_rate);
+      if (!Number.isFinite(invoiceTaxRate) || invoiceTaxRate < 0 || invoiceTaxRate > 100)
+        return NextResponse.json({ error: "Invoice tax rate must be between 0 and 100" }, { status: 400 });
+      updateData.prj_invoice_tax_rate = invoiceTaxRate;
     }
 
     if (body.prj_dstartdate)

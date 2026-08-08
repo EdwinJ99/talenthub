@@ -144,7 +144,7 @@ async function createSpreadsheet(name: string) {
 
 function sheetValues(project: Awaited<ReturnType<typeof loadProject>>) {
   const header = ['No.', 'Influencer Name', 'Username', 'Followers', 'Total Post', 'ER (%)', 'Avg. View',
-    'Avg. Brand View', 'CPV All', 'CPV Branded', 'SOW', 'Platform', 'Qty', 'Rate Card', 'Total'];
+    'Avg. Brand View', 'CPV All', 'CPV Brand', 'SOW', 'Platform', 'Qty', 'Rate Card', 'Total'];
   return [
     [`Project: ${project.prj_nama} (${project.prj_kode})`],
     [`Brand: ${project.mst_brand.brd_nama ?? '-'}`],

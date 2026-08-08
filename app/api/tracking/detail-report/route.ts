@@ -3,6 +3,7 @@ import { scrapeContentUrl } from '@/lib/apify';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { NextResponse } from 'next/server';
+import { getContentIdentity } from '@/lib/content-url';
 
 async function authorized() {
   return Boolean((await getServerSession(authOptions))?.user);
@@ -87,6 +88,11 @@ function serialize(row: Awaited<ReturnType<typeof getRows>>[number]) {
   };
 }
 
+function displayUsername(value: string | null | undefined) {
+  const username = String(value ?? '').trim().replace(/^@+/, '');
+  return username ? `@${username}` : 'Creator';
+}
+
 export async function GET(request: Request) {
   if (!(await authorized())) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   const params = new URL(request.url).searchParams;
@@ -126,10 +132,42 @@ export async function POST(request: Request) {
   }
 
   const rows = await getRows(projectId, detailIds);
-  const results = await Promise.all(rows.map(async (row) => {
-    if (!row.drf_link_content) return { detailId: row.drf_id, error: 'URL content is empty' };
+  const duplicateUrls = new Map<string, number[]>();
+  for (const row of rows) {
+    if (!row.drf_link_content) continue;
     try {
-      const metric = await scrapeContentUrl(row.drf_link_content);
+      const identity = getContentIdentity(row.drf_link_content, row.mst_creators.social_media);
+      duplicateUrls.set(identity.normalizedUrl, [...(duplicateUrls.get(identity.normalizedUrl) ?? []), row.drf_id]);
+    } catch { /* the row receives its detailed validation error below */ }
+  }
+  const duplicateDetailIds = new Set(
+    [...duplicateUrls.values()].filter((ids) => ids.length > 1).flat(),
+  );
+  const results = await Promise.all(rows.map(async (row) => {
+    const resultContext = {
+      detailId: row.drf_id,
+      creator: displayUsername(row.mst_creators.username),
+      contentUrl: row.drf_link_content,
+    };
+    if (!row.drf_link_content) return { ...resultContext, error: 'URL content is empty' };
+    if (duplicateDetailIds.has(row.drf_id)) {
+      return { ...resultContext, error: 'Duplicate content URL is assigned to multiple creators' };
+    }
+    try {
+      const identity = getContentIdentity(row.drf_link_content, row.mst_creators.social_media);
+      console.info('[SCRAPING START]', {
+        projectId, creatorId: row.drf_creatorid, detailId: row.drf_id,
+        creator: row.mst_creators.username, platform: identity.platform,
+        requestedUrl: row.drf_link_content, normalizedUrl: identity.normalizedUrl,
+        contentId: identity.contentId,
+      });
+      const metric = await scrapeContentUrl(row.drf_link_content, row.mst_creators.social_media);
+      console.info('[SCRAPING RESULT]', {
+        creatorId: row.drf_creatorid, detailId: row.drf_id,
+        requestedUrl: identity.normalizedUrl, returnedUrl: metric.scrapedContentUrl,
+        requestedContentId: identity.contentId, returnedContentId: metric.contentId,
+        match: identity.contentId === metric.contentId,
+      });
       const thumbnail = await persistThumbnail(
         metric.thumbnailCandidates ?? (metric.thumbnailUrl ? [metric.thumbnailUrl] : []),
         metric.platform,
@@ -153,12 +191,16 @@ export async function POST(request: Request) {
           shares: metric.shares, performance,
         },
       });
-      return { detailId: row.drf_id, success: true };
+      console.info('[SCRAPING SAVE]', {
+        creatorId: row.drf_creatorid, detailId: row.drf_id,
+        contentId: metric.contentId, status: 'saved',
+      });
+      return { ...resultContext, success: true };
     } catch (error) {
       console.error(`Detail report scraping failed for detail ${row.drf_id}:`, error);
       const message = error instanceof Error ? error.message : 'Scraping failed';
       const isDatabaseError = message.includes('prisma') || message.includes('Invalid value provided');
-      return { detailId: row.drf_id, error: isDatabaseError ? 'Scraped metadata could not be saved' : message };
+      return { ...resultContext, error: isDatabaseError ? 'Scraped metadata could not be saved' : message };
     }
   }));
 

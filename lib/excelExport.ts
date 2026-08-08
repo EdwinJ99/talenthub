@@ -1,5 +1,29 @@
 import * as XLSX from "xlsx-js-style";
 
+function toFiniteNumber(value: unknown): number {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  if (typeof value === "bigint") return Number(value);
+
+  if (typeof value === "string") {
+    const normalized = value
+      .trim()
+      .replace(/^Rp\s*/i, "")
+      .replace(/\s/g, "")
+      .replace(/,/g, "");
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function calculateCpv(markPrice: unknown, averageView: unknown): number {
+  const price = toFiniteNumber(markPrice);
+  const views = toFiniteNumber(averageView);
+  return views > 0 ? price / views : 0;
+}
+
 export const createExcelWorkbook = (
   creators: any[],
   projectDetail: any
@@ -15,7 +39,7 @@ export const createExcelWorkbook = (
     "Avg. View",
     "Avg. Brand View",
     "CPV All",
-    "CPV Branded",
+    "CPV Brand",
     "SOW",
     "Platform",
     "Qty",
@@ -28,18 +52,20 @@ export const createExcelWorkbook = (
     "No.": index + 1,
     "Influencer Name": creator.name ?? "-",
     Username: creator.username ?? "-",
-    Followers: creator.followers,
-    "Total Post": creator.totalPost,
-    "ER (%)": creator.engagementRate,
-    "Avg. View": creator.averageView,
-    "Avg. Brand View": creator.averageViewBrand,
-    "CPV All": creator.cpvAll,
-    "CPV Branded": creator.cpvBranded,
+    Followers: toFiniteNumber(creator.followers),
+    "Total Post": toFiniteNumber(creator.totalPost),
+    "ER (%)": toFiniteNumber(creator.engagementRate),
+    "Avg. View": toFiniteNumber(creator.averageView),
+    "Avg. Brand View": toFiniteNumber(creator.averageViewBrand),
+    // Always calculate from the business source fields at export time. This
+    // avoids stale/ formatted CPV values from the React table state.
+    "CPV All": calculateCpv(creator.markupPrice, creator.averageView),
+    "CPV Brand": calculateCpv(creator.markupPrice, creator.averageViewBrand),
     SOW: creator.sow ?? "-",
     Platform: creator.platform ?? "-",
-    Qty: creator.drf_qty,
-    "Rate Card": creator.markupPrice,
-    Total: creator.total,
+    Qty: toFiniteNumber(creator.drf_qty ?? creator.qty),
+    "Rate Card": toFiniteNumber(creator.markupPrice),
+    Total: toFiniteNumber(creator.total),
   }));
 
   // 3. Create worksheet and add data in sections
@@ -118,6 +144,11 @@ export const createExcelWorkbook = (
         if (C === 5) {
           // ER (%) column
           ws[cell_ref].s.numFmt = "0.00%";
+        }
+        if (C === 8 || C === 9 || C === 13 || C === 14) {
+          // Keep CPV, Rate Card, and Total numeric while displaying Rupiah.
+          ws[cell_ref].t = "n";
+          ws[cell_ref].s.numFmt = '"Rp" #,##0';
         }
       }
     }

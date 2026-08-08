@@ -550,7 +550,7 @@ export default function QuotationSection({
     />
 
     <div className="mb-3 flex items-center justify-between gap-4">
-      <label htmlFor="tax-rate" className="font-medium">PPN (%)</label>
+      <label htmlFor="tax-rate" className="font-medium">PPN (%) <span className="text-red-500">*</span></label>
       <input id="tax-rate" type="number" min="0" max="100" step="0.01" value={taxRateInput}
         disabled={readOnly || savingTaxRate}
         aria-invalid={!taxRateIsValid}

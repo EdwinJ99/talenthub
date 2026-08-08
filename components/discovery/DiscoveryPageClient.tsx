@@ -689,6 +689,9 @@ export default function CreatorDiscoveryPage() {
                               row.photo_url
                             )}`}
                             alt={row.name}
+                            onError={(event) => {
+                              event.currentTarget.src = "/image/default-kol-avatar.png";
+                            }}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display =
@@ -885,7 +888,7 @@ export default function CreatorDiscoveryPage() {
             <form onSubmit={handleSubmitProject} className="p-5 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Project Name
+                  Project Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -899,7 +902,7 @@ export default function CreatorDiscoveryPage() {
 
               <div className="relative">
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Brand
+                  Brand <span className="text-red-500">*</span>
                 </label>
                 <div
                   onClick={() => setIsBrandDropdownOpen(!isBrandDropdownOpen)}
@@ -966,7 +969,7 @@ export default function CreatorDiscoveryPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Start Date
+                    Start Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
@@ -978,7 +981,7 @@ export default function CreatorDiscoveryPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    End Date
+                    End Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"

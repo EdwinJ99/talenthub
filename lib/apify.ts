@@ -1,5 +1,6 @@
 import { ApifyClient } from 'apify-client';
 import type { SocialPlatform } from './social-platform';
+import { contentIdentityMatches, getContentIdentity } from './content-url';
 
 const client = new ApifyClient({ token: process.env.APIFY_TOKEN! });
 
@@ -119,6 +120,8 @@ export async function validateUsernames(
 
 export interface ContentMetrics {
   contentUrl: string;
+  scrapedContentUrl: string;
+  contentId: string;
   platform: SocialPlatform;
   caption: string;
   thumbnailUrl?: string;
@@ -138,12 +141,6 @@ function int(value: unknown): number {
   return Number.isFinite(number) ? Math.max(0, Math.round(number)) : 0;
 }
 
-function normalizeContentUrl(value: string): string {
-  const url = new URL(value.trim());
-  if (!['http:', 'https:'].includes(url.protocol)) throw new Error('URL content is invalid');
-  return url.toString();
-}
-
 function imageUrls(...values: unknown[]): string[] {
   const result: string[] = [];
   const visit = (value: unknown) => {
@@ -158,21 +155,48 @@ function imageUrls(...values: unknown[]): string[] {
   return [...new Set(result)];
 }
 
-export function detectContentPlatform(value: string): SocialPlatform {
-  const hostname = new URL(value).hostname.toLowerCase().replace(/^www\./, '');
-  if (hostname === 'instagram.com' || hostname.endsWith('.instagram.com')) return 'instagram';
-  if (hostname === 'tiktok.com' || hostname.endsWith('.tiktok.com')) return 'tiktok';
-  if (hostname === 'youtube.com' || hostname.endsWith('.youtube.com') || hostname === 'youtu.be') return 'youtube';
-  if (hostname === 'x.com' || hostname.endsWith('.x.com') || hostname === 'twitter.com'
-    || hostname.endsWith('.twitter.com')) return 'twitter';
-  throw new Error('Supported content URLs: Instagram, TikTok, YouTube, and Twitter/X');
+function returnedContentUrl(item: Record<string, unknown>, platform: SocialPlatform): string | null {
+  const text = (...keys: string[]) => {
+    const value = keys.map((key) => item[key]).find((candidate) => typeof candidate === 'string' || typeof candidate === 'number');
+    return value === undefined ? null : String(value);
+  };
+  const candidates = platform === 'instagram'
+    ? [
+        // Input/permalink and shortcode identify the post. A generic `url`
+        // from Instagram actors may point to the author profile or CDN.
+        text('inputUrl'), text('postUrl'), text('permalink'),
+        text('shortcode', 'code') ? `https://instagram.com/reel/${text('shortcode', 'code')}/` : null,
+        text('url'),
+      ]
+    : platform === 'tiktok'
+      ? [text('inputUrl'), text('postUrl'), text('webVideoUrl'), text('id', 'aweme_id') ? `https://tiktok.com/@unknown/video/${text('id', 'aweme_id')}/` : null, text('url')]
+      : platform === 'youtube'
+        ? [text('inputUrl'), text('videoUrl'), text('id', 'videoId') ? `https://youtube.com/watch?v=${text('id', 'videoId')}` : null, text('url')]
+        : [text('inputUrl'), text('tweetUrl'), text('id', 'tweetId') ? `https://x.com/i/status/${text('id', 'tweetId')}/` : null, text('url')];
+  return candidates.find((candidate): candidate is string => typeof candidate === 'string' && /^https?:\/\//i.test(candidate)) ?? null;
 }
 
-export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
+async function resolveShortUrl(value: string): Promise<string> {
+  const identity = getContentIdentity(value);
+  if (!identity.isShortUrl) return identity.normalizedUrl;
+  try {
+    const response = await fetch(identity.normalizedUrl, {
+      method: 'HEAD', redirect: 'follow', cache: 'no-store',
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+    });
+    return response.url || identity.normalizedUrl;
+  } catch {
+    return identity.normalizedUrl;
+  }
+}
+
+export async function scrapeContentUrl(value: string, expectedPlatform?: string | null): Promise<ContentMetrics> {
   if (!process.env.APIFY_TOKEN) throw new Error('APIFY_TOKEN is not configured');
 
-  const contentUrl = normalizeContentUrl(value);
-  const platform = detectContentPlatform(contentUrl);
+  const resolvedUrl = await resolveShortUrl(value);
+  const requested = getContentIdentity(resolvedUrl, expectedPlatform);
+  const contentUrl = requested.normalizedUrl;
+  const platform = requested.platform;
   // The general Instagram actor does not expose saves/reposts for a direct post.
   // This URL-specific actor returns those engagement fields and a stable thumbnail field.
   const run = platform === 'instagram'
@@ -191,10 +215,36 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
           tweetUrls: [contentUrl], includeProfile: false, includeTweets: true,
           includeReplies: false, maxTweetsPerProfile: 1,
         });
-  const { items } = await client.dataset(run.defaultDatasetId).listItems({ limit: 1 });
-  const item = items[0] as Record<string, any> | undefined;
-  if (!item) throw new Error('Content could not be found or is not public');
+  const { items } = await client.dataset(run.defaultDatasetId).listItems({ limit: 10 });
+  const actorItems = items as Record<string, any>[];
+  // Prefer an exact actor result when its identity is available. Some actors,
+  // especially Instagram post-details, return a media/CDN URL or a different
+  // URL field even though the run was requested for one exact content URL.
+  const matchingItem = actorItems.find((candidate) => {
+    const candidateUrl = returnedContentUrl(candidate, platform);
+    if (!candidateUrl) return false;
+    try {
+      return contentIdentityMatches(requested, getContentIdentity(candidateUrl, platform));
+    } catch {
+      return false;
+    }
+  });
+  const item = matchingItem;
+  if (!actorItems[0]) throw new Error('Content could not be found or is not public');
+  if (!item) {
+    throw new Error('Scraper did not return the exact requested content');
+  }
   if (item.error) throw new Error(String(item.error));
+  const returnedUrl = returnedContentUrl(item, platform);
+  if (!returnedUrl) throw new Error('Scraper result did not include the requested content identity');
+  const returned = getContentIdentity(returnedUrl, platform);
+  if (!contentIdentityMatches(requested, returned)) {
+    throw new Error('Scraper did not return the exact requested content');
+  }
+  const verifiedContent = {
+    scrapedContentUrl: returned.normalizedUrl,
+    contentId: requested.contentId ?? returned.contentId ?? '',
+  };
 
   if (platform === 'instagram') {
     const metrics = item.metrics ?? {};
@@ -211,7 +261,7 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
       item.carouselMedia, item.childPosts,
     );
     return {
-      contentUrl, platform, caption,
+      contentUrl, ...verifiedContent, platform, caption,
       thumbnailUrl: thumbnailCandidates[0],
       thumbnailCandidates,
       likes: int(metrics.like_count ?? item.like_count ?? item.likesCount ?? item.likes_count),
@@ -234,7 +284,7 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
     item.downloadedCovers, item.downloadedCover,
   );
     return {
-      contentUrl, platform, caption: item.text ?? item.desc ?? '',
+      contentUrl, ...verifiedContent, platform, caption: item.text ?? item.desc ?? '',
       thumbnailUrl: thumbnailCandidates[0], thumbnailCandidates,
       likes: int(item.diggCount ?? item.digg_count ?? item.stats?.diggCount),
       comments: int(item.commentCount ?? item.comment_count ?? item.stats?.commentCount),
@@ -254,7 +304,7 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
     );
     const views = int(item.viewCount ?? item.views ?? item.viewsCount ?? item.stats?.views);
     return {
-      contentUrl, platform,
+      contentUrl, ...verifiedContent, platform,
       caption: item.title ?? item.text ?? item.description ?? '',
       thumbnailUrl: thumbnailCandidates[0], thumbnailCandidates,
       likes: int(item.likes ?? item.likeCount ?? item.likesCount),
@@ -272,7 +322,7 @@ export async function scrapeContentUrl(value: string): Promise<ContentMetrics> {
   );
   const views = int(metrics.viewCount ?? metrics.views ?? item.viewCount ?? item.views);
   return {
-    contentUrl, platform,
+    contentUrl, ...verifiedContent, platform,
     caption: item.text ?? item.fullText ?? item.full_text ?? item.tweet ?? '',
     thumbnailUrl: thumbnailCandidates[0], thumbnailCandidates,
     likes: int(metrics.likeCount ?? metrics.likes ?? item.likeCount ?? item.favoriteCount),

@@ -653,7 +653,14 @@ export default function CreatorTable({
                   className="p-3 border-r border-gray-200 font-semibold text-gray-700 whitespace-nowrap bg-gray-100 cursor-pointer hover:bg-gray-50"
                 >
                   <div className="flex items-center justify-between">
-                    <span>{head.label}</span>
+                    <span>
+                      {head.label}
+                      {(
+                        draftPricingMode && ["sow", "qty", "rateCard", "markupPrice"].includes(head.field)
+                      ) || (
+                        runningMode && ["drf_planning_upload", "drf_actual_upload", "drf_link_content"].includes(head.field)
+                      ) ? <span className="ml-1 text-red-500">*</span> : null}
+                    </span>
                     <span className="text-gray-400 text-xs ml-1">
                       {getSortIcon(head.field)}
                     </span>

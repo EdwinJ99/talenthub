@@ -171,7 +171,8 @@ export default function CreatorDetailClient(props: { profile: Profile; posts: Po
   const { profile, posts } = props;
   const [range, setRange] = useState<RangeDays>(90);
 
-  const photoSrc = proxied(profile.photoUrl) || "https://picsum.photos/200";
+  const defaultProfilePhoto = "/image/default-kol-avatar.png";
+  const photoSrc = proxied(profile.photoUrl) || defaultProfilePhoto;
   const followingText = profile.following !== null ? formatNumber(profile.following) : "-";
 
   // Recomputed entirely client-side from the posts already fetched by the
@@ -197,6 +198,11 @@ export default function CreatorDetailClient(props: { profile: Profile; posts: Po
             <img
               src={photoSrc}
               alt={profile.name}
+              onError={(event) => {
+                if (!event.currentTarget.src.endsWith(defaultProfilePhoto)) {
+                  event.currentTarget.src = defaultProfilePhoto;
+                }
+              }}
               className="-mt-10 h-20 w-20 rounded-2xl border-4 border-white object-cover"
             />
             <h1 className="mt-3 text-xl font-bold text-slate-800">{profile.name}</h1>

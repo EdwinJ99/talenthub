@@ -27,19 +27,65 @@ export default function InvoiceSection({
   handleFinish,
   readOnly = false,
 }: Props) {
-  const taxSummary = calculateTaxSummary(
-    Number(projectDetail?.subtotal ?? 0),
-    Number(projectDetail?.taxRate ?? 11),
-  );
   const [sending, setSending] = useState(false);
   const [uploadedPdf, setUploadedPdf] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const initialInvoiceTaxRate = Number(projectDetail?.invoiceTaxRate ?? projectDetail?.taxRate ?? 11);
+  const [invoiceTaxRateInput, setInvoiceTaxRateInput] = useState(() => String(initialInvoiceTaxRate));
+  const [savedInvoiceTaxRate, setSavedInvoiceTaxRate] = useState(initialInvoiceTaxRate);
+  const [savingInvoiceTaxRate, setSavingInvoiceTaxRate] = useState(false);
+  const invoiceTaxRate = Number(invoiceTaxRateInput);
+  const invoiceTaxRateIsValid = invoiceTaxRateInput.trim() !== ""
+    && Number.isFinite(invoiceTaxRate)
+    && invoiceTaxRate >= 0
+    && invoiceTaxRate <= 100;
+  const taxSummary = calculateTaxSummary(
+    Number(projectDetail?.subtotal ?? 0),
+    invoiceTaxRateIsValid ? invoiceTaxRate : savedInvoiceTaxRate,
+  );
   const uploadInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
+
+  useEffect(() => {
+    const nextRate = Number(projectDetail?.invoiceTaxRate ?? projectDetail?.taxRate ?? 11);
+    setInvoiceTaxRateInput(String(nextRate));
+    setSavedInvoiceTaxRate(nextRate);
+  }, [projectDetail?.id, projectDetail?.invoiceTaxRate, projectDetail?.taxRate]);
+
+  const saveInvoiceTaxRate = async () => {
+    if (readOnly || savingInvoiceTaxRate) return;
+
+    if (!invoiceTaxRateIsValid) {
+      await showAlertValidationError("Invoice PPN must be a number between 0 and 100.");
+      setInvoiceTaxRateInput(String(savedInvoiceTaxRate));
+      return;
+    }
+
+    if (invoiceTaxRate === savedInvoiceTaxRate) return;
+
+    try {
+      setSavingInvoiceTaxRate(true);
+      const response = await fetch(`/api/tracking?id=${projectDetail?.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prj_invoice_tax_rate: invoiceTaxRate }),
+      });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Failed to update Invoice PPN.");
+
+      setSavedInvoiceTaxRate(invoiceTaxRate);
+      await showSuccess("Invoice PPN updated", `Invoice tax rate has been updated to ${invoiceTaxRate}%.`);
+    } catch (error) {
+      setInvoiceTaxRateInput(String(savedInvoiceTaxRate));
+      await showAlertValidationError(error instanceof Error ? error.message : "Failed to update Invoice PPN.");
+    } finally {
+      setSavingInvoiceTaxRate(false);
+    }
+  };
   const payment = projectDetail?.payment;
   const getFileName = () =>
     `Invoice_${projectDetail?.code ?? projectDetail?.name ?? "Project"}.pdf`;
@@ -291,7 +337,38 @@ export default function InvoiceSection({
 
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-6"><h3 className="text-xl font-bold text-slate-900">Payment Method</h3>{payment ? <div className="mt-6 space-y-4 text-sm"><PaymentRow label="Bank" value={payment.bank} /><PaymentRow label="Account No" value={payment.accountNo} /><PaymentRow label="Account Name" value={payment.accountName} /></div> : <p className="mt-6 text-sm text-slate-500">Payment details are not available for this invoice.</p>}</div>
-        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6"><div className="space-y-3 text-sm"><TotalRow label="Subtotal" value={formatRupiah(taxSummary.subtotal)} /><TotalRow label="DPP" value={formatRupiah(taxSummary.dpp)} /><TotalRow label={`PPN (${taxSummary.taxRate}%)`} value={formatRupiah(taxSummary.ppn)} /></div><div className="mt-6 flex justify-between border-t border-yellow-200 pt-5 text-lg font-bold text-slate-900"><span>Grand Total</span><span>{formatRupiah(taxSummary.grandTotal)}</span></div></div>
+        <div className="w-full rounded-xl border bg-yellow-50 p-4 sm:p-6">
+          <div className="space-y-3 text-sm">
+            <TotalRow label="Subtotal" value={formatRupiah(taxSummary.subtotal)} />
+            <TotalRow label="DPP" value={formatRupiah(taxSummary.dpp)} />
+          </div>
+
+          <div className="mb-3 mt-3 flex items-center justify-between gap-4">
+            <label htmlFor="invoice-tax-rate" className="font-medium">
+              PPN (%) {!readOnly && <span className="text-red-500">*</span>}
+            </label>
+            <input
+              id="invoice-tax-rate"
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={invoiceTaxRateInput}
+              disabled={readOnly || savingInvoiceTaxRate}
+              onChange={(event) => setInvoiceTaxRateInput(event.target.value)}
+              onBlur={saveInvoiceTaxRate}
+              aria-invalid={!invoiceTaxRateIsValid}
+              className={`w-24 rounded-md border px-3 py-2 text-right disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-500 ${invoiceTaxRateIsValid ? "border-slate-300 bg-white" : "border-red-500 bg-red-50"}`}
+            />
+          </div>
+
+          <TotalRow label={`PPN (${taxSummary.taxRate}%)`} value={formatRupiah(taxSummary.ppn)} />
+
+          <div className="mt-4 flex justify-between border-t pt-4 text-xl font-bold">
+            <span>Grand Total</span>
+            <span>{formatRupiah(taxSummary.grandTotal)}</span>
+          </div>
+        </div>
       </div>
 
       {uploadedPdf && previewUrl && <div className="mt-6 flex flex-col gap-4 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700"><FileDocumentIcon className="h-5 w-5" /></div><div className="min-w-0"><p className="text-sm font-bold text-slate-900">PDF Ready to Send</p><p className="truncate text-xs text-slate-600">{uploadedPdf.name}</p></div></div><button type="button" onClick={() => setIsPreviewOpen(true)} className="inline-flex w-full justify-center rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-100 sm:w-auto">Preview PDF</button></div>}
