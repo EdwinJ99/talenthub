@@ -689,9 +689,6 @@ export default function CreatorDiscoveryPage() {
                               row.photo_url
                             )}`}
                             alt={row.name}
-                            onError={(event) => {
-                              event.currentTarget.src = "/image/default-kol-avatar.png";
-                            }}
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display =
